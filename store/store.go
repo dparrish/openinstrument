@@ -10,12 +10,13 @@ import (
   "github.com/dparrish/openinstrument/variable"
   "github.com/coreos/go-etcd/etcd"
   "encoding/base64"
-  "strings"
+  "encoding/json"
   "errors"
   "flag"
   "fmt"
   "html/template"
   "io/ioutil"
+  "strings"
   "log"
   "net"
   "net/http"
@@ -320,6 +321,75 @@ func InspectVariable(w http.ResponseWriter, req *http.Request) {
   }
 }
 
+func Query(w http.ResponseWriter, req *http.Request) {
+  query := req.FormValue("q")
+  show_values := req.FormValue("v") == "1"
+  type Result struct {
+    Variable string `json:"name"`
+    Values [][]interface{} `json:"values"`
+  }
+
+  var min_timestamp *uint64
+  var max_timestamp *uint64
+  var duration *time.Duration
+  if req.FormValue("d") != "" {
+    d, err := time.ParseDuration(req.FormValue("d"))
+    if err != nil {
+      w.WriteHeader(401)
+      fmt.Fprintf(w, "Invalid duration")
+      return
+    }
+    duration = &d
+    t := uint64(time.Now().UnixNano() - d.Nanoseconds()) / 1000000
+    min_timestamp = &t
+  }
+
+  if query == "" {
+    w.WriteHeader(401)
+    fmt.Fprintf(w, "Specify q=")
+    return
+  }
+
+  results := make([]Result, 0)
+
+  for stream := range ds.Reader(variable.NewFromString(query), min_timestamp, max_timestamp, show_values) {
+    r := Result{
+      Variable: variable.NewFromProto(stream.Variable).String(),
+    }
+    if !show_values {
+      results = append(results, r)
+      continue
+    }
+    r.Values = make([][]interface{}, 0)
+
+    if duration == nil {
+      // Latest value only
+      if len(stream.Value) > 0 {
+        v := stream.Value[len(stream.Value) - 1]
+        r.Values = append(r.Values, []interface{}{v.Timestamp, v.GetDoubleValue()})
+        //r.Values = append(r.Values, v)
+      }
+    } else {
+      // All values over a specific time period
+      for _, v := range stream.Value {
+        if min_timestamp == nil || *min_timestamp > v.GetTimestamp() {
+          r.Values = append(r.Values, []interface{}{v.GetTimestamp(), v.GetDoubleValue()})
+        }
+      }
+    }
+    results = append(results, r)
+  }
+
+  b, err := json.Marshal(results)
+  if err != nil {
+    w.WriteHeader(500)
+    fmt.Fprintf(w, "Couldn't marshal: %s", err)
+    return
+  }
+  w.WriteHeader(200)
+  w.Write(b)
+}
+
 func main() {
   log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
   log.Printf("Current PID: %d", os.Getpid())
@@ -343,6 +413,7 @@ func main() {
   http.Handle("/status", http.HandlerFunc(StoreStatus))
   http.Handle("/compact", http.HandlerFunc(CompactBlock))
   http.Handle("/inspect", http.HandlerFunc(InspectVariable))
+  http.Handle("/query", http.HandlerFunc(Query))
   sock, e := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
   if e != nil {
     log.Fatalf("Can't listen on %s: %s", net.JoinHostPort(*address, strconv.Itoa(*port)), e)
@@ -430,7 +501,7 @@ func (this *TaskInfo) BackgroundTask() {
       }
     }
   }
-  this.Close();
+  this.Close()
 }
 
 func (this *TaskInfo) Close() error {
