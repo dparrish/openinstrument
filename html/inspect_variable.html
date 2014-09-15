@@ -1,0 +1,41 @@
+<html>
+<head>
+  <title>OpenInstrument Datastore Status</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.2.1/css/foundation.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+  <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.2.1/js/foundation.min.js"></script>-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+  <script>
+    function Duration(ms) {
+      var date = new Date(ms);
+      return date.getUTCHours() + ":" + date.getUTCMinutes() + ":" + date.getUTCSeconds() + "." + date.getUTCMilliseconds();
+    }
+  </script>
+  <h1>{{ .Title }}</h1>
+
+  <b>Query: </b>{{ .Query }}<br />
+
+  {{ range .Variables }}
+  <table>
+    <tr>
+      <td><b>Name:</b></td>
+      <td>{{ .Name }}</td>
+    </tr>
+    <tr>
+      <td><b>First Timestamp:</b></td>
+      <td>{{ .FirstTimestamp }}</td>
+    </tr>
+    <tr>
+      <td><b>Last Timestamp:</b></td>
+      <td>{{ .LastTimestamp }}</td>
+    </tr>
+  </table>
+  {{ end }}
+
+</body>
+</html>
+
+

@@ -5,7 +5,7 @@ import (
   "github.com/dparrish/openinstrument"
   "github.com/dparrish/openinstrument/datastore"
   "github.com/dparrish/openinstrument/mutations"
-  openinstrument_proto "github.com/dparrish/openinstrument/proto"
+  oproto "github.com/dparrish/openinstrument/proto"
   "github.com/dparrish/openinstrument/store_config"
   "github.com/dparrish/openinstrument/variable"
   "github.com/coreos/go-etcd/etcd"
@@ -26,11 +26,13 @@ import (
 )
 
 var task_name = flag.String("name", "", "Name of the task. Must be unique across the cluster. e.g. \"hostname:port\"")
-var etcd_addr = flag.String("etcd", "http://127.0.0.1:4001", "etcd daemon address")
-var etcd_root = flag.String("config_root", "/openinstrument", "etcd configuration root path")
+var etcd_addr = flag.String("etcd", "http://127.0.0.1:4001", "etcd daemon addres")
+var etcd_root = flag.String("config_root", "", "etcd configuration root path")
 var address = flag.String("address", "", "Address to listen on (blank for any)")
 var port = flag.Int("port", 8020, "Port to listen on")
 var config_file = flag.String("config", "/store/config.txt", "Path to the store configuration file")
+var store_path = flag.String("datastore", "/store", "Path to the data store files")
+var template_path = flag.String("templates", "/html", "Path to HTML template files")
 
 var ds *datastore.Datastore
 
@@ -69,8 +71,8 @@ func returnResponse(w http.ResponseWriter, req *http.Request, response proto.Mes
 }
 
 func Get(w http.ResponseWriter, req *http.Request) {
-  var request openinstrument_proto.GetRequest
-  var response openinstrument_proto.GetResponse
+  var request oproto.GetRequest
+  var response oproto.GetResponse
   if parseRequest(w, req, &request) != nil {
     return
   }
@@ -91,7 +93,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
   }
   fmt.Println(openinstrument.ProtoText(&request))
   stream_chan := ds.Reader(request_variable, request.MinTimestamp, request.MaxTimestamp, true)
-  streams := make([]*openinstrument_proto.ValueStream, 0)
+  streams := make([]*oproto.ValueStream, 0)
   for stream := range stream_chan {
     streams = append(streams, stream)
   }
@@ -100,33 +102,33 @@ func Get(w http.ResponseWriter, req *http.Request) {
     merge_by = request.Aggregation[0].GetLabel()[0]
   }
   sc := openinstrument.MergeStreamsBy(streams, merge_by)
-  response.Stream = make([]*openinstrument_proto.ValueStream, 0)
+  response.Stream = make([]*oproto.ValueStream, 0)
   for streams := range sc {
     mutation_channels := openinstrument.ValueStreamChannelList(openinstrument.MergeValueStreams(streams))
     if request.GetMutation() != nil && len(request.GetMutation()) > 0 {
       for _, mut := range request.GetMutation() {
         switch mut.GetSampleType() {
-        case openinstrument_proto.StreamMutation_NONE:
+        case oproto.StreamMutation_NONE:
           mutation_channels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
             mutation_channels.Last(),
             mutations.Interpolate))
-        case openinstrument_proto.StreamMutation_AVERAGE:
+        case oproto.StreamMutation_AVERAGE:
           mutation_channels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
             mutation_channels.Last(),
             mutations.Mean))
-        case openinstrument_proto.StreamMutation_MIN:
+        case oproto.StreamMutation_MIN:
           mutation_channels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
             mutation_channels.Last(),
             mutations.Min))
-        case openinstrument_proto.StreamMutation_MAX:
+        case oproto.StreamMutation_MAX:
           mutation_channels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
             mutation_channels.Last(),
             mutations.Max))
-        case openinstrument_proto.StreamMutation_RATE:
+        case oproto.StreamMutation_RATE:
           mutation_channels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
             mutation_channels.Last(),
             mutations.Rate))
-        case openinstrument_proto.StreamMutation_RATE_SIGNED:
+        case oproto.StreamMutation_RATE_SIGNED:
           mutation_channels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
             mutation_channels.Last(),
             mutations.SignedRate))
@@ -134,7 +136,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
       }
     }
 
-    newstream := new(openinstrument_proto.ValueStream)
+    newstream := new(oproto.ValueStream)
     newstream.Variable = variable.NewFromProto(streams[0].Variable).AsProto()
     writer := openinstrument.ValueStreamWriter(newstream)
     var value_count uint32
@@ -163,8 +165,8 @@ func Get(w http.ResponseWriter, req *http.Request) {
 }
 
 func Add(w http.ResponseWriter, req *http.Request) {
-  var request openinstrument_proto.AddRequest
-  var response openinstrument_proto.AddResponse
+  var request oproto.AddRequest
+  var response oproto.AddResponse
   if parseRequest(w, req, &request) != nil {
     return
   }
@@ -179,15 +181,15 @@ func Add(w http.ResponseWriter, req *http.Request) {
   returnResponse(w, req, &response)
 }
 
-func ListResponseAddTimer(name string, response *openinstrument_proto.ListResponse) *openinstrument.Timer {
-  response.Timer = append(response.Timer, &openinstrument_proto.LogMessage{})
+func ListResponseAddTimer(name string, response *oproto.ListResponse) *openinstrument.Timer {
+  response.Timer = append(response.Timer, &oproto.LogMessage{})
   return openinstrument.NewTimer(name, response.Timer[len(response.Timer)-1])
 }
 
 func List(w http.ResponseWriter, req *http.Request) {
-  var request openinstrument_proto.ListRequest
-  var response openinstrument_proto.ListResponse
-  response.Timer = make([]*openinstrument_proto.LogMessage, 0)
+  var request oproto.ListRequest
+  var response oproto.ListResponse
+  response.Timer = make([]*oproto.LogMessage, 0)
   if parseRequest(w, req, &request) != nil {
     return
   }
@@ -204,7 +206,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 
   // Retrieve all variables and store the names in a map for uniqueness
   timer := ListResponseAddTimer("retrieve variables", &response)
-  vars := make(map[string]*openinstrument_proto.StreamVariable)
+  vars := make(map[string]*oproto.StreamVariable)
   min_timestamp := time.Now().Add(time.Duration(-request.GetMaxAge()) * time.Millisecond)
   unix := uint64(min_timestamp.Unix()) * 1000
   stream_chan := ds.Reader(request_variable, &unix, nil, false)
@@ -218,7 +220,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 
   // Build the response out of the map
   timer = ListResponseAddTimer("construct response", &response)
-  response.Variable = make([]*openinstrument_proto.StreamVariable, 0)
+  response.Variable = make([]*oproto.StreamVariable, 0)
   for varname := range vars {
     response.Variable = append(response.Variable, variable.NewFromString(varname).AsProto())
   }
@@ -237,21 +239,81 @@ func GetConfig(w http.ResponseWriter, req *http.Request) {
   returnResponse(w, req, store_config.Config().Config)
 }
 
-type storeStatus struct {
-  Title  string
-  Blocks *map[string]*datastore.DatastoreBlock
-}
-
 func StoreStatus(w http.ResponseWriter, req *http.Request) {
-  t, err := template.ParseFiles("src/store_status.html")
+  t, err := template.ParseFiles(fmt.Sprintf("%s/store_status.html", *template_path))
   if err != nil {
     log.Printf("Couldn't find template file: %s", err)
     return
   }
-  p := storeStatus{
+  p := struct {
+    Title  string
+    Blocks *map[string]*datastore.DatastoreBlock
+  }{
     Title:  "Store Status",
     Blocks: &ds.Blocks,
   }
+  err = t.Execute(w, p)
+  if err != nil {
+    log.Println(err)
+  }
+}
+
+func CompactBlock(w http.ResponseWriter, req *http.Request) {
+  for _, block := range ds.Blocks {
+    if strings.HasPrefix(strings.ToLower(block.Id), strings.ToLower(req.FormValue("block"))) {
+      log.Printf("User request compaction of block %s", req.FormValue("block"))
+      block.RequestCompact = true
+      w.WriteHeader(http.StatusOK)
+      fmt.Fprintf(w, "compaction requested\n")
+      return
+    }
+  }
+  w.WriteHeader(404)
+  fmt.Fprintf(w, "block %s not found\n", req.FormValue("block"))
+}
+
+func InspectVariable(w http.ResponseWriter, req *http.Request) {
+  //w.WriteHeader(http.StatusOK)
+  t, err := template.ParseFiles(fmt.Sprintf("%s/inspect_variable.html", *template_path))
+  if err != nil {
+    log.Printf("Couldn't find template file: %s", err)
+    return
+  }
+  type varInfo struct {
+    Name string
+    FirstTimestamp time.Time
+    LastTimestamp time.Time
+  }
+  p := struct {
+    Title string
+    Query string
+    Variables []varInfo
+  }{
+    Title:  "Inspect Variable",
+    Query: req.FormValue("q"),
+    Variables: make([]varInfo, 0),
+  }
+
+  if p.Query == "" {
+    w.WriteHeader(404)
+    fmt.Fprintf(w, "Specify q=")
+    return
+  }
+
+  v := variable.NewFromString(p.Query)
+  c := ds.Reader(v, nil, nil, true)
+  for stream := range c {
+    lt := stream.Value[len(stream.Value) - 1].GetEndTimestamp()
+    if lt == 0 {
+      lt = stream.Value[len(stream.Value) - 1].GetTimestamp()
+    }
+    p.Variables = append(p.Variables, varInfo{
+      Name: variable.NewFromProto(stream.Variable).String(),
+      FirstTimestamp: time.Unix(int64(stream.Value[0].GetTimestamp() / 1000), 0),
+      LastTimestamp: time.Unix(int64(lt / 1000), 0),
+    })
+  }
+
   err = t.Execute(w, p)
   if err != nil {
     log.Println(err)
@@ -279,6 +341,8 @@ func main() {
   http.Handle("/args", http.HandlerFunc(Args))
   http.Handle("/config", http.HandlerFunc(GetConfig))
   http.Handle("/status", http.HandlerFunc(StoreStatus))
+  http.Handle("/compact", http.HandlerFunc(CompactBlock))
+  http.Handle("/inspect", http.HandlerFunc(InspectVariable))
   sock, e := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
   if e != nil {
     log.Fatalf("Can't listen on %s: %s", net.JoinHostPort(*address, strconv.Itoa(*port)), e)
@@ -296,7 +360,7 @@ func main() {
     }
   }
 
-  ds = datastore.Open("/store")
+  ds = datastore.Open(*store_path)
   http.Serve(sock, nil)
 
   task_info.Close()

@@ -11,6 +11,10 @@ import (
   "time"
 )
 
+func NowMs() uint64 {
+  return uint64(time.Now().UnixNano() / 1000000);
+}
+
 func NewVariableFromString(textvar string) *variable.Variable {
   return variable.NewFromString(textvar)
 }

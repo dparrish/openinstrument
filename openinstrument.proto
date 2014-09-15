@@ -164,20 +164,6 @@ message StoreFileHeaderIndex {
   optional fixed64 max_timestamp = 5;
 }
 
-message CompactionLog {
-  optional uint64 start_time = 1;
-  optional uint64 end_time = 2;
-  repeated LogMessage log = 3;
-  optional uint64 old_streams = 4;
-  optional uint64 old_values = 5;
-  optional uint64 log_streams = 6;
-  optional uint64 log_values = 7;
-  optional uint64 out_streams = 8;
-  optional uint64 out_values = 9;
-  repeated string input_filename = 10;
-  repeated string output_filename = 11;
-}
-
 message StoreFileHeader {
   optional uint32 version = 6 [ default = 1 ];
   optional uint64 start_timestamp = 1;
@@ -185,11 +171,6 @@ message StoreFileHeader {
   repeated StreamVariable variable = 4;
   repeated StoreFileHeaderIndex index = 5;
   optional string end_key = 7;
-  optional fixed64 footer_position = 9;
-}
-
-message StoreFileFooter {
-  repeated CompactionLog compaction_log = 1;
 }
 
 message RetentionPolicyItem {

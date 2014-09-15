@@ -1,6 +1,0 @@
-go get github.com/joaojeronimo/go-crc16 \
-       github.com/nu7hatch/gouuid \
-       code.google.com/p/goprotobuf/proto \
-       code.google.com/p/goprotobuf/protoc-gen-go \
-       github.com/coreos/go-etcd
-

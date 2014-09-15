@@ -23,9 +23,7 @@ It has these top-level messages:
 	ListRequest
 	ListResponse
 	StoreFileHeaderIndex
-	CompactionLog
 	StoreFileHeader
-	StoreFileFooter
 	RetentionPolicyItem
 	RetentionPolicy
 	StoreServer
@@ -806,102 +804,6 @@ func (m *StoreFileHeaderIndex) GetMaxTimestamp() uint64 {
 	return 0
 }
 
-type CompactionLog struct {
-	StartTime        *uint64       `protobuf:"varint,1,opt,name=start_time" json:"start_time,omitempty"`
-	EndTime          *uint64       `protobuf:"varint,2,opt,name=end_time" json:"end_time,omitempty"`
-	Log              []*LogMessage `protobuf:"bytes,3,rep,name=log" json:"log,omitempty"`
-	OldStreams       *uint64       `protobuf:"varint,4,opt,name=old_streams" json:"old_streams,omitempty"`
-	OldValues        *uint64       `protobuf:"varint,5,opt,name=old_values" json:"old_values,omitempty"`
-	LogStreams       *uint64       `protobuf:"varint,6,opt,name=log_streams" json:"log_streams,omitempty"`
-	LogValues        *uint64       `protobuf:"varint,7,opt,name=log_values" json:"log_values,omitempty"`
-	OutStreams       *uint64       `protobuf:"varint,8,opt,name=out_streams" json:"out_streams,omitempty"`
-	OutValues        *uint64       `protobuf:"varint,9,opt,name=out_values" json:"out_values,omitempty"`
-	InputFilename    []string      `protobuf:"bytes,10,rep,name=input_filename" json:"input_filename,omitempty"`
-	OutputFilename   []string      `protobuf:"bytes,11,rep,name=output_filename" json:"output_filename,omitempty"`
-	XXX_unrecognized []byte        `json:"-"`
-}
-
-func (m *CompactionLog) Reset()         { *m = CompactionLog{} }
-func (m *CompactionLog) String() string { return proto.CompactTextString(m) }
-func (*CompactionLog) ProtoMessage()    {}
-
-func (m *CompactionLog) GetStartTime() uint64 {
-	if m != nil && m.StartTime != nil {
-		return *m.StartTime
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetEndTime() uint64 {
-	if m != nil && m.EndTime != nil {
-		return *m.EndTime
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetLog() []*LogMessage {
-	if m != nil {
-		return m.Log
-	}
-	return nil
-}
-
-func (m *CompactionLog) GetOldStreams() uint64 {
-	if m != nil && m.OldStreams != nil {
-		return *m.OldStreams
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetOldValues() uint64 {
-	if m != nil && m.OldValues != nil {
-		return *m.OldValues
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetLogStreams() uint64 {
-	if m != nil && m.LogStreams != nil {
-		return *m.LogStreams
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetLogValues() uint64 {
-	if m != nil && m.LogValues != nil {
-		return *m.LogValues
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetOutStreams() uint64 {
-	if m != nil && m.OutStreams != nil {
-		return *m.OutStreams
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetOutValues() uint64 {
-	if m != nil && m.OutValues != nil {
-		return *m.OutValues
-	}
-	return 0
-}
-
-func (m *CompactionLog) GetInputFilename() []string {
-	if m != nil {
-		return m.InputFilename
-	}
-	return nil
-}
-
-func (m *CompactionLog) GetOutputFilename() []string {
-	if m != nil {
-		return m.OutputFilename
-	}
-	return nil
-}
-
 type StoreFileHeader struct {
 	Version          *uint32                 `protobuf:"varint,6,opt,name=version,def=1" json:"version,omitempty"`
 	StartTimestamp   *uint64                 `protobuf:"varint,1,opt,name=start_timestamp" json:"start_timestamp,omitempty"`
@@ -909,7 +811,6 @@ type StoreFileHeader struct {
 	Variable         []*StreamVariable       `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
 	Index            []*StoreFileHeaderIndex `protobuf:"bytes,5,rep,name=index" json:"index,omitempty"`
 	EndKey           *string                 `protobuf:"bytes,7,opt,name=end_key" json:"end_key,omitempty"`
-	FooterPosition   *uint64                 `protobuf:"fixed64,9,opt,name=footer_position" json:"footer_position,omitempty"`
 	XXX_unrecognized []byte                  `json:"-"`
 }
 
@@ -959,29 +860,6 @@ func (m *StoreFileHeader) GetEndKey() string {
 		return *m.EndKey
 	}
 	return ""
-}
-
-func (m *StoreFileHeader) GetFooterPosition() uint64 {
-	if m != nil && m.FooterPosition != nil {
-		return *m.FooterPosition
-	}
-	return 0
-}
-
-type StoreFileFooter struct {
-	CompactionLog    []*CompactionLog `protobuf:"bytes,1,rep,name=compaction_log" json:"compaction_log,omitempty"`
-	XXX_unrecognized []byte           `json:"-"`
-}
-
-func (m *StoreFileFooter) Reset()         { *m = StoreFileFooter{} }
-func (m *StoreFileFooter) String() string { return proto.CompactTextString(m) }
-func (*StoreFileFooter) ProtoMessage()    {}
-
-func (m *StoreFileFooter) GetCompactionLog() []*CompactionLog {
-	if m != nil {
-		return m.CompactionLog
-	}
-	return nil
 }
 
 type RetentionPolicyItem struct {

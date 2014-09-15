@@ -46,20 +46,9 @@ func Open(path string) *Datastore {
 
   // Wait forever...
   go func() {
-    tick := time.Tick(5 * time.Second)
+    tick := time.Tick(1 * time.Second)
     for !this.shutdown {
       <-tick
-      // Compact any blocks that need it
-      for _, block := range this.Blocks {
-        if block.shouldCompact() {
-          start_time := time.Now()
-          if err := this.compactBlock(block); err != nil {
-            log.Printf("Error compacting block: %s\n", err)
-          }
-          log.Printf("Finished compaction of %s in %v", block, time.Since(start_time))
-        }
-      }
-
       // Split any blocks that need it
       for _, block := range this.Blocks {
         if block.shouldSplit() {
@@ -71,24 +60,15 @@ func Open(path string) *Datastore {
         }
       }
 
-      // Attempt to join blocks with low usage
-      sorted := make([]*DatastoreBlock, 0)
+      // Compact any blocks that need it
       for _, block := range this.Blocks {
-        sorted = append(sorted, block)
-      }
-      By(func(a, b *DatastoreBlock) bool { return a.EndKey < b.EndKey }).Sort(sorted)
-      join_blocks := make([]*DatastoreBlock, 0)
-      var join_size uint32 = 0
-      for _, block := range sorted {
-        if join_size+block.NumStreams() > SPLIT_POINT {
-          continue
+        if block.shouldCompact() {
+          start_time := time.Now()
+          if err := this.compactBlock(block); err != nil {
+            log.Printf("Error compacting block: %s\n", err)
+          }
+          log.Printf("Finished compaction of %s in %v", block, time.Since(start_time))
         }
-        join_size += block.NumStreams()
-        join_blocks = append(join_blocks, block)
-      }
-      if join_size > 0 && len(join_blocks) > 1 {
-        new_block := this.joinBlocks(join_blocks)
-        new_block = new_block
       }
     }
   }()
@@ -149,12 +129,6 @@ func (this *Datastore) readBlock(filename string, waitgroup *sync.WaitGroup) {
   if block.BlockHeader.GetVersion() != 2 {
     log.Printf("Block file %s has incorrect version identifier '%v'\n", block.Filename(), block.BlockHeader.GetVersion())
     return
-  }
-
-  if block.BlockHeader.FooterPosition != nil {
-    file.ReadAt(int64(block.BlockHeader.GetFooterPosition()), block.BlockFooter)
-  } else {
-    log.Printf("Block file has no footer")
   }
 
   block.EndKey = block.BlockHeader.GetEndKey()
@@ -233,13 +207,11 @@ func (this *Datastore) Writer() chan *oproto.ValueStream {
   return c
 }
 
-// tReader builds a channel that will return streams for a supplied Variable.
+// Reader builds a channel that will return streams for a supplied Variable.
 // If min/max_timestamp are not nil, streams will only be returned if SOME values inside the stream match.
 // The supplied variable may be a search or a single.
 // The streams returned may be out of order with respect to variable names or timestamps.
-func (this *Datastore) Reader(v *variable.Variable,
-  min_timestamp, max_timestamp *uint64,
-  fetch_values bool) chan *oproto.ValueStream {
+func (this *Datastore) Reader(v *variable.Variable, min_timestamp, max_timestamp *uint64, fetch_values bool) chan *oproto.ValueStream {
   //log.Printf("Creating Reader for %s\n", v.String())
   c := make(chan *oproto.ValueStream, 1000)
   go func() {
@@ -379,15 +351,6 @@ func (this *Datastore) splitBlock(block *DatastoreBlock) error {
   log.Printf("Splitting at %d (%s)", splitpoint, sorted_keys[splitpoint])
 
   // Read in the whole block
-  streams := make(map[string]*oproto.ValueStream)
-  clog := new(oproto.CompactionLog)
-  err := block.Read(this.Path, streams, clog)
-  if err != nil {
-    return errors.New(fmt.Sprintf("Couldn't read old block file: %s", err))
-  }
-
-  block.logLock.Lock()
-  defer block.logLock.Unlock()
 
   u, err := uuid.NewV4()
   if err != nil {
@@ -397,7 +360,15 @@ func (this *Datastore) splitBlock(block *DatastoreBlock) error {
   leftstreams := make(map[string]*oproto.ValueStream)
   rightstreams := make(map[string]*oproto.ValueStream)
 
-  for _, stream := range streams {
+  streams, err := block.Read(this.Path)
+  if err != nil {
+    return errors.New(fmt.Sprintf("Couldn't read old block file: %s", err))
+  }
+
+  block.logLock.Lock()
+  defer block.logLock.Unlock()
+
+  for stream := range streams {
     v := variable.NewFromProto(stream.Variable)
     if v.String() <= leftblock.EndKey {
       leftstreams[v.String()] = stream
@@ -406,11 +377,11 @@ func (this *Datastore) splitBlock(block *DatastoreBlock) error {
     }
   }
 
-  err = leftblock.Write(this.Path, leftstreams, clog)
+  err = leftblock.Write(this.Path, leftstreams)
   if err != nil {
     return errors.New(fmt.Sprintf("Error writing left block: %s", err))
   }
-  err = block.Write(this.Path, rightstreams, clog)
+  err = block.Write(this.Path, rightstreams)
   if err != nil {
     return errors.New(fmt.Sprintf("Error writing right block: %s", err))
   }
@@ -418,57 +389,6 @@ func (this *Datastore) splitBlock(block *DatastoreBlock) error {
 
   log.Printf("Left contains %d streams, right contains %d", len(leftstreams), len(rightstreams))
   return nil
-}
-
-// joinBlocks joins multiple blocks into a single block.
-// The old block files will be removed once the new block has been written to disk.
-// This will block writes to the old blocks until the new block has been written.
-// WARNING: The supplied blocks must be sequential.
-func (this *Datastore) joinBlocks(blocks []*DatastoreBlock) *DatastoreBlock {
-  log.Printf("Joining blocks %v", blocks)
-  newblock := newBlock(blocks[len(blocks)-1].EndKey, blocks[len(blocks)-1].Id)
-  clog := &oproto.CompactionLog{
-    StartTime: proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-    EndTime:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-    Log:       make([]*oproto.LogMessage, 0),
-  }
-  newblock.BlockFooter.CompactionLog = blocks[len(blocks)-1].BlockFooter.CompactionLog
-  newblock.BlockFooter.CompactionLog = append(newblock.BlockFooter.CompactionLog, clog)
-
-  streams := make(map[string]*oproto.ValueStream)
-  for _, block := range blocks {
-    if err := block.Read(this.Path, streams, clog); err != nil {
-      log.Printf("Unable to read block: %s", err)
-      return nil
-    }
-  }
-
-  clog.OldStreams = proto.Uint64(uint64(len(streams)))
-  var num_values uint64
-  for _, stream := range streams {
-    num_values += uint64(len(stream.Value))
-  }
-  clog.OldValues = proto.Uint64(num_values)
-
-  if err := newblock.Write(this.Path, streams, clog); err != nil {
-    log.Printf("%s", err)
-    return nil
-  }
-
-  for _, block := range blocks {
-    os.Remove(filepath.Join(this.Path, block.logFilename()))
-    delete(this.Blocks, block.EndKey)
-    if block.EndKey == newblock.EndKey {
-      waitgroup := new(sync.WaitGroup)
-      waitgroup.Add(1)
-      this.readBlock(newblock.Filename(), waitgroup)
-    } else {
-      os.Remove(filepath.Join(this.Path, block.Filename()))
-    }
-  }
-  this.Blocks[newblock.EndKey] = newblock
-
-  return newblock
 }
 
 func newBlock(end_key, id string) *DatastoreBlock {
@@ -480,9 +400,6 @@ func newBlock(end_key, id string) *DatastoreBlock {
     BlockHeader: &oproto.StoreFileHeader{
       Version: proto.Uint32(2),
       Index:   make([]*oproto.StoreFileHeaderIndex, 0),
-    },
-    BlockFooter: &oproto.StoreFileFooter{
-      CompactionLog: make([]*oproto.CompactionLog, 0),
     },
   }
 }
@@ -511,37 +428,49 @@ func (this *Datastore) findBlock(v *variable.Variable) *DatastoreBlock {
 
 func (this *Datastore) compactBlock(block *DatastoreBlock) (err error) {
   log.Printf("Compacting block %s\n", block)
-  clog := &oproto.CompactionLog{
-    StartTime: proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-    EndTime:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-    Log:       make([]*oproto.LogMessage, 0),
-  }
-  AddLogMessage(clog, "Beginning compaction")
 
+  block.RequestCompact = false
   block.isCompacting = true
   block.compactStartTime = time.Now()
-  block.BlockFooter.CompactionLog = append(block.BlockFooter.CompactionLog, clog)
 
   block.logLock.Lock()
-  streams := make(map[string]*oproto.ValueStream)
-  if err = block.Read(this.Path, streams, clog); err != nil {
-    log.Printf("Unable to read block: %s", err)
-    AddLogMessage(clog, fmt.Sprintf("Failed compaction: %s", err))
-  } else {
-    var old_values uint64
-    for _, stream := range streams {
-      old_values += uint64(len(stream.Value))
+
+  streams := make(map[string]*oproto.ValueStream, 0)
+  appendStream := func(stream *oproto.ValueStream) {
+    if stream.Variable == nil {
+      return
     }
-    clog.OldStreams = proto.Uint64(uint64(len(streams)))
-    clog.OldValues = proto.Uint64(old_values)
-    if err = block.Write(this.Path, streams, clog); err != nil {
-      AddLogMessage(clog, fmt.Sprintf("Error writing: %s", err))
+    v := variable.NewFromProto(stream.Variable).String()
+    outstream, found := streams[v]
+    if found {
+      outstream.Value = append(outstream.Value, stream.Value...)
     } else {
+      streams[v] = stream
+    }
+  }
+  st := time.Now()
+  reader, err := block.Read(this.Path)
+  if err != nil {
+    log.Printf("Unable to read block: %s", err)
+  } else {
+    for stream := range reader {
+      if stream.Variable != nil {
+        appendStream(stream)
+      }
+    }
+    log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
+
+    st = time.Now()
+    if err = block.Write(this.Path, streams); err != nil {
+      log.Printf("Error writing: %s", err)
+    } else {
+      log.Printf("Compaction wrote in %s", time.Since(st))
       // Delete the log file
       os.Remove(filepath.Join(this.Path, block.logFilename()))
       block.LogStreams = make(map[string]*oproto.ValueStream)
     }
   }
+
   block.logLock.Unlock()
 
   block.compactEndTime = time.Now()
@@ -565,22 +494,11 @@ func (this *Datastore) NumValues() uint32 {
   return values
 }
 
-func AddLogMessage(this *oproto.CompactionLog, message string) {
-  if this == nil {
-    return
-  }
-  this.Log = append(this.Log, &oproto.LogMessage{
-    Timestamp: proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-    Message:   proto.String(message),
-  })
-}
-
 type DatastoreBlock struct {
   EndKey string
   Id     string
 
   BlockHeader *oproto.StoreFileHeader
-  BlockFooter *oproto.StoreFileFooter
 
   // Contains any streams that have been written to disk but not yet indexed
   LogStreams map[string]*oproto.ValueStream
@@ -592,6 +510,7 @@ type DatastoreBlock struct {
   isCompacting     bool
   compactStartTime time.Time
   compactEndTime   time.Time
+  RequestCompact   bool
 }
 
 func BlockIdFromFilename(filename string) string {
@@ -682,19 +601,11 @@ func (this *DatastoreBlock) shouldCompact() bool {
     log.Printf("Block %s has %d (> %d) log streams, scheduling compaction", this, len(this.LogStreams), 10000)
     return true
   }
-  if this.NumLogValues() > 50000 {
-    log.Printf("Block %s has %d (> %d) log values, scheduling compaction", this, this.NumLogValues(), 1000)
+  if this.NumLogValues() > MAX_LOG_VALUES {
+    log.Printf("Block %s has %d (> %d) log values, scheduling compaction", this, this.NumLogValues(), MAX_LOG_VALUES)
     return true
   }
-  if len(this.BlockFooter.CompactionLog) > 0 && len(this.LogStreams) > 0 {
-    st := this.BlockFooter.CompactionLog[len(this.BlockFooter.CompactionLog)-1].GetStartTime()
-    age := uint64(time.Now().UnixNano()/1000000) - st
-    if age > uint64(60*60*1000) {
-      log.Printf("Block %s has not compacted in a while, scheduling", this)
-      return true
-    }
-  }
-  return false
+  return this.RequestCompact
 }
 
 func (this *DatastoreBlock) shouldSplit() bool {
@@ -709,45 +620,123 @@ func (this *DatastoreBlock) shouldSplit() bool {
   return false
 }
 
-func (this *DatastoreBlock) Write(path string, streams map[string]*oproto.ValueStream, clog *oproto.CompactionLog) error {
+func runLengthEncode() (chan *oproto.Value, chan *oproto.Value) {
+  input := make(chan *oproto.Value, 500)
+  output := make(chan *oproto.Value, 500)
+  go func() {
+    var last *oproto.Value
+    for value := range input {
+      if last == nil {
+        last = value
+        continue
+      }
+
+      if last.StringValue != nil && value.StringValue != nil {
+        if last.GetStringValue() == value.GetStringValue() {
+          if value.GetEndTimestamp() > value.GetTimestamp() {
+            last.EndTimestamp = proto.Uint64(value.GetEndTimestamp())
+          } else {
+            last.EndTimestamp = proto.Uint64(value.GetTimestamp())
+          }
+          continue
+        }
+      }
+
+      if last.DoubleValue != nil && value.DoubleValue != nil {
+        //log.Printf("Last is %f, this is %f", last.GetDoubleValue(), value.GetDoubleValue())
+        if last.GetDoubleValue() == value.GetDoubleValue() {
+          //log.Printf("  extending")
+          if value.GetEndTimestamp() > value.GetTimestamp() {
+            last.EndTimestamp = proto.Uint64(value.GetEndTimestamp())
+          } else {
+            last.EndTimestamp = proto.Uint64(value.GetTimestamp())
+          }
+          continue
+        }
+      }
+
+      //log.Printf("Starting new value")
+      output <-last
+      last = value
+    }
+
+    if last != nil {
+      if last.EndTimestamp == nil {
+        last.EndTimestamp = proto.Uint64(last.GetTimestamp())
+      }
+      output <- last
+    }
+    close(output)
+  }()
+  return input, output
+}
+
+// Write writes a map of ValueStreams to a single block file on disk.
+// The values inside each ValueStream will be sorted and run-length-encoded before writing.
+func (this *DatastoreBlock) Write(path string, streams map[string]*oproto.ValueStream) error {
   // Build the header with a 0-index for each variable
   start_time := time.Now()
   var min_timestamp, max_timestamp uint64
   var end_key string
-  AddLogMessage(clog, "Sorting streams")
+  log.Println("Compressing streams")
   this.BlockHeader.Index = make([]*oproto.StoreFileHeaderIndex, 0)
+  input_values := 0
+  output_values := 0
+
+  var wg sync.WaitGroup
+  st := time.Now()
   for v, stream := range streams {
+    // Run-length encode all streams in parallel
     if v > end_key {
       end_key = v
     }
+    wg.Add(1)
+    go func(v string, stream *oproto.ValueStream) {
+      // Sort values by timestamp
+      value.By(func(a, b *oproto.Value) bool { return a.GetTimestamp() < b.GetTimestamp() }).Sort(stream.Value)
 
-    // Sort values by timestamp
-    value.By(func(a, b *oproto.Value) bool { return a.GetTimestamp() < b.GetTimestamp() }).Sort(stream.Value)
+      // Run-length encode values
+      raw, compressed := runLengthEncode()
+      go func() {
+        input_values += len(stream.Value)
+        for _, v := range stream.Value {
+          raw <-v
+        }
+        close(raw)
+      }()
 
-    // TODO(dparrish): Run-length encode
+      compressed_values := make([]*oproto.Value, 0)
+      for v := range compressed {
+        compressed_values = append(compressed_values, v)
+      }
+      stream.Value = compressed_values
+      output_values += len(stream.Value)
 
-    // Add this stream to the index
-    this.BlockHeader.Index = append(this.BlockHeader.Index, &oproto.StoreFileHeaderIndex{
-      Variable:     stream.Variable,
-      Offset:       proto.Uint64(0),
-      MinTimestamp: proto.Uint64(stream.Value[0].GetTimestamp()),
-      MaxTimestamp: proto.Uint64(stream.Value[len(stream.Value)-1].GetTimestamp()),
-      NumValues:    proto.Uint32(uint32(len(stream.Value))),
-    })
+      // Add this stream to the index
+      this.BlockHeader.Index = append(this.BlockHeader.Index, &oproto.StoreFileHeaderIndex{
+        Variable:     stream.Variable,
+        Offset:       proto.Uint64(0),
+        MinTimestamp: proto.Uint64(stream.Value[0].GetTimestamp()),
+        MaxTimestamp: proto.Uint64(stream.Value[len(stream.Value)-1].GetTimestamp()),
+        NumValues:    proto.Uint32(uint32(len(stream.Value))),
+      })
 
-    if min_timestamp == 0 || stream.Value[0].GetTimestamp() < min_timestamp {
-      min_timestamp = stream.Value[0].GetTimestamp()
-    }
-    if stream.Value[len(stream.Value)-1].GetTimestamp() > max_timestamp {
-      max_timestamp = stream.Value[len(stream.Value)-1].GetTimestamp()
-    }
+      if min_timestamp == 0 || stream.Value[0].GetTimestamp() < min_timestamp {
+        min_timestamp = stream.Value[0].GetTimestamp()
+      }
+      if stream.Value[len(stream.Value)-1].GetTimestamp() > max_timestamp {
+        max_timestamp = stream.Value[len(stream.Value)-1].GetTimestamp()
+      }
+      wg.Done()
+    }(v, stream)
   }
+  wg.Wait()
+
+  log.Printf("Run-length encoded %d streams from %d to %d in %s", len(streams), input_values, output_values, time.Since(st))
 
   this.BlockHeader.StartTimestamp = proto.Uint64(min_timestamp)
   this.BlockHeader.EndTimestamp = proto.Uint64(max_timestamp)
   this.BlockHeader.EndKey = proto.String(end_key)
-  // Dummy position so the field is included
-  this.BlockHeader.FooterPosition = proto.Uint64(0)
 
   // Start writing to the new block file
   newfilename := filepath.Join(path, fmt.Sprintf("%s.new.%d", this.Filename(), os.Getpid()))
@@ -760,34 +749,31 @@ func (this *DatastoreBlock) Write(path string, streams map[string]*oproto.ValueS
 
   // Write all the ValueStreams
   index_pos := make(map[string]uint64)
-  AddLogMessage(clog, fmt.Sprintf("Writing %d streams", len(streams)))
+  log.Printf("Writing %d streams", len(streams))
   var out_values uint32
+  var write_duration, tell_duration time.Duration
   for _, stream := range streams {
     v := variable.NewFromProto(stream.Variable).String()
+    st := time.Now()
     index_pos[v] = uint64(newfile.Tell())
+    tell_duration += time.Since(st)
+    st = time.Now()
     newfile.Write(stream)
+    write_duration += time.Since(st)
     out_values += uint32(len(stream.Value))
   }
+  log.Printf("Spent %s in tell()", tell_duration)
+  log.Printf("Spent %s in write()", write_duration)
 
   // Update the offsets in the header, now that all the data has been written
-  AddLogMessage(clog, fmt.Sprintf("Updating index of %d streams", len(this.BlockHeader.Index)))
+  log.Printf("Updating index of %d streams", len(this.BlockHeader.Index))
   for _, index := range this.BlockHeader.Index {
     v := variable.NewFromProto(index.Variable).String()
     index.Offset = proto.Uint64(index_pos[v])
   }
-  this.BlockHeader.FooterPosition = proto.Uint64(uint64(newfile.Tell()))
 
-  AddLogMessage(clog, "Flushing data to disk")
+  log.Printf("Flushing data to disk")
   newfile.Sync()
-
-  // Write the footer
-  clog.EndTime = proto.Uint64(uint64(time.Now().UnixNano() / 1000000))
-  clog.OutStreams = proto.Uint64(uint64(len(streams)))
-  clog.OutValues = proto.Uint64(uint64(out_values))
-  clog.OutputFilename = append(clog.OutputFilename, filepath.Join(path, this.Filename()))
-  AddLogMessage(clog, "Compaction complete")
-  // After this, the Compaction Log has been written and can't be amended
-  newfile.Write(this.BlockFooter)
 
   newfile.WriteAt(0, this.BlockHeader)
   newfile.Close()
@@ -801,62 +787,41 @@ func (this *DatastoreBlock) Write(path string, streams map[string]*oproto.ValueS
   return nil
 }
 
-func (this *DatastoreBlock) Read(path string, streams map[string]*oproto.ValueStream, clog *oproto.CompactionLog) error {
-  // Read in the entire old block file
-  appendStream := func(stream *oproto.ValueStream) {
-    v := variable.NewFromProto(stream.Variable).String()
-    outstream, found := streams[v]
-    if found {
-      outstream.Value = append(outstream.Value, stream.Value...)
-    } else {
-      streams[v] = stream
-    }
-  }
-
+func (this *DatastoreBlock) Read(path string) (chan *oproto.ValueStream, error) {
   oldfile, err := openinstrument.ReadProtoFile(filepath.Join(path, this.Filename()))
   if err != nil {
     if !os.IsNotExist(err) {
-      return errors.New(fmt.Sprintf("Can't read old block file %s: %s\n", this.Filename(), err))
+      return nil, errors.New(fmt.Sprintf("Can't read old block file %s: %s\n", this.Filename(), err))
     }
-  } else {
-    AddLogMessage(clog, fmt.Sprintf("Reading %s", this.Filename()))
-    if clog != nil {
-      clog.InputFilename = append(clog.InputFilename, this.Filename())
-    }
-    defer oldfile.Close()
-    var oldheader oproto.StoreFileHeader
-    n, err := oldfile.Read(&oldheader)
-    if n != 1 || err != nil {
-      AddLogMessage(clog, fmt.Sprintf("File %s has a corrupted header: %s", this.Filename(), err))
-      return errors.New(fmt.Sprintf("Block %s has a corrupted header: %s\n", this.Filename(), err))
-    }
+  }
 
+  var oldheader oproto.StoreFileHeader
+  n, err := oldfile.Read(&oldheader)
+  if n != 1 || err != nil {
+    return nil, errors.New(fmt.Sprintf("Block %s has a corrupted header: %s\n", this.Filename(), err))
+  }
+
+  c := make(chan *oproto.ValueStream, 500)
+  go func() {
+    defer oldfile.Close()
     if oldheader.GetVersion() == 2 {
       // Read all the value streams from the old block file
-      AddLogMessage(clog, "Reading streams")
-      reader := oldfile.ValueStreamReaderUntil(oldheader.GetFooterPosition(), 500)
+      reader := oldfile.ValueStreamReader(500)
       for stream := range reader {
-        appendStream(stream)
+        c <-stream
       }
     } else {
-      return errors.New(fmt.Sprintf("Block %s has unknown version '%v'\n", this.Filename(), oldheader.GetVersion()))
+      log.Printf("Block %s has unknown version '%v'\n", this.Filename(), oldheader.GetVersion())
     }
 
-    var oldfooter oproto.StoreFileFooter
-    n, err = oldfile.Read(&oldfooter)
-    if n != 1 || err != nil {
-      AddLogMessage(clog, fmt.Sprintf("File %s has a corrupted footer: %s", this.Filename(), err))
+    // Append any log streams
+    for _, stream := range this.LogStreams {
+      c <-stream
     }
-  }
 
-  // Append any log streams
-  if clog != nil {
-    clog.InputFilename = append(clog.InputFilename, this.logFilename())
-  }
-  for _, stream := range this.LogStreams {
-    appendStream(stream)
-  }
-  return nil
+    close(c)
+  }()
+  return c, nil
 }
 
 func (this *DatastoreBlock) GetStreams(index *oproto.StoreFileHeaderIndex) chan *oproto.ValueStream {
