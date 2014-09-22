@@ -2,9 +2,8 @@ package mutations
 
 import (
   "code.google.com/p/goprotobuf/proto"
-  "github.com/dparrish/openinstrument/mutations"
   openinstrument_proto "github.com/dparrish/openinstrument/proto"
-  . "launchpad.net/gocheck"
+  . "gopkg.in/check.v1"
   "log"
   "testing"
 )
@@ -49,7 +48,7 @@ func (s *MySuite) TestMutations(c *C) {
 
   log.Println("Mean")
   ic := make(chan *openinstrument_proto.Value, 100)
-  oc := mutations.MutateValues(300, ic, mutations.Mean)
+  oc := MutateValues(300, ic, Mean)
   go write_values(ic)
   value := <-oc
   c.Check(value.GetDoubleValue(), Equals, float64(70))
@@ -58,7 +57,7 @@ func (s *MySuite) TestMutations(c *C) {
 
   log.Println("Interpolate")
   ic = make(chan *openinstrument_proto.Value, 100)
-  oc = mutations.MutateValues(300, ic, mutations.Interpolate)
+  oc = MutateValues(300, ic, Interpolate)
   go write_offset_values(ic)
   value = <-oc
   c.Check(value.GetDoubleValue(), Equals, float64(20))
@@ -79,7 +78,7 @@ func (s *MySuite) TestMutations(c *C) {
   /*
      log.Println("Signed Rate")
      ic = make(chan *openinstrument_proto.Value)
-     oc = mutations.MutateValues(300, ic, mutations.SignedRate)
+     oc = MutateValues(300, ic, SignedRate)
      go write_values(ic)
      value = <-oc
      c.Check(value.GetDoubleValue(), Equals, float64(1.0/3.0))
@@ -88,7 +87,7 @@ func (s *MySuite) TestMutations(c *C) {
 
      log.Println("Standard Deviation")
      ic = make(chan *openinstrument_proto.Value)
-     oc = mutations.MutateValues(60, ic, mutations.StdDev)
+     oc = MutateValues(60, ic, StdDev)
      go write_values(ic)
      value = <-oc
      c.Check(value.GetDoubleValue(), Equals, float64(2))
@@ -97,7 +96,7 @@ func (s *MySuite) TestMutations(c *C) {
 
      log.Println("Max")
      ic = make(chan *openinstrument_proto.Value)
-     oc = mutations.MutateValues(60, ic, mutations.Max)
+     oc = MutateValues(60, ic, Max)
      go write_values(ic)
      value = <-oc
      c.Check(value.GetDoubleValue(), Equals, float64(9))
@@ -106,7 +105,7 @@ func (s *MySuite) TestMutations(c *C) {
 
      log.Println("Min")
      ic = make(chan *openinstrument_proto.Value)
-     oc = mutations.MutateValues(60, ic, mutations.Min)
+     oc = MutateValues(60, ic, Min)
      go write_values(ic)
      value = <-oc
      c.Check(value.GetDoubleValue(), Equals, float64(2))
@@ -115,7 +114,7 @@ func (s *MySuite) TestMutations(c *C) {
 
      log.Println("Rate")
      ic = make(chan *openinstrument_proto.Value)
-     oc = mutations.MutateValues(60, ic, mutations.Rate)
+     oc = MutateValues(60, ic, Rate)
      go write_values(ic)
      value = <-oc
      c.Check(value.GetDoubleValue(), Equals, float64(1))

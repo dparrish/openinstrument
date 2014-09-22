@@ -16,6 +16,7 @@ It has these top-level messages:
 	StreamAggregation
 	Value
 	ValueStream
+	Query
 	GetRequest
 	GetResponse
 	AddRequest
@@ -93,6 +94,10 @@ const (
 	StreamMutation_DELTA StreamMutation_SampleType = 6
 	// Latest point
 	StreamMutation_LATEST StreamMutation_SampleType = 7
+	// Multiply all values by a constant
+	StreamMutation_MULTIPLY StreamMutation_SampleType = 8
+	// Add a constant to each value
+	StreamMutation_ADD StreamMutation_SampleType = 9
 )
 
 var StreamMutation_SampleType_name = map[int32]string{
@@ -104,6 +109,8 @@ var StreamMutation_SampleType_name = map[int32]string{
 	5: "RATE_SIGNED",
 	6: "DELTA",
 	7: "LATEST",
+	8: "MULTIPLY",
+	9: "ADD",
 }
 var StreamMutation_SampleType_value = map[string]int32{
 	"NONE":        0,
@@ -114,6 +121,8 @@ var StreamMutation_SampleType_value = map[string]int32{
 	"RATE_SIGNED": 5,
 	"DELTA":       6,
 	"LATEST":      7,
+	"MULTIPLY":    8,
+	"ADD":         9,
 }
 
 func (x StreamMutation_SampleType) Enum() *StreamMutation_SampleType {
@@ -481,6 +490,72 @@ func (m *ValueStream) GetValue() []*Value {
 func (m *ValueStream) GetMutation() []*StreamMutation {
 	if m != nil {
 		return m.Mutation
+	}
+	return nil
+}
+
+type Query struct {
+	// At least one of these must be set for each subquery
+	Subquery []*Query          `protobuf:"bytes,1,rep,name=subquery" json:"subquery,omitempty"`
+	Variable []*StreamVariable `protobuf:"bytes,2,rep,name=variable" json:"variable,omitempty"`
+	Constant []float64         `protobuf:"fixed64,3,rep,name=constant" json:"constant,omitempty"`
+	// Milliseconds since epoch
+	MinTimestamp     *uint64              `protobuf:"varint,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
+	MaxTimestamp     *uint64              `protobuf:"varint,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
+	Mutation         []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
+	Aggregation      []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
+	XXX_unrecognized []byte               `json:"-"`
+}
+
+func (m *Query) Reset()         { *m = Query{} }
+func (m *Query) String() string { return proto.CompactTextString(m) }
+func (*Query) ProtoMessage()    {}
+
+func (m *Query) GetSubquery() []*Query {
+	if m != nil {
+		return m.Subquery
+	}
+	return nil
+}
+
+func (m *Query) GetVariable() []*StreamVariable {
+	if m != nil {
+		return m.Variable
+	}
+	return nil
+}
+
+func (m *Query) GetConstant() []float64 {
+	if m != nil {
+		return m.Constant
+	}
+	return nil
+}
+
+func (m *Query) GetMinTimestamp() uint64 {
+	if m != nil && m.MinTimestamp != nil {
+		return *m.MinTimestamp
+	}
+	return 0
+}
+
+func (m *Query) GetMaxTimestamp() uint64 {
+	if m != nil && m.MaxTimestamp != nil {
+		return *m.MaxTimestamp
+	}
+	return 0
+}
+
+func (m *Query) GetMutation() []*StreamMutation {
+	if m != nil {
+		return m.Mutation
+	}
+	return nil
+}
+
+func (m *Query) GetAggregation() []*StreamAggregation {
+	if m != nil {
+		return m.Aggregation
 	}
 	return nil
 }

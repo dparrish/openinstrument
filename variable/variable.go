@@ -102,8 +102,7 @@ func (v *Variable) ParseFromString(textvar string) error {
       if len(substrings) != 2 {
         return errors.New(fmt.Sprintf("Error splitting labels from %s", textvar))
       }
-      key, value := substrings[0], substrings[1]
-      v.Labels[key] = value
+      v.Labels[strings.TrimSpace(substrings[0])] = strings.TrimSpace(substrings[1])
     }
   }
   return nil

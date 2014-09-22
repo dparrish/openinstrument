@@ -39,6 +39,10 @@ message StreamMutation {
     DELTA = 6;
     // Latest point
     LATEST = 7;
+    // Multiply all values by a constant
+    MULTIPLY = 8;
+    // Add a constant to each value
+    ADD = 9;
   }
   required SampleType sample_type = 1;
 
@@ -86,6 +90,20 @@ message ValueStream {
   // An optional set of mutations that have been applied to this stream.
   // If the stream contains the raw data, this should be empty.
   repeated StreamMutation mutation = 5;
+}
+
+message Query {
+  // At least one of these must be set for each subquery
+  repeated Query subquery = 1;
+  repeated StreamVariable variable = 2;
+  repeated double constant = 3;
+
+  // Milliseconds since epoch
+  optional uint64 min_timestamp = 4;
+  optional uint64 max_timestamp = 5;
+
+  repeated StreamMutation mutation = 6;
+  repeated StreamAggregation aggregation = 7;
 }
 
 message GetRequest {
