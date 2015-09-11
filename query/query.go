@@ -1,107 +1,103 @@
 package query
 
 import (
-  //"github.com/dparrish/openinstrument/query/ast"
-  //"github.com/dparrish/openinstrument/lexer"
-  //"github.com/dparrish/openinstrument/parser"
-  oproto "github.com/dparrish/openinstrument/proto"
-  "code.google.com/p/goprotobuf/proto"
-  "github.com/dparrish/openinstrument/variable"
-  "time"
+	"time"
+
+	"code.google.com/p/goprotobuf/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/variable"
 )
 
 type Query struct {
-  q *oproto.Query
+	q *oproto.Query
 }
 
-func (this *Query) AsProto() *oproto.Query {
-  return this.q
+func (query *Query) AsProto() *oproto.Query {
+	return query.q
 }
 
-func (this *Query) String() string {
-  return proto.MarshalTextString(this.q)
+func (query *Query) String() string {
+	return proto.MarshalTextString(query.q)
 }
 
 func New() *Query {
-  this := &Query{
-    q : &oproto.Query{},
-  }
-  return this
+	query := &Query{
+		q: &oproto.Query{},
+	}
+	return query
 }
 
 func NewFromString(str string) *Query {
-  this := &Query{
-    q : &oproto.Query{},
-  }
-  proto.UnmarshalText(str, this.q)
-  return this
+	query := &Query{
+		q: &oproto.Query{},
+	}
+	proto.UnmarshalText(str, query.q)
+	return query
 }
 
-func (this *Query) AddVariable(v *variable.Variable) *Query {
-  if this.q.Variable == nil {
-    this.q.Variable = make([]*oproto.StreamVariable, 0)
-  }
-  this.q.Variable = append(this.q.Variable, v.AsProto())
-  return this
+func (query *Query) AddVariable(v *variable.Variable) *Query {
+	if query.q.Variable == nil {
+		query.q.Variable = make([]*oproto.StreamVariable, 0)
+	}
+	query.q.Variable = append(query.q.Variable, v.AsProto())
+	return query
 }
 
-func (this *Query) AddVariableString(v string) *Query {
-  return this.AddVariable(variable.NewFromString(v))
+func (query *Query) AddVariableString(v string) *Query {
+	return query.AddVariable(variable.NewFromString(v))
 }
 
-func (this *Query) AddSubquery(q *oproto.Query) *Query {
-  if this.q.Subquery == nil {
-    this.q.Subquery = make([]*oproto.Query, 0)
-  }
-  this.q.Subquery = append(this.q.Subquery, q)
-  return this
+func (query *Query) AddSubquery(q *oproto.Query) *Query {
+	if query.q.Subquery == nil {
+		query.q.Subquery = make([]*oproto.Query, 0)
+	}
+	query.q.Subquery = append(query.q.Subquery, q)
+	return query
 }
 
-func (this *Query) AddConstant(constant float64) *Query {
-  if this.q.Constant == nil {
-    this.q.Constant = make([]float64, 0)
-  }
-  this.q.Constant = append(this.q.Constant, constant)
-  return this
+func (query *Query) AddConstant(constant float64) *Query {
+	if query.q.Constant == nil {
+		query.q.Constant = make([]float64, 0)
+	}
+	query.q.Constant = append(query.q.Constant, constant)
+	return query
 }
 
-func (this *Query) SetMinTimestamp(min_timestamp time.Time) *Query {
-  this.q.MinTimestamp = proto.Uint64(uint64(min_timestamp.UnixNano() / 1000000))
-  return this
+func (query *Query) SetMinTimestamp(minTimestamp time.Time) *Query {
+	query.q.MinTimestamp = proto.Uint64(uint64(minTimestamp.UnixNano() / 1000000))
+	return query
 }
 
-func (this *Query) SetMaxTimestamp(max_timestamp time.Time) *Query {
-  this.q.MaxTimestamp = proto.Uint64(uint64(max_timestamp.UnixNano() / 1000000))
-  return this
+func (query *Query) SetMaxTimestamp(maxTimestamp time.Time) *Query {
+	query.q.MaxTimestamp = proto.Uint64(uint64(maxTimestamp.UnixNano() / 1000000))
+	return query
 }
 
-func (this *Query) AddAggregation(t oproto.StreamAggregation_AggregateType, labels []string) *Query {
-  if this.q.Aggregation == nil {
-    this.q.Aggregation = make([]*oproto.StreamAggregation, 0)
-  }
-  agg := &oproto.StreamAggregation{
-    Type: oproto.StreamAggregation_AggregateType.Enum(t),
-  }
-  agg.Label = labels
-  this.q.Aggregation = append(this.q.Aggregation, agg)
-  return this
+func (query *Query) AddAggregation(t oproto.StreamAggregation_AggregateType, labels []string) *Query {
+	if query.q.Aggregation == nil {
+		query.q.Aggregation = make([]*oproto.StreamAggregation, 0)
+	}
+	agg := &oproto.StreamAggregation{
+		Type: oproto.StreamAggregation_AggregateType.Enum(t),
+	}
+	agg.Label = labels
+	query.q.Aggregation = append(query.q.Aggregation, agg)
+	return query
 }
 
-func (this *Query) AddMutation(t oproto.StreamMutation_SampleType, sample_frequency, max_gap_interpolate uint32) *Query {
-  if this.q.Mutation == nil {
-    this.q.Mutation = make([]*oproto.StreamMutation, 0)
-  }
-  agg := &oproto.StreamMutation{
-    SampleType: oproto.StreamMutation_SampleType.Enum(t),
-  }
-  if sample_frequency > 0 {
-    agg.SampleFrequency = proto.Uint32(sample_frequency)
-  }
-  if max_gap_interpolate > 0 {
-    agg.MaxGapInterpolate = proto.Uint32(max_gap_interpolate)
-  }
-  this.q.Mutation = append(this.q.Mutation, agg)
-  return this
+func (query *Query) AddMutation(t oproto.StreamMutation_SampleType, sampleFrequency, maxGapInterpolate uint32) *Query {
+	if query.q.Mutation == nil {
+		query.q.Mutation = make([]*oproto.StreamMutation, 0)
+	}
+	agg := &oproto.StreamMutation{
+		SampleType: oproto.StreamMutation_SampleType.Enum(t),
+	}
+	if sampleFrequency > 0 {
+		agg.SampleFrequency = proto.Uint32(sampleFrequency)
+	}
+	if maxGapInterpolate > 0 {
+		agg.MaxGapInterpolate = proto.Uint32(maxGapInterpolate)
+	}
+	query.q.Mutation = append(query.q.Mutation, agg)
+	return query
 }
-
-

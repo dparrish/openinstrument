@@ -1,33 +1,34 @@
 package valuestream
 
 import (
-  oproto "github.com/dparrish/openinstrument/proto"
-  "sort"
+	"sort"
+
+	oproto "github.com/dparrish/openinstrument/proto"
 )
 
 type By func(p1, p2 *oproto.ValueStream) bool
 
 func (by By) Sort(values []*oproto.ValueStream) {
-  sfs := &valuesSorter{
-    values: values,
-    by:     by,
-  }
-  sort.Sort(sfs)
+	sfs := &valuesSorter{
+		values: values,
+		by:     by,
+	}
+	sort.Sort(sfs)
 }
 
 type valuesSorter struct {
-  values []*oproto.ValueStream
-  by     By
+	values []*oproto.ValueStream
+	by     By
 }
 
-func (this *valuesSorter) Len() int {
-  return len(this.values)
+func (vs *valuesSorter) Len() int {
+	return len(vs.values)
 }
 
-func (this *valuesSorter) Swap(i, j int) {
-  this.values[i], this.values[j] = this.values[j], this.values[i]
+func (vs *valuesSorter) Swap(i, j int) {
+	vs.values[i], vs.values[j] = vs.values[j], vs.values[i]
 }
 
-func (this *valuesSorter) Less(i, j int) bool {
-  return this.by(this.values[i], this.values[j])
+func (vs *valuesSorter) Less(i, j int) bool {
+	return vs.by(vs.values[i], vs.values[j])
 }

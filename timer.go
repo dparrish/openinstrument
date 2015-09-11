@@ -1,53 +1,81 @@
 package openinstrument
 
 import (
-  "fmt"
-  "time"
+	"fmt"
+	"time"
+
+	"code.google.com/p/goprotobuf/proto"
+	"github.com/dparrish/openinstrument/proto"
 )
 
+type Timer struct {
+	t         *openinstrument_proto.LogMessage
+	startTime time.Time
+	message   string
+}
+
+func NewTimer(message string, t *openinstrument_proto.LogMessage) *Timer {
+	return &Timer{
+		startTime: time.Now(),
+		t:         t,
+		message:   message,
+	}
+}
+
+func (t *Timer) Stop() uint64 {
+	duration := time.Since(t.startTime)
+	if t.t != nil {
+		t.t.Timestamp = proto.Uint64(uint64(duration.Nanoseconds() / 1000000))
+		if t.message != "" {
+			t.t.Message = &t.message
+		}
+	}
+	return uint64(duration.Nanoseconds() / 1000000)
+}
+
 type DurationTimer struct {
-  name       string
-  start_time time.Time
-  end_time   time.Time
-  total_time time.Duration
-  running    bool
+	name      string
+	startTime time.Time
+	endTime   time.Time
+	totalTime time.Duration
+	running   bool
 }
 
 func NewNamedDurationTimer(name string) *DurationTimer {
-  return &DurationTimer{
-    name: name,
-  }
+	return &DurationTimer{
+		name: name,
+	}
 }
 
 func NewDurationTimer() *DurationTimer {
-  return &DurationTimer{}
+	return &DurationTimer{}
 }
 
-func (this *DurationTimer) Start() {
-  if !this.running {
-    this.start_time = time.Now()
-    this.running = true
-  }
+func (t *DurationTimer) Start() {
+	if !t.running {
+		t.startTime = time.Now()
+		t.running = true
+	}
 }
 
-func (this *DurationTimer) Stop() {
-  if this.running {
-    this.end_time = time.Now()
-    d := this.end_time.Sub(this.start_time)
-    this.total_time = time.Duration(d.Nanoseconds() + this.total_time.Nanoseconds())
-  }
+func (t *DurationTimer) Stop() {
+	if t.running {
+		t.endTime = time.Now()
+		d := t.endTime.Sub(t.startTime)
+		t.totalTime = time.Duration(d.Nanoseconds() + t.totalTime.Nanoseconds())
+	}
 }
 
-func (this *DurationTimer) Duration() time.Duration {
-  if this.running {
-    this.Stop()
-  }
-  return this.total_time
+func (t *DurationTimer) Duration() time.Duration {
+	if t.running {
+		t.Stop()
+	}
+	return t.totalTime
 }
 
-func (this *DurationTimer) String() string {
-  if this.name != "" {
-    return fmt.Sprintf("%s: %s", this.name, this.Duration())
-  }
-  return this.Duration().String()
+func (t *DurationTimer) String() string {
+	if t.name != "" {
+		return fmt.Sprintf("%s: %s", t.name, t.Duration())
+	}
+	return t.Duration().String()
 }

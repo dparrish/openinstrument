@@ -1,298 +1,298 @@
 package exported
 
 import (
-  "code.google.com/p/goprotobuf/proto"
-  "github.com/dparrish/openinstrument/variable"
-  oproto "github.com/dparrish/openinstrument/proto"
-  "time"
-  "log"
+	"log"
+	"time"
+
+	"code.google.com/p/goprotobuf/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/variable"
 )
 
 type VariableExporter struct {
-  shutdown bool
-  completed chan bool
+	shutdown  bool
+	completed chan bool
 }
 
 func NewVariableExporter(address string, interval int32) *VariableExporter {
-  this := new(VariableExporter)
-  this.completed = make(chan bool, 1)
-  go func(this *VariableExporter) {
-    tick := time.Tick(time.Duration(interval) * time.Millisecond)
-    for !this.shutdown {
-      <-tick
-      // Flush
-      log.Printf("Flushing exported variables")
-    }
-    this.completed <- true
-  }(this)
-  return this
+	ve := new(VariableExporter)
+	ve.completed = make(chan bool, 1)
+	go func(ve *VariableExporter) {
+		tick := time.Tick(time.Duration(interval) * time.Millisecond)
+		for !ve.shutdown {
+			<-tick
+			// Flush
+			log.Printf("Flushing exported variables")
+		}
+		ve.completed <- true
+	}(ve)
+	return ve
 }
 
-func (this *VariableExporter) Shutdown() {
-  this.shutdown = true
-  <-this.completed
+func (ve *VariableExporter) Shutdown() {
+	ve.shutdown = true
+	<-ve.completed
 }
 
 type Exportable interface {
-  Export() chan *oproto.ValueStream;
-  Variable() *variable.Variable;
-  SetVariable(v *variable.Variable);
+	Export() chan *oproto.ValueStream
+	Variable() *variable.Variable
+	SetVariable(v *variable.Variable)
 }
 
-//////////// ExportedInteger ///////////////////////////////
-type ExportedInteger struct {
-  value uint64
-  v *variable.Variable
+//////////// Integer ///////////////////////////////
+type Integer struct {
+	value uint64
+	v     *variable.Variable
 }
 
-func NewExportedInteger(v string) *ExportedInteger {
-  return &ExportedInteger{
-    value: 0,
-    v: variable.NewFromString(v),
-  }
+func NewInteger(v string) *Integer {
+	return &Integer{
+		value: 0,
+		v:     variable.NewFromString(v),
+	}
 }
 
-func (this *ExportedInteger) Variable() *variable.Variable {
-  return this.v
+func (ei *Integer) Variable() *variable.Variable {
+	return ei.v
 }
 
-func (this *ExportedInteger) SetVariable(v *variable.Variable) {
-  this.v = v
+func (ei *Integer) SetVariable(v *variable.Variable) {
+	ei.v = v
 }
 
-func (this *ExportedInteger) Export() chan *oproto.ValueStream {
-  c := make(chan *oproto.ValueStream)
-  go func() {
-    stream := new(oproto.ValueStream)
-    stream.Variable = this.v.AsProto()
-    stream.Value = append(stream.Value, &oproto.Value{
-      Timestamp: proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-      DoubleValue: proto.Float64(float64(this.value)),
-    })
-    c <- stream
-    close(c)
-  }()
-  return c
+func (ei *Integer) Export() chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		stream := new(oproto.ValueStream)
+		stream.Variable = ei.v.AsProto()
+		stream.Value = append(stream.Value, &oproto.Value{
+			Timestamp:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
+			DoubleValue: proto.Float64(float64(ei.value)),
+		})
+		c <- stream
+		close(c)
+	}()
+	return c
 }
 
-func (this *ExportedInteger) Get() uint64 {
-  return this.value
+func (ei *Integer) Get() uint64 {
+	return ei.value
 }
 
-func (this *ExportedInteger) Set(value uint64) {
-  this.value = value
+func (ei *Integer) Set(value uint64) {
+	ei.value = value
 }
 
-func (this *ExportedInteger) Add(value uint64) {
-  this.value += value
+func (ei *Integer) Add(value uint64) {
+	ei.value += value
 }
 
-func (this *ExportedInteger) Sub(value uint64) {
-  this.value -= value
+func (ei *Integer) Sub(value uint64) {
+	ei.value -= value
 }
 
-//////////// ExportedFloat ///////////////////////////////
-type ExportedFloat struct {
-  value float64
-  v *variable.Variable
+//////////// Float ///////////////////////////////
+type Float struct {
+	value float64
+	v     *variable.Variable
 }
 
-func NewExportedFloat(v string) *ExportedFloat {
-  return &ExportedFloat{
-    value: 0,
-    v: variable.NewFromString(v),
-  }
+func NewFloat(v string) *Float {
+	return &Float{
+		value: 0,
+		v:     variable.NewFromString(v),
+	}
 }
 
-func (this *ExportedFloat) Variable() *variable.Variable {
-  return this.v
+func (ef *Float) Variable() *variable.Variable {
+	return ef.v
 }
 
-func (this *ExportedFloat) SetVariable(v *variable.Variable) {
-  this.v = v
+func (ef *Float) SetVariable(v *variable.Variable) {
+	ef.v = v
 }
 
-func (this *ExportedFloat) Export() chan *oproto.ValueStream {
-  c := make(chan *oproto.ValueStream)
-  go func() {
-    stream := new(oproto.ValueStream)
-    stream.Variable = this.v.AsProto()
-    stream.Value = append(stream.Value, &oproto.Value{
-      Timestamp: proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-      DoubleValue: proto.Float64(this.value),
-    })
-    c <- stream
-    close(c)
-  }()
-  return c
+func (ef *Float) Export() chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		stream := new(oproto.ValueStream)
+		stream.Variable = ef.v.AsProto()
+		stream.Value = append(stream.Value, &oproto.Value{
+			Timestamp:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
+			DoubleValue: proto.Float64(ef.value),
+		})
+		c <- stream
+		close(c)
+	}()
+	return c
 }
 
-func (this *ExportedFloat) Get() float64 {
-  return this.value
+func (ef *Float) Get() float64 {
+	return ef.value
 }
 
-func (this *ExportedFloat) Set(value float64) {
-  this.value = value
+func (ef *Float) Set(value float64) {
+	ef.value = value
 }
 
-func (this *ExportedFloat) Add(value float64) {
-  this.value += value
+func (ef *Float) Add(value float64) {
+	ef.value += value
 }
 
-func (this *ExportedFloat) Sub(value float64) {
-  this.value -= value
+func (ef *Float) Sub(value float64) {
+	ef.value -= value
 }
 
-//////////// ExportedRatio ///////////////////////////////
-type ExportedRatio struct {
-  success *ExportedInteger
-  failure *ExportedInteger
-  total *ExportedInteger
+//////////// Ratio ///////////////////////////////
+type Ratio struct {
+	success *Integer
+	failure *Integer
+	total   *Integer
 }
 
-func NewExportedRatio(v string) *ExportedRatio {
-  success_var := variable.NewFromString(v)
-  success_var.Variable += "-success"
-  failure_var := variable.NewFromString(v)
-  failure_var.Variable += "-failure"
-  total_var := variable.NewFromString(v)
-  total_var.Variable += "-total"
-  return &ExportedRatio{
-    success: NewExportedInteger(success_var.String()),
-    failure: NewExportedInteger(failure_var.String()),
-    total: NewExportedInteger(total_var.String()),
-  }
+func NewRatio(v string) *Ratio {
+	successVar := variable.NewFromString(v)
+	successVar.Variable += "-success"
+	failureVar := variable.NewFromString(v)
+	failureVar.Variable += "-failure"
+	totalVar := variable.NewFromString(v)
+	totalVar.Variable += "-total"
+	return &Ratio{
+		success: NewInteger(successVar.String()),
+		failure: NewInteger(failureVar.String()),
+		total:   NewInteger(totalVar.String()),
+	}
 }
 
-func (this *ExportedRatio) Export() chan *oproto.ValueStream {
-  c := make(chan *oproto.ValueStream)
-  go func() {
-    for stream := range this.success.Export() {
-      c <- stream
-    }
-    for stream := range this.failure.Export() {
-      c <- stream
-    }
-    for stream := range this.total.Export() {
-      c <- stream
-    }
-    close(c)
-  }()
-  return c
+func (er *Ratio) Export() chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		for stream := range er.success.Export() {
+			c <- stream
+		}
+		for stream := range er.failure.Export() {
+			c <- stream
+		}
+		for stream := range er.total.Export() {
+			c <- stream
+		}
+		close(c)
+	}()
+	return c
 }
 
-func (this *ExportedRatio) Success() {
-  this.success.Add(1)
-  this.total.Add(1)
+func (er *Ratio) Success() {
+	er.success.Add(1)
+	er.total.Add(1)
 }
 
-func (this *ExportedRatio) Failure() {
-  this.failure.Add(1)
-  this.total.Add(1)
+func (er *Ratio) Failure() {
+	er.failure.Add(1)
+	er.total.Add(1)
 }
 
-//////////// ExportedAverage ///////////////////////////////
-type ExportedAverage struct {
-  overallSum *ExportedFloat
-  totalCount *ExportedInteger
+//////////// Average ///////////////////////////////
+type Average struct {
+	overallSum *Float
+	totalCount *Integer
 }
 
-func NewExportedAverage(v string) *ExportedAverage {
-  sum_var := variable.NewFromString(v)
-  sum_var.Variable += "-total-count"
-  total_var := variable.NewFromString(v)
-  sum_var.Variable += "-overall-sum"
-  return &ExportedAverage{
-    overallSum: NewExportedFloat(sum_var.String()),
-    totalCount: NewExportedInteger(total_var.String()),
-  }
+func NewAverage(v string) *Average {
+	sumVar := variable.NewFromString(v)
+	sumVar.Variable += "-total-count"
+	totalVar := variable.NewFromString(v)
+	sumVar.Variable += "-overall-sum"
+	return &Average{
+		overallSum: NewFloat(sumVar.String()),
+		totalCount: NewInteger(totalVar.String()),
+	}
 }
 
-func (this *ExportedAverage) Export() chan *oproto.ValueStream {
-  c := make(chan *oproto.ValueStream)
-  go func() {
-    for stream := range this.overallSum.Export() {
-      c <- stream
-    }
-    for stream := range this.totalCount.Export() {
-      c <- stream
-    }
-    close(c)
-  }()
-  return c
+func (ea *Average) Export() chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		for stream := range ea.overallSum.Export() {
+			c <- stream
+		}
+		for stream := range ea.totalCount.Export() {
+			c <- stream
+		}
+		close(c)
+	}()
+	return c
 }
 
-func (this *ExportedAverage) Update(sum float64, count uint64) {
-  this.overallSum.Add(sum)
-  this.totalCount.Add(count)
+func (ea *Average) Update(sum float64, count uint64) {
+	ea.overallSum.Add(sum)
+	ea.totalCount.Add(count)
 }
 
-
-//////////// ExportedTimer ///////////////////////////////
-type ExportedTimer struct {
-  average *ExportedAverage
-  start_time time.Time
+//////////// Timer ///////////////////////////////
+type Timer struct {
+	average   *Average
+	startTime time.Time
 }
 
-func NewExportedTimer(v string) *ExportedTimer {
-  return &ExportedTimer{
-    average: NewExportedAverage(v),
-  }
+func NewTimer(v string) *Timer {
+	return &Timer{
+		average: NewAverage(v),
+	}
 }
 
-func (this *ExportedTimer) Export() chan *oproto.ValueStream {
-  return this.average.Export()
+func (et *Timer) Export() chan *oproto.ValueStream {
+	return et.average.Export()
 }
 
-func (this *ExportedTimer) Start() {
-  this.start_time = time.Now()
+func (et *Timer) Start() {
+	et.startTime = time.Now()
 }
 
-func (this *ExportedTimer) Stop() {
-  duration := time.Since(this.start_time)
-  this.average.Update(float64(duration.Nanoseconds() / 1000000), 1)
+func (et *Timer) Stop() {
+	duration := time.Since(et.startTime)
+	et.average.Update(float64(duration.Nanoseconds()/1000000), 1)
 }
 
-//////////// ExportedString ///////////////////////////////
-type ExportedString struct {
-  value string
-  v *variable.Variable
+//////////// String ///////////////////////////////
+type String struct {
+	value string
+	v     *variable.Variable
 }
 
-func NewExportedString(v string) *ExportedString {
-  return &ExportedString{
-    value: "",
-    v: variable.NewFromString(v),
-  }
+func NewString(v string) *String {
+	return &String{
+		value: "",
+		v:     variable.NewFromString(v),
+	}
 }
 
-func (this *ExportedString) Variable() *variable.Variable {
-  return this.v
+func (es *String) Variable() *variable.Variable {
+	return es.v
 }
 
-func (this *ExportedString) SetVariable(v *variable.Variable) {
-  this.v = v
+func (es *String) SetVariable(v *variable.Variable) {
+	es.v = v
 }
 
-func (this *ExportedString) Export() chan *oproto.ValueStream {
-  c := make(chan *oproto.ValueStream)
-  go func() {
-    stream := new(oproto.ValueStream)
-    stream.Variable = this.v.AsProto()
-    stream.Value = append(stream.Value, &oproto.Value{
-      Timestamp: proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-      StringValue: proto.String(this.value),
-    })
-    c <- stream
-    close(c)
-  }()
-  return c
+func (es *String) Export() chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		stream := new(oproto.ValueStream)
+		stream.Variable = es.v.AsProto()
+		stream.Value = append(stream.Value, &oproto.Value{
+			Timestamp:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
+			StringValue: proto.String(es.value),
+		})
+		c <- stream
+		close(c)
+	}()
+	return c
 }
 
-func (this *ExportedString) Get() string {
-  return this.value
+func (es *String) Get() string {
+	return es.value
 }
 
-func (this *ExportedString) Set(value string) {
-  this.value = value
+func (es *String) Set(value string) {
+	es.value = value
 }
