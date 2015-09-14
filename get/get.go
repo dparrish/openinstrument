@@ -12,6 +12,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"github.com/dparrish/openinstrument"
 	openinstrument_proto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/variable"
 )
 
 var (
@@ -61,7 +62,7 @@ func main() {
 		log.Fatal("Invalid --duration:", err)
 	}
 	request := openinstrument_proto.GetRequest{
-		Variable:     openinstrument.NewVariableFromString(flag.Arg(0)).AsProto(),
+		Variable:     variable.NewFromString(flag.Arg(0)).AsProto(),
 		MinTimestamp: proto.Uint64(uint64(time.Now().Add(-dur).UnixNano() / 1000000)),
 	}
 	if *maxVariables > 0 {
@@ -221,7 +222,7 @@ func main() {
 	}
 	for _, getresponse := range response {
 		for _, stream := range getresponse.Stream {
-			variable := openinstrument.NewVariableFromProto(stream.Variable).String()
+			variable := variable.NewFromProto(stream.Variable).String()
 			for _, value := range stream.Value {
 				fmt.Printf("%s\t%s\t", variable, time.Unix(int64(*value.Timestamp/1000), 0))
 				if value.DoubleValue != nil {

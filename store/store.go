@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"code.google.com/p/goprotobuf/proto"
-	"github.com/coreos/go-etcd/etcd"
 	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
 	"github.com/dparrish/openinstrument/mutations"
@@ -30,8 +29,6 @@ import (
 
 var (
 	taskName     = flag.String("name", "", "Name of the task. Must be unique across the cluster. e.g. \"hostname:port\"")
-	etcdAddr     = flag.String("etcd", "http://127.0.0.1:4001", "etcd daemon addres")
-	etcdRoot     = flag.String("config_root", "", "etcd configuration root path")
 	address      = flag.String("address", "", "Address to listen on (blank for any)")
 	port         = flag.Int("port", 8020, "Port to listen on")
 	configFile   = flag.String("config", "/store/config.txt", "Path to the store configuration file")
@@ -391,14 +388,6 @@ func main() {
 	}
 	config.ReadConfig()
 
-	var taskInfo *TaskInfo
-	if false {
-		taskInfo, err = NewTaskInfo(etcd.NewClient([]string{*etcdAddr}), *etcdRoot, *taskName)
-		if err != nil && *etcdRoot != "" {
-			log.Fatalf("Couldn't create task info in etcd: %s", err)
-		}
-	}
-
 	http.Handle("/list", http.HandlerFunc(List))
 	http.Handle("/get", http.HandlerFunc(Get))
 	http.Handle("/add", http.HandlerFunc(Add))
@@ -414,53 +403,16 @@ func main() {
 	}
 	log.Printf("Listening on %v", sock.Addr().String())
 
-	if taskInfo != nil {
-		addrs, _ := net.InterfaceAddrs()
-		for _, addr := range addrs {
-			parts := strings.SplitN(addr.String(), "/", 2)
-			if parts[0] == "127.0.0.1" || parts[0] == "::1" {
-				continue
-			}
-			taskInfo.AddHostport(net.JoinHostPort(parts[0], fmt.Sprintf("%d", *port)))
-		}
-	}
-
 	ds = datastore.Open(*storePath)
 	http.Serve(sock, nil)
-
-	if taskInfo != nil {
-		taskInfo.Close()
-	}
 }
 
 // Live updating task information
 type TaskInfo struct {
 	Root      string
 	TaskName  string
-	Client    *etcd.Client
 	HostPorts []string
 	filename  string
-}
-
-func NewTaskInfo(client *etcd.Client, root string, taskName string) (*TaskInfo, error) {
-	ti := &TaskInfo{
-		Root:      root,
-		TaskName:  taskName,
-		Client:    client,
-		HostPorts: make([]string, 0),
-	}
-
-	if root != "" {
-		if taskName == "" {
-			return nil, errors.New("You must specify a task name with --name")
-		}
-		ti.Client.CreateDir(fmt.Sprintf("%s/tasks", ti.Root), 0)
-		// Ignore error, the directory may already exist
-		ti.filename = fmt.Sprintf("%s/tasks/%s", ti.Root, ti.TaskName)
-		ti.Client.Create(ti.filename, "", 60)
-		go ti.BackgroundTask()
-	}
-	return ti, nil
 }
 
 func (ti *TaskInfo) BuildContents() string {
@@ -473,36 +425,4 @@ func (ti *TaskInfo) BuildContents() string {
 
 func (ti *TaskInfo) AddHostport(hostport string) {
 	ti.HostPorts = append(ti.HostPorts, hostport)
-}
-
-func (ti *TaskInfo) BackgroundTask() {
-	tick := time.Tick(1 * time.Second)
-	oldContents := ""
-	ticks := 0
-	for {
-		select {
-		case <-tick:
-			// Write the file when the contents has changed, or the file is old
-			ticks++
-			contents := ti.BuildContents()
-			if contents != oldContents || ticks >= 50 {
-				_, err := ti.Client.Update(ti.filename, ti.BuildContents(), 60)
-				if err != nil {
-					log.Printf("Can't write TaskInfo in etcd: %s", err)
-				} else {
-					oldContents = contents
-					ticks = 0
-				}
-			}
-		}
-	}
-	ti.Close()
-}
-
-func (ti *TaskInfo) Close() error {
-	if ti.Client == nil {
-		return errors.New("No Client")
-	}
-	ti.Client.Delete(ti.filename, false)
-	return nil
 }

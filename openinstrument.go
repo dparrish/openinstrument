@@ -14,48 +14,6 @@ func NowMs() uint64 {
 	return uint64(time.Now().UnixNano() / 1000000)
 }
 
-func NewVariableFromString(textvar string) *variable.Variable {
-	return variable.NewFromString(textvar)
-}
-
-func NewVariableFromProto(p *oproto.StreamVariable) *variable.Variable {
-	return variable.NewFromProto(p)
-}
-
-type Semaphore chan bool
-
-// acquire n resources
-func (s Semaphore) P(n int) {
-	for i := 0; i < n; i++ {
-		s <- true
-	}
-}
-
-// release n resources
-func (s Semaphore) V(n int) {
-	for i := 0; i < n; i++ {
-		<-s
-	}
-}
-
-func (s Semaphore) Lock() {
-	s.P(1)
-}
-
-func (s Semaphore) Unlock() {
-	s.V(1)
-}
-
-/* signal-wait */
-
-func (s Semaphore) Signal() {
-	s.V(1)
-}
-
-func (s Semaphore) Wait(n int) {
-	s.P(n)
-}
-
 // ValueStreamWriter returns a channel that appends values to the supplied ValueStream.
 // No effort is made to ensure that the ValueStream contains sorted Values
 func ValueStreamWriter(stream *oproto.ValueStream) chan<- *oproto.Value {
@@ -169,7 +127,7 @@ func MergeStreamsBy(streams []*oproto.ValueStream, by string) <-chan []*oproto.V
 	return c
 }
 
-func Readdirnames(directory string) ([]string, error) {
+func ReadDirNames(directory string) ([]string, error) {
 	dir, err := os.Open(directory)
 	if err != nil {
 		return nil, fmt.Errorf("Can't open %s for readdir: %s", directory, err)

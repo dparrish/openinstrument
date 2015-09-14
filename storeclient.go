@@ -16,6 +16,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
+	"github.com/dparrish/openinstrument/variable"
 )
 
 func ProtoText(msg proto.Message) string {
@@ -182,8 +183,8 @@ func (sc *StoreClient) List(request *oproto.ListRequest) ([]*oproto.ListResponse
 	return response, nil
 }
 
-func (sc *StoreClient) SimpleGet(variable string, minTimestamp, maxTimestamp uint64) ([]*oproto.GetResponse, error) {
-	reqvar := NewVariableFromString(variable)
+func (sc *StoreClient) SimpleGet(varName string, minTimestamp, maxTimestamp uint64) ([]*oproto.GetResponse, error) {
+	reqvar := variable.NewFromString(varName)
 	request := &oproto.GetRequest{
 		Variable: reqvar.AsProto(),
 	}

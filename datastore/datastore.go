@@ -84,7 +84,7 @@ func Open(path string) *Datastore {
 // This is only called once when the datastore is opened the first time.
 func (ds *Datastore) readBlocks() bool {
 	startTime := time.Now()
-	names, err := openinstrument.Readdirnames(ds.Path)
+	names, err := openinstrument.ReadDirNames(ds.Path)
 	if err != nil {
 		log.Printf("Can't read existing blocks: %s\n", err)
 		return false
