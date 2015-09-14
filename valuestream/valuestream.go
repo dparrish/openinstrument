@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/variable"
 )
 
 type By func(p1, p2 *oproto.ValueStream) bool
@@ -31,4 +32,93 @@ func (vs *valuesSorter) Swap(i, j int) {
 
 func (vs *valuesSorter) Less(i, j int) bool {
 	return vs.by(vs.values[i], vs.values[j])
+}
+
+// Merge merges multiple ValueStreams, returning a channel producing sorted Values.
+func Merge(streams []*oproto.ValueStream) <-chan *oproto.Value {
+	c := make(chan *oproto.Value)
+	n := len(streams)
+	go func() {
+		indexes := make([]int, n)
+		for {
+			var minTimestamp uint64
+			var minStream *oproto.ValueStream
+			var minValue *oproto.Value
+			for i := 0; i < n; i++ {
+				if indexes[i] >= len(streams[i].Value) {
+					continue
+				}
+				v := streams[i].Value[indexes[i]]
+				if minStream == nil || v.GetTimestamp() < minTimestamp {
+					minTimestamp = v.GetTimestamp()
+					minStream = streams[i]
+					minValue = v
+					indexes[i]++
+				}
+			}
+			if minValue == nil {
+				break
+			}
+			c <- minValue
+		}
+		close(c)
+	}()
+	return c
+}
+
+func MergeBy(streams []*oproto.ValueStream, by string) <-chan []*oproto.ValueStream {
+	c := make(chan []*oproto.ValueStream)
+	go func() {
+		uniqueVars := make(map[string]bool)
+		uniqueLabels := make(map[string]bool)
+		for _, stream := range streams {
+			v := variable.NewFromProto(stream.Variable)
+			uniqueVars[v.Variable] = true
+			labelValue, ok := v.Labels[by]
+			if !ok {
+				uniqueLabels[""] = true
+			} else {
+				uniqueLabels[labelValue] = true
+			}
+		}
+		for varname := range uniqueVars {
+			v := variable.NewFromString(varname)
+			if by == "" {
+				var output []*oproto.ValueStream
+				for _, stream := range streams {
+					testvar := variable.NewFromProto(stream.Variable)
+					if testvar.Variable != v.Variable {
+						continue
+					}
+					output = append(output, stream)
+				}
+				if len(output) > 0 {
+					c <- output
+				}
+			} else {
+				for labelvalue := range uniqueLabels {
+					var output []*oproto.ValueStream
+					for _, stream := range streams {
+						testvar := variable.NewFromProto(stream.Variable)
+						if testvar.Variable != v.Variable {
+							continue
+						}
+						value, ok := testvar.Labels[by]
+						if !ok {
+							continue
+						}
+						if value != labelvalue {
+							continue
+						}
+						output = append(output, stream)
+					}
+					if len(output) > 0 {
+						c <- output
+					}
+				}
+			}
+		}
+		close(c)
+	}()
+	return c
 }

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.google.com/p/goprotobuf/proto"
-	"github.com/dparrish/openinstrument"
+	storeclient "github.com/dparrish/openinstrument/client"
 	openinstrument_proto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 )
@@ -40,15 +40,15 @@ func main() {
 		log.Fatal("Specify at least one variable to retrieve")
 	}
 
-	var client *openinstrument.StoreClient
+	var client *storeclient.StoreClient
 	var err error
 	if *connectAddress != "" {
-		client, err = openinstrument.NewAutoStoreClient(*connectAddress)
+		client, err = storeclient.NewAuto(*connectAddress)
 		if err != nil {
 			log.Fatal("Can't create StoreClient: %s", err)
 		}
 	} else if *configFile != "" {
-		client, err = openinstrument.NewStoreClient(*configFile)
+		client, err = storeclient.New(*configFile)
 		if err != nil {
 			log.Fatal("Can't create StoreClient: %s", err)
 		}

@@ -24,6 +24,7 @@ import (
 	"github.com/dparrish/openinstrument/mutations"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
+	"github.com/dparrish/openinstrument/valuestream"
 	"github.com/dparrish/openinstrument/variable"
 )
 
@@ -102,10 +103,10 @@ func Get(w http.ResponseWriter, req *http.Request) {
 	if len(request.Aggregation) > 0 {
 		mergeBy = request.Aggregation[0].GetLabel()[0]
 	}
-	sc := openinstrument.MergeStreamsBy(streams, mergeBy)
+	sc := valuestream.MergeBy(streams, mergeBy)
 	response.Stream = make([]*oproto.ValueStream, 0)
 	for streams := range sc {
-		output := openinstrument.MergeValueStreams(streams)
+		output := valuestream.Merge(streams)
 
 		if request.GetMutation() != nil && len(request.GetMutation()) > 0 {
 			for _, mut := range request.GetMutation() {
@@ -126,7 +127,6 @@ func Get(w http.ResponseWriter, req *http.Request) {
 
 		newstream := new(oproto.ValueStream)
 		newstream.Variable = variable.NewFromProto(streams[0].Variable).AsProto()
-		writer := openinstrument.ValueStreamWriter(newstream)
 		var valueCount uint32
 		for value := range output {
 			if request.MinTimestamp != nil && value.GetTimestamp() < request.GetMinTimestamp() {
@@ -137,10 +137,9 @@ func Get(w http.ResponseWriter, req *http.Request) {
 				// Too new
 				continue
 			}
-			writer <- value
+			newstream.Value = append(newstream.Value, value)
 			valueCount++
 		}
-		close(writer)
 
 		if request.MaxValues != nil && valueCount >= request.GetMaxValues() {
 			newstream.Value = newstream.Value[uint32(len(newstream.Value))-request.GetMaxValues():]
