@@ -18,7 +18,7 @@ var _ = Suite(&MySuite{})
 func (s *MySuite) TestEncodeDouble(c *C) {
 	// Create pipeline
 	input := make(chan *oproto.Value, 10)
-	output := Encode(input, 10)
+	output := Encode(input)
 
 	push := func(input chan *oproto.Value, timestamp uint64, value float64) {
 		input <- &oproto.Value{
@@ -49,7 +49,7 @@ func (s *MySuite) TestEncodeDouble(c *C) {
 func (s *MySuite) TestEncodeString(c *C) {
 	// Create pipeline
 	input := make(chan *oproto.Value, 10)
-	output := Encode(input, 10)
+	output := Encode(input)
 
 	push := func(input chan *oproto.Value, timestamp uint64, value string) {
 		input <- &oproto.Value{

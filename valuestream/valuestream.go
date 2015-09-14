@@ -122,3 +122,28 @@ func MergeBy(streams []*oproto.ValueStream, by string) <-chan []*oproto.ValueStr
 	}()
 	return c
 }
+
+// FromChan takes a ValueStream and writes all the values individually to a new channel.
+func ToChan(input *oproto.ValueStream) <-chan *oproto.Value {
+	output := make(chan *oproto.Value)
+	go func() {
+		for _, v := range input.Value {
+			output <- v
+		}
+		close(output)
+	}()
+	return output
+}
+
+// FromChan takes a channel of Values and appends each one to the supplied ValueStream.
+// As this is run as a goroutine, it returns a channel that gets a value sent once the append has completed.
+func FromChan(input <-chan *oproto.Value, output *oproto.ValueStream) <-chan interface{} {
+	done := make(chan interface{})
+	go func() {
+		for v := range input {
+			output.Value = append(output.Value, v)
+		}
+		done <- struct{}{}
+	}()
+	return done
+}

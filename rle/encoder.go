@@ -5,8 +5,8 @@ import (
 	oproto "github.com/dparrish/openinstrument/proto"
 )
 
-func Encode(input <-chan *oproto.Value, outputBufSize int) <-chan *oproto.Value {
-	output := make(chan *oproto.Value, outputBufSize)
+func Encode(input <-chan *oproto.Value) <-chan *oproto.Value {
+	output := make(chan *oproto.Value)
 	go func() {
 		var last *oproto.Value
 		for value := range input {

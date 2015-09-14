@@ -10,7 +10,6 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 )
 
-// Write contains information for writing to a protofile.
 // Write creates a file handle for writing a protofile, returning a ProtoFile.
 // After calling this, the file is opened for writing and the file position it the end of the file, ready for appending.
 func Write(filename string) (*ProtoFile, error) {
