@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"code.google.com/p/goprotobuf/proto"
-	openinstrument_proto "github.com/dparrish/openinstrument/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/joaojeronimo/go-crc16"
 )
 
@@ -17,15 +17,8 @@ var (
 	checkProtofileCrc = flag.Bool("check_protofile_crc", true, "Check CRC of each protofile entry.")
 )
 
-type Reader struct {
-	filename string
-	file     *os.File
-	stat     os.FileInfo
-	pos      int64
-}
-
-func Read(filename string) (*Reader, error) {
-	reader := new(Reader)
+func Read(filename string) (*ProtoFile, error) {
+	reader := new(ProtoFile)
 	reader.filename = filename
 	var err error
 	if reader.file, err = os.Open(filename); err != nil {
@@ -40,43 +33,20 @@ func Read(filename string) (*Reader, error) {
 	return reader, nil
 }
 
-func (pfr *Reader) Close() error {
-	pfr.pos = 0
-	return pfr.file.Close()
-}
-
-func (pfr *Reader) Tell() int64 {
-	return pfr.pos
-}
-
-func (pfr *Reader) Seek(pos int64) (int64, error) {
-	npos, err := pfr.file.Seek(pos, os.SEEK_SET)
-	if err != nil {
-		log.Printf("Erorr seeking to %d: %s", pos, err)
-		return npos, err
-	}
-	pfr.pos = npos
-	return npos, nil
-}
-
-func (pfr *Reader) Stat() (os.FileInfo, error) {
-	return pfr.file.Stat()
-}
-
-func (pfr *Reader) ReadAt(pos int64, message proto.Message) (int64, error) {
+func (pf *ProtoFile) ReadAt(pos int64, message proto.Message) (int64, error) {
 	var err error
-	if pfr.pos, err = pfr.Seek(pos); err != nil {
+	if pf.pos, err = pf.Seek(pos); err != nil {
 		return 0, err
 	}
-	return pfr.Read(message)
+	return pf.Read(message)
 }
 
-func (pfr *Reader) ValueStreamReader(chanSize int) chan *openinstrument_proto.ValueStream {
-	c := make(chan *openinstrument_proto.ValueStream, chanSize)
+func (pf *ProtoFile) ValueStreamReader(chanSize int) chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream, chanSize)
 	go func() {
 		for {
-			value := new(openinstrument_proto.ValueStream)
-			_, err := pfr.Read(value)
+			value := new(oproto.ValueStream)
+			_, err := pf.Read(value)
 			if err == io.EOF {
 				break
 			}
@@ -91,7 +61,7 @@ func (pfr *Reader) ValueStreamReader(chanSize int) chan *openinstrument_proto.Va
 	return c
 }
 
-func (pfr *Reader) Read(message proto.Message) (int64, error) {
+func (pf *ProtoFile) Read(message proto.Message) (int64, error) {
 	for {
 		type header struct {
 			Magic  uint16
@@ -102,7 +72,7 @@ func (pfr *Reader) Read(message proto.Message) (int64, error) {
 			bytesRead int64
 		)
 
-		err := binary.Read(pfr.file, binary.LittleEndian, &h)
+		err := binary.Read(pf.file, binary.LittleEndian, &h)
 		if err != nil {
 			if err == io.EOF {
 				return 0, io.EOF
@@ -114,18 +84,18 @@ func (pfr *Reader) Read(message proto.Message) (int64, error) {
 
 		// Read Magic header
 		if h.Magic != protoMagic {
-			log.Printf("Protobuf delimeter at %s:%x does not match %#x", pfr.filename, pfr.pos, protoMagic)
-			pfr.Seek(pfr.pos + 1)
+			log.Printf("Protobuf delimeter at %s:%x does not match %#x", pf.filename, pf.pos, protoMagic)
+			pf.Seek(pf.pos + 1)
 			continue
 		}
-		if int64(h.Length) >= pfr.stat.Size() {
-			log.Printf("Chunk length %d at %s:%x is greater than file size %d", h.Length, pfr.filename, pfr.pos, pfr.stat.Size())
+		if int64(h.Length) >= pf.stat.Size() {
+			log.Printf("Chunk length %d at %s:%x is greater than file size %d", h.Length, pf.filename, pf.pos, pf.stat.Size())
 			continue
 		}
 
 		// Read Proto
 		buf := make([]byte, h.Length)
-		n, err := pfr.file.Read(buf)
+		n, err := pf.file.Read(buf)
 		bytesRead += int64(n)
 		if err != nil || uint32(n) != h.Length {
 			log.Printf("Could not read %d bytes from file: %s", h.Length, err)
@@ -134,7 +104,7 @@ func (pfr *Reader) Read(message proto.Message) (int64, error) {
 
 		// Read CRC
 		var crc uint16
-		err = binary.Read(pfr.file, binary.LittleEndian, &crc)
+		err = binary.Read(pf.file, binary.LittleEndian, &crc)
 		bytesRead += int64(2)
 		if err != nil {
 			log.Printf("Error reading CRC from recordlog: %s", err)
@@ -150,10 +120,10 @@ func (pfr *Reader) Read(message proto.Message) (int64, error) {
 
 		// Decode and add proto
 		if err = proto.Unmarshal(buf, message); err != nil {
-			return 0, fmt.Errorf("Error decoding protobuf at %s:%x: %s", pfr.filename, pfr.pos, err)
+			return 0, fmt.Errorf("Error decoding protobuf at %s:%x: %s", pf.filename, pf.pos, err)
 		}
 
-		pfr.pos += bytesRead
+		pf.pos += bytesRead
 		return bytesRead, nil
 	}
 }

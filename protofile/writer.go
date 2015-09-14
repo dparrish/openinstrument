@@ -10,14 +10,11 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 )
 
-type Writer struct {
-	filename string
-	file     *os.File
-	pos      int64
-}
-
-func Write(filename string) (*Writer, error) {
-	writer := new(Writer)
+// Write contains information for writing to a protofile.
+// Write creates a file handle for writing a protofile, returning a ProtoFile.
+// After calling this, the file is opened for writing and the file position it the end of the file, ready for appending.
+func Write(filename string) (*ProtoFile, error) {
+	writer := new(ProtoFile)
 	writer.filename = filename
 	var err error
 	writer.file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0664)
@@ -28,33 +25,16 @@ func Write(filename string) (*Writer, error) {
 	return writer, nil
 }
 
-func (pfw *Writer) Close() error {
-	pfw.pos = 0
-	return pfw.file.Close()
-}
-
-func (pfw *Writer) Tell() int64 {
-	return pfw.pos
-}
-
-func (pfw *Writer) Stat() (os.FileInfo, error) {
-	return pfw.file.Stat()
-}
-
-func (pfw *Writer) Sync() error {
-	return pfw.file.Sync()
-}
-
-func (pfw *Writer) WriteAt(pos int64, message proto.Message) (int64, error) {
+func (pf *ProtoFile) WriteAt(pos int64, message proto.Message) (int64, error) {
 	var err error
-	pfw.pos, err = pfw.file.Seek(pos, os.SEEK_SET)
+	pf.pos, err = pf.file.Seek(pos, os.SEEK_SET)
 	if err != nil {
 		return 0, err
 	}
-	return pfw.Write(message)
+	return pf.Write(message)
 }
 
-func (pfw *Writer) Write(message proto.Message) (int64, error) {
+func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 	data, err := proto.Marshal(message)
 	if err != nil {
 		return 0, fmt.Errorf("Marshaling error: %s", err)
@@ -67,12 +47,12 @@ func (pfw *Writer) Write(message proto.Message) (int64, error) {
 	}
 	var bytes int64
 	for _, v := range buf {
-		err = binary.Write(pfw.file, binary.LittleEndian, v)
+		err = binary.Write(pf.file, binary.LittleEndian, v)
 		if err != nil {
 			return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
 		}
 		bytes += int64(binary.Size(v))
 	}
-	pfw.pos += bytes
+	pf.pos += bytes
 	return bytes, nil
 }
