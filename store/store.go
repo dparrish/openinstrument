@@ -108,34 +108,21 @@ func Get(w http.ResponseWriter, req *http.Request) {
 	sc := openinstrument.MergeStreamsBy(streams, mergeBy)
 	response.Stream = make([]*oproto.ValueStream, 0)
 	for streams := range sc {
-		mutationChannels := openinstrument.ValueStreamChannelList(openinstrument.MergeValueStreams(streams))
+		output := openinstrument.MergeValueStreams(streams)
+
 		if request.GetMutation() != nil && len(request.GetMutation()) > 0 {
 			for _, mut := range request.GetMutation() {
 				switch mut.GetSampleType() {
-				case oproto.StreamMutation_NONE:
-					mutationChannels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
-						mutationChannels.Last(),
-						mutations.Interpolate))
 				case oproto.StreamMutation_AVERAGE:
-					mutationChannels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
-						mutationChannels.Last(),
-						mutations.Mean))
+					output = mutations.Mean(uint64(mut.GetSampleFrequency()), output)
 				case oproto.StreamMutation_MIN:
-					mutationChannels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
-						mutationChannels.Last(),
-						mutations.Min))
+					output = mutations.Min(uint64(mut.GetSampleFrequency()), output)
 				case oproto.StreamMutation_MAX:
-					mutationChannels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
-						mutationChannels.Last(),
-						mutations.Max))
+					output = mutations.Max(uint64(mut.GetSampleFrequency()), output)
 				case oproto.StreamMutation_RATE:
-					mutationChannels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
-						mutationChannels.Last(),
-						mutations.Rate))
+					output = mutations.Rate(uint64(mut.GetSampleFrequency()), output)
 				case oproto.StreamMutation_RATE_SIGNED:
-					mutationChannels.Add(mutations.MutateValues(uint64(mut.GetSampleFrequency()),
-						mutationChannels.Last(),
-						mutations.SignedRate))
+					output = mutations.SignedRate(uint64(mut.GetSampleFrequency()), output)
 				}
 			}
 		}
@@ -144,7 +131,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
 		newstream.Variable = variable.NewFromProto(streams[0].Variable).AsProto()
 		writer := openinstrument.ValueStreamWriter(newstream)
 		var valueCount uint32
-		for value := range mutationChannels.Last() {
+		for value := range output {
 			if request.MinTimestamp != nil && value.GetTimestamp() < request.GetMinTimestamp() {
 				// Too old
 				continue

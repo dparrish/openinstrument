@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	openinstrument_proto "github.com/dparrish/openinstrument/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 )
 
@@ -18,7 +18,7 @@ func NewVariableFromString(textvar string) *variable.Variable {
 	return variable.NewFromString(textvar)
 }
 
-func NewVariableFromProto(p *openinstrument_proto.StreamVariable) *variable.Variable {
+func NewVariableFromProto(p *oproto.StreamVariable) *variable.Variable {
 	return variable.NewFromProto(p)
 }
 
@@ -56,35 +56,21 @@ func (s Semaphore) Wait(n int) {
 	s.P(n)
 }
 
-// ValueStreamWriter returns a channel that appends values to the supplied ValueStream, performing run-length-encoding.
+// ValueStreamWriter returns a channel that appends values to the supplied ValueStream.
 // No effort is made to ensure that the ValueStream contains sorted Values
-func ValueStreamWriter(stream *openinstrument_proto.ValueStream) chan *openinstrument_proto.Value {
-	c := make(chan *openinstrument_proto.Value)
+func ValueStreamWriter(stream *oproto.ValueStream) chan<- *oproto.Value {
+	c := make(chan *oproto.Value)
 	go func() {
 		for value := range c {
-			if len(stream.Value) > 0 {
-				last := stream.Value[len(stream.Value)-1]
-				if (last.GetStringValue() != "" && last.GetStringValue() == value.GetStringValue()) ||
-					(last.GetDoubleValue() == value.GetDoubleValue()) {
-					if value.GetEndTimestamp() > 0 {
-						last.EndTimestamp = value.EndTimestamp
-					} else {
-						last.EndTimestamp = value.Timestamp
-					}
-				} else {
-					stream.Value = append(stream.Value, value)
-				}
-			} else {
-				stream.Value = append(stream.Value, value)
-			}
+			stream.Value = append(stream.Value, value)
 		}
 	}()
 	return c
 }
 
 // ValueStreamReader returns a channel producing Values from the supplied ValueStream
-func ValueStreamReader(stream *openinstrument_proto.ValueStream) chan *openinstrument_proto.Value {
-	c := make(chan *openinstrument_proto.Value)
+func ValueStreamReader(stream *oproto.ValueStream) <-chan *oproto.Value {
+	c := make(chan *oproto.Value)
 	go func() {
 		for _, value := range stream.Value {
 			c <- value
@@ -95,15 +81,15 @@ func ValueStreamReader(stream *openinstrument_proto.ValueStream) chan *openinstr
 }
 
 // MergeValueStreams merges multiple ValueStreams, returning a channel producing sorted Values.
-func MergeValueStreams(streams []*openinstrument_proto.ValueStream) chan *openinstrument_proto.Value {
-	c := make(chan *openinstrument_proto.Value)
+func MergeValueStreams(streams []*oproto.ValueStream) <-chan *oproto.Value {
+	c := make(chan *oproto.Value)
 	n := len(streams)
 	go func() {
 		indexes := make([]int, n)
 		for {
 			var minTimestamp uint64
-			var minStream *openinstrument_proto.ValueStream
-			var minValue *openinstrument_proto.Value
+			var minStream *oproto.ValueStream
+			var minValue *oproto.Value
 			for i := 0; i < n; i++ {
 				if indexes[i] >= len(streams[i].Value) {
 					continue
@@ -126,8 +112,8 @@ func MergeValueStreams(streams []*openinstrument_proto.ValueStream) chan *openin
 	return c
 }
 
-func MergeStreamsBy(streams []*openinstrument_proto.ValueStream, by string) chan []*openinstrument_proto.ValueStream {
-	c := make(chan []*openinstrument_proto.ValueStream)
+func MergeStreamsBy(streams []*oproto.ValueStream, by string) <-chan []*oproto.ValueStream {
+	c := make(chan []*oproto.ValueStream)
 	go func() {
 		uniqueVars := make(map[string]bool)
 		uniqueLabels := make(map[string]bool)
@@ -144,7 +130,7 @@ func MergeStreamsBy(streams []*openinstrument_proto.ValueStream, by string) chan
 		for varname := range uniqueVars {
 			v := variable.NewFromString(varname)
 			if by == "" {
-				var output []*openinstrument_proto.ValueStream
+				var output []*oproto.ValueStream
 				for _, stream := range streams {
 					testvar := variable.NewFromProto(stream.Variable)
 					if testvar.Variable != v.Variable {
@@ -157,7 +143,7 @@ func MergeStreamsBy(streams []*openinstrument_proto.ValueStream, by string) chan
 				}
 			} else {
 				for labelvalue := range uniqueLabels {
-					var output []*openinstrument_proto.ValueStream
+					var output []*oproto.ValueStream
 					for _, stream := range streams {
 						testvar := variable.NewFromProto(stream.Variable)
 						if testvar.Variable != v.Variable {
@@ -181,26 +167,6 @@ func MergeStreamsBy(streams []*openinstrument_proto.ValueStream, by string) chan
 		close(c)
 	}()
 	return c
-}
-
-type valueStreamChannelList struct {
-	input    chan *openinstrument_proto.Value
-	channels []chan *openinstrument_proto.Value
-}
-
-func (cl *valueStreamChannelList) Add(c chan *openinstrument_proto.Value) {
-	cl.channels = append(cl.channels, c)
-}
-
-func (cl *valueStreamChannelList) Last() chan *openinstrument_proto.Value {
-	return cl.channels[len(cl.channels)-1]
-}
-
-func ValueStreamChannelList(initial chan *openinstrument_proto.Value) *valueStreamChannelList {
-	cl := new(valueStreamChannelList)
-	cl.channels = make([]chan *openinstrument_proto.Value, 0)
-	cl.channels = append(cl.channels, initial)
-	return cl
 }
 
 func Readdirnames(directory string) ([]string, error) {
