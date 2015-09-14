@@ -33,7 +33,7 @@
       {{ range .Blocks }}
       <tr valign='top'>
         <td>{{ .EndKey }}</td>
-        <td>{{ .Id }}</td>
+        <td style='font-family: monospace;'>{{ .Filename }}</td>
         <td>{{ if .IsCompacting }}{{ .CompactDuration }}{{ end }}</td>
         <td>{{ len .BlockHeader.Index }}</td>
         <td>{{ len .LogStreams }}</td>
@@ -45,5 +45,3 @@
   </table>
 </body>
 </html>
-
-

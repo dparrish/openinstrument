@@ -17,31 +17,33 @@ var (
 	checkProtofileCrc = flag.Bool("check_protofile_crc", true, "Check CRC of each protofile entry.")
 )
 
-type Reader struct {
+type protoFileReader struct {
 	filename string
 	file     *os.File
 	stat     os.FileInfo
 }
 
-func Read(filename string) (*Reader, error) {
-	reader := new(Reader)
+func Read(filename string) (*protoFileReader, error) {
+	reader := new(protoFileReader)
 	reader.filename = filename
 	var err error
 	if reader.file, err = os.Open(filename); err != nil {
+		log.Printf("Couldn't open %s: %s", filename, err)
 		return nil, err
 	}
 	if reader.stat, err = reader.file.Stat(); err != nil {
+		log.Printf("Couldn't stat %s: %s", filename, err)
 		reader.file.Close()
 		return nil, err
 	}
 	return reader, nil
 }
 
-func (pfr *Reader) Close() error {
+func (pfr *protoFileReader) Close() error {
 	return pfr.file.Close()
 }
 
-func (pfr *Reader) Tell() int64 {
+func (pfr *protoFileReader) Tell() int64 {
 	pos, err := pfr.file.Seek(0, os.SEEK_CUR)
 	if err != nil {
 		log.Printf("Erorr getting file position: %s", err)
@@ -49,7 +51,7 @@ func (pfr *Reader) Tell() int64 {
 	return pos
 }
 
-func (pfr *Reader) Seek(pos int64) (int64, error) {
+func (pfr *protoFileReader) Seek(pos int64) (int64, error) {
 	npos, err := pfr.file.Seek(pos, os.SEEK_SET)
 	if err != nil {
 		log.Printf("Erorr getting seeking to %d: %s", pos, err)
@@ -58,18 +60,18 @@ func (pfr *Reader) Seek(pos int64) (int64, error) {
 	return npos, nil
 }
 
-func (pfr *Reader) Stat() (os.FileInfo, error) {
+func (pfr *protoFileReader) Stat() (os.FileInfo, error) {
 	return pfr.file.Stat()
 }
 
-func (pfr *Reader) ReadAt(pos int64, message proto.Message) (int64, error) {
+func (pfr *protoFileReader) ReadAt(pos int64, message proto.Message) (int64, error) {
 	if _, err := pfr.Seek(pos); err != nil {
 		return 0, err
 	}
 	return pfr.Read(message)
 }
 
-func (pfr *Reader) ValueStreamReader(chanSize int) chan *openinstrument_proto.ValueStream {
+func (pfr *protoFileReader) ValueStreamReader(chanSize int) chan *openinstrument_proto.ValueStream {
 	c := make(chan *openinstrument_proto.ValueStream, chanSize)
 	go func() {
 		for {
@@ -89,7 +91,7 @@ func (pfr *Reader) ValueStreamReader(chanSize int) chan *openinstrument_proto.Va
 	return c
 }
 
-func (pfr *Reader) ValueStreamReaderUntil(maxPos uint64, chanSize int) chan *openinstrument_proto.ValueStream {
+func (pfr *protoFileReader) ValueStreamReaderUntil(maxPos uint64, chanSize int) chan *openinstrument_proto.ValueStream {
 	c := make(chan *openinstrument_proto.ValueStream, chanSize)
 	go func() {
 		for uint64(pfr.Tell()) < maxPos {
@@ -109,7 +111,7 @@ func (pfr *Reader) ValueStreamReaderUntil(maxPos uint64, chanSize int) chan *ope
 	return c
 }
 
-func (pfr *Reader) Read(message proto.Message) (int64, error) {
+func (pfr *protoFileReader) Read(message proto.Message) (int64, error) {
 	for {
 		pos := pfr.Tell()
 		type header struct {

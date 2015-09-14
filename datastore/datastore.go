@@ -408,7 +408,7 @@ func (ds *Datastore) findBlock(v *variable.Variable) *Block {
 	// TODO(dparrish): Binary search for block
 	for _, key := range ds.blockKeys {
 		if key >= v.String() {
-			log.Printf("Returning block %s\n", ds.Blocks[key].EndKey)
+			//log.Printf("Returning block %s\n", ds.Blocks[key].EndKey)
 			return ds.Blocks[key]
 		}
 	}
@@ -450,15 +450,14 @@ func (ds *Datastore) compactBlock(block *Block) error {
 	reader, err := block.Read(ds.Path)
 	if err != nil {
 		log.Printf("Unable to read block: %s", err)
-		return err
-	}
-
-	for stream := range reader {
-		if stream.Variable != nil {
-			appendStream(stream)
+	} else {
+		for stream := range reader {
+			if stream.Variable != nil {
+				appendStream(stream)
+			}
 		}
+		log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
 	}
-	log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
 
 	st = time.Now()
 	if err = block.Write(ds.Path, streams); err != nil {
@@ -740,12 +739,11 @@ func (ds *Block) Write(path string, streams map[string]*oproto.ValueStream) erro
 func (ds *Block) Read(path string) (chan *oproto.ValueStream, error) {
 	oldfile, err := protofile.Read(filepath.Join(path, ds.Filename()))
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("Can't read old block file %s: %s\n", ds.Filename(), err)
-		}
+		return nil, fmt.Errorf("Can't read old block file %s: %s\n", ds.Filename(), err)
 	}
 
 	var oldheader oproto.StoreFileHeader
+	log.Printf("Reading block header %s", ds.Filename())
 	n, err := oldfile.Read(&oldheader)
 	if n < 1 || err != nil {
 		return nil, fmt.Errorf("Block %s has a corrupted header: %s\n", ds.Filename(), err)
