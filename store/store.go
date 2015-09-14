@@ -97,7 +97,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
 	}
 	fmt.Println(openinstrument.ProtoText(&request))
 	streamChan := ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp, true)
-	var streams []*oproto.ValueStream
+	streams := make([]*oproto.ValueStream, 0)
 	for stream := range streamChan {
 		streams = append(streams, stream)
 	}
@@ -353,7 +353,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var results []Result
+	results := make([]Result, 0)
 
 	for stream := range ds.Reader(variable.NewFromString(query), minTimestamp, maxTimestamp, showValues) {
 		r := Result{

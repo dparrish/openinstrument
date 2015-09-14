@@ -2,6 +2,7 @@ package exported
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"code.google.com/p/goprotobuf/proto"
@@ -11,27 +12,28 @@ import (
 
 type VariableExporter struct {
 	shutdown  bool
-	completed chan bool
+	completed sync.Mutex
 }
 
 func NewVariableExporter(address string, interval int32) *VariableExporter {
 	ve := new(VariableExporter)
-	ve.completed = make(chan bool, 1)
 	go func(ve *VariableExporter) {
+		ve.completed.Lock()
+		defer ve.completed.Unlock()
 		tick := time.Tick(time.Duration(interval) * time.Millisecond)
 		for !ve.shutdown {
 			<-tick
 			// Flush
 			log.Printf("Flushing exported variables")
 		}
-		ve.completed <- true
 	}(ve)
 	return ve
 }
 
 func (ve *VariableExporter) Shutdown() {
 	ve.shutdown = true
-	<-ve.completed
+	ve.completed.Lock()
+	ve.completed.Unlock()
 }
 
 type Exportable interface {
