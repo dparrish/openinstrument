@@ -32,7 +32,7 @@
     <tbody>
       {{ range .Blocks }}
       <tr valign='top'>
-        <td>{{ .EndKey }}</td>
+        <td style='font-family: monospace;'>{{ .EndKey }}</td>
         <td style='font-family: monospace;'>{{ .Filename }}</td>
         <td>{{ if .IsCompacting }}{{ .CompactDuration }}{{ end }}</td>
         <td>{{ len .BlockHeader.Index }}</td>
