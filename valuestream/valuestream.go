@@ -135,15 +135,15 @@ func ToChan(input *oproto.ValueStream) <-chan *oproto.Value {
 	return output
 }
 
-// FromChan takes a channel of Values and appends each one to the supplied ValueStream.
+// ToStream takes a channel of Values and appends each one to the supplied ValueStream.
 // As this is run as a goroutine, it returns a channel that gets a value sent once the append has completed.
-func FromChan(input <-chan *oproto.Value, output *oproto.ValueStream) <-chan interface{} {
+func ToStream(input <-chan *oproto.Value, output *oproto.ValueStream) <-chan interface{} {
 	done := make(chan interface{})
 	go func() {
 		for v := range input {
 			output.Value = append(output.Value, v)
 		}
-		done <- struct{}{}
+		close(done)
 	}()
 	return done
 }

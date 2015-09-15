@@ -12,8 +12,8 @@ import (
 
 // Write creates a file handle for writing a protofile, returning a ProtoFile.
 // After calling this, the file is opened for writing and the file position it the end of the file, ready for appending.
-func Write(filename string) (*ProtoFile, error) {
-	writer := new(ProtoFile)
+func Write(filename string) (ReaderWriter, error) {
+	writer := &ProtoFile{}
 	writer.filename = filename
 	var err error
 	writer.file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0664)

@@ -12,12 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/goprotobuf/proto"
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
 	"github.com/dparrish/openinstrument/variable"
-	"github.com/nu7hatch/gouuid"
 )
 
 const (
@@ -348,11 +346,7 @@ func (ds *Datastore) splitBlock(block *Block) error {
 	log.Printf("Splitting at %d (%s)", splitpoint, sortedKeys[splitpoint])
 
 	// Read in the whole block
-	u, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("Error generating UUID for new datastore block filename: %s", err)
-	}
-	leftBlock := newBlock(sortedKeys[splitpoint-1], u.String())
+	leftBlock := newBlock(sortedKeys[splitpoint-1], "")
 	leftStreams := make(map[string]*oproto.ValueStream)
 	rightStreams := make(map[string]*oproto.ValueStream)
 
@@ -387,19 +381,6 @@ func (ds *Datastore) splitBlock(block *Block) error {
 	return nil
 }
 
-func newBlock(endKey, id string) *Block {
-	return &Block{
-		EndKey:     endKey,
-		ID:         id,
-		LogStreams: make(map[string]*oproto.ValueStream, 0),
-		NewStreams: make([]*oproto.ValueStream, 0),
-		BlockHeader: &oproto.StoreFileHeader{
-			Version: proto.Uint32(2),
-			Index:   make([]*oproto.StoreFileHeaderIndex, 0),
-		},
-	}
-}
-
 // findBlock gets a datastore block that can have the variable written to.
 func (ds *Datastore) findBlock(v *variable.Variable) *Block {
 	// Search for a block with end key greater than the current key
@@ -411,12 +392,7 @@ func (ds *Datastore) findBlock(v *variable.Variable) *Block {
 		}
 	}
 	// Create a new block
-	u, err := uuid.NewV4()
-	if err != nil {
-		log.Printf("Error generating UUID for new datastore block filename: %s", err)
-		return nil
-	}
-	block := newBlock(v.String(), u.String())
+	block := newBlock(v.String(), "")
 	ds.insertBlock(block)
 	log.Printf("Creating new block for %s\n", v.String())
 	return block

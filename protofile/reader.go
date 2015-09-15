@@ -17,7 +17,7 @@ var (
 	checkProtofileCrc = flag.Bool("check_protofile_crc", true, "Check CRC of each protofile entry.")
 )
 
-func Read(filename string) (*ProtoFile, error) {
+func Read(filename string) (ReaderWriter, error) {
 	reader := new(ProtoFile)
 	reader.filename = filename
 	var err error
@@ -41,11 +41,11 @@ func (pf *ProtoFile) ReadAt(pos int64, message proto.Message) (int64, error) {
 	return pf.Read(message)
 }
 
-func (pf *ProtoFile) ValueStreamReader(chanSize int) chan *oproto.ValueStream {
+func (pf *ProtoFile) ValueStreamReader(chanSize int) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream, chanSize)
 	go func() {
 		for {
-			value := new(oproto.ValueStream)
+			value := &oproto.ValueStream{}
 			_, err := pf.Read(value)
 			if err == io.EOF {
 				break
@@ -67,10 +67,8 @@ func (pf *ProtoFile) Read(message proto.Message) (int64, error) {
 			Magic  uint16
 			Length uint32
 		}
-		var (
-			h         header
-			bytesRead int64
-		)
+		var h header
+		var bytesRead int64
 
 		err := binary.Read(pf.file, binary.LittleEndian, &h)
 		if err != nil {

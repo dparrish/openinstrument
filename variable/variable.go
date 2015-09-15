@@ -110,10 +110,10 @@ func (v *Variable) ParseFromString(textvar string) error {
 
 // ParseFromProto extracts the details from a protobuf.
 func (v *Variable) ParseFromProto(p *openinstrument_proto.StreamVariable) error {
-	v.Variable = *p.Name
+	v.Variable = p.GetName()
 	// Copy labels
-	v.Labels = make(map[string]string, len(p.Label))
-	for _, label := range p.Label {
+	v.Labels = make(map[string]string, len(p.GetLabel()))
+	for _, label := range p.GetLabel() {
 		v.Labels[label.GetLabel()] = label.GetValue()
 	}
 	return nil

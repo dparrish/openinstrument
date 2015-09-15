@@ -3,9 +3,25 @@ package protofile
 import (
 	"log"
 	"os"
+
+	"code.google.com/p/goprotobuf/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
 )
 
 const protoMagic uint16 = 0xDEAD
+
+type ReaderWriter interface {
+	Close() error
+	Stat() (os.FileInfo, error)
+	Tell() int64
+	Sync() error
+	Seek(pos int64) (int64, error)
+	Read(message proto.Message) (int64, error)
+	ReadAt(pos int64, message proto.Message) (int64, error)
+	ValueStreamReader(chanSize int) <-chan *oproto.ValueStream
+	WriteAt(pos int64, message proto.Message) (int64, error)
+	Write(message proto.Message) (int64, error)
+}
 
 // ProtoFile contains information for reading and writing to a protofile.
 // It is returned from either Read() or Write().

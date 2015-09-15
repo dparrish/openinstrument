@@ -44,12 +44,13 @@ func (s *MySuite) TestFromChan(c *C) {
 	output := &oproto.ValueStream{
 		Value: make([]*oproto.Value, 0),
 	}
-	done := FromChan(input, output)
+	done := ToStream(input, output)
 	for i := 0; i < 10; i++ {
 		input <- &oproto.Value{DoubleValue: proto.Float64(float64(i))}
 	}
 	close(input)
 	<-done
+	c.Assert(len(output.Value), Equals, 10)
 	for i := 0; i < 10; i++ {
 		c.Check(output.Value[i].GetDoubleValue(), Equals, float64(i))
 	}
