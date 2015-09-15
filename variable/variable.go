@@ -122,10 +122,12 @@ func (v *Variable) ParseFromProto(p *openinstrument_proto.StreamVariable) error 
 // Match checks that the supplied variable matches this one, using the matching rules defined above.
 func (v *Variable) Match(match *Variable) bool {
 	if strings.HasSuffix(match.Variable, "*") {
-		m := match.Variable[0 : len(match.Variable)-2]
-		if !strings.HasPrefix(v.Variable, m) {
-			// Invalid prefix match
-			return false
+		if match.Variable != "*" {
+			m := match.Variable[0 : len(match.Variable)-2]
+			if !strings.HasPrefix(v.Variable, m) {
+				// Invalid prefix match
+				return false
+			}
 		}
 	} else if match.Variable != v.Variable {
 		// Variable name does not match

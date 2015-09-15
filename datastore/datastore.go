@@ -93,10 +93,11 @@ func (ds *Datastore) readBlocks() bool {
 				continue
 			}
 			waitgroup.Add(1)
-			ds.readBlock(name, waitgroup)
+			go ds.readBlock(name, waitgroup)
 		}
 	}
 	waitgroup.Wait()
+
 	waitgroup = new(sync.WaitGroup)
 	for _, name := range names {
 		if matched, _ := regexp.MatchString("^block\\..+\\.log$", name); matched {
@@ -139,7 +140,7 @@ func (ds *Datastore) readBlock(filename string, waitgroup *sync.WaitGroup) {
 func (ds *Datastore) readBlockLog(filename string, waitgroup *sync.WaitGroup) {
 	defer waitgroup.Done()
 	block := newBlock("", BlockIDFromFilename(filename))
-	log.Printf("Reading block log %s", filename)
+	//log.Printf("Reading block log %s", filename)
 
 	file, err := protofile.Read(filepath.Join(ds.Path, block.logFilename()))
 	if err != nil {
@@ -193,9 +194,10 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 			// Write this stream
 			v := variable.NewFromProto(stream.GetVariable())
 			//log.Printf("Writing stream for %s\n", v.String())
-			block := ds.findBlock(v)
-			if block != nil {
+			if block := ds.findBlock(v); block != nil {
+				block.NewStreamsLock.Lock()
 				block.NewStreams = append(block.NewStreams, stream)
+				block.NewStreamsLock.Unlock()
 			}
 		}
 		ds.Flush()
@@ -279,6 +281,8 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp *ui
 // Returns once everything is written. Further writes will block until this is completed.
 func (ds *Datastore) Flush() error {
 	for _, block := range ds.Blocks {
+		block.NewStreamsLock.Lock()
+		defer block.NewStreamsLock.Unlock()
 		if len(block.NewStreams) > 0 {
 			// There are streams that need to be flushed to disk
 			block.logLock.Lock()
@@ -439,7 +443,6 @@ func (ds *Datastore) compactBlock(block *Block) error {
 		return err
 	}
 
-	log.Printf("Compaction wrote in %s", time.Since(st))
 	// Delete the log file
 	os.Remove(filepath.Join(ds.Path, block.logFilename()))
 	block.LogStreams = make(map[string]*oproto.ValueStream)

@@ -42,6 +42,7 @@ func (s *MySuite) TestToProto(c *C) {
 
 func (s *MySuite) TestMatch(c *C) {
 	var1 := NewFromString("/openinstrument/test{label1=value1,label2=spaced value}")
+	c.Check(var1.Match(NewFromString("*")), Equals, true)
 	c.Check(var1.Match(NewFromString("/openinstrument/*")), Equals, true)
 	c.Check(var1.Match(NewFromString("/openinstrx/*")), Equals, false)
 	c.Check(var1.Match(NewFromString("/openinstrument/")), Equals, false)

@@ -43,7 +43,8 @@ type Block struct {
 	logLock    sync.Mutex
 
 	// Contains any streams that have not yet been written to disk
-	NewStreams []*oproto.ValueStream
+	NewStreams     []*oproto.ValueStream
+	NewStreamsLock sync.Mutex
 
 	isCompacting     bool
 	compactStartTime time.Time
