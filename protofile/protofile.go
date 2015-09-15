@@ -19,8 +19,9 @@ type ReaderWriter interface {
 	Read(message proto.Message) (int64, error)
 	ReadAt(pos int64, message proto.Message) (int64, error)
 	ValueStreamReader(chanSize int) <-chan *oproto.ValueStream
-	WriteAt(pos int64, message proto.Message) (int64, error)
 	Write(message proto.Message) (int64, error)
+	WriteAt(pos int64, message proto.Message) (int64, error)
+	ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream, <-chan interface{})
 }
 
 // ProtoFile contains information for reading and writing to a protofile.

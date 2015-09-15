@@ -3,11 +3,14 @@ package protofile
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	"github.com/joaojeronimo/go-crc16"
 
 	"code.google.com/p/goprotobuf/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
 )
 
 // Write creates a file handle for writing a protofile, returning a ProtoFile.
@@ -54,4 +57,23 @@ func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 	}
 	pf.pos += bytes
 	return bytes, nil
+}
+
+func (pf *ProtoFile) ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream, <-chan interface{}) {
+	c := make(chan *oproto.ValueStream, chanSize)
+	done := make(chan interface{}, 1)
+	go func() {
+		defer close(done)
+		for value := range c {
+			_, err := pf.Write(value)
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+	}()
+	return c, done
 }

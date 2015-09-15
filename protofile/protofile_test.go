@@ -163,3 +163,57 @@ func (s *MySuite) TestValueStreamReader(c *C) {
 		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
 	}
 }
+
+func (s *MySuite) TestValueStreamWriter(c *C) {
+	filename := filepath.Join(c.MkDir(), "protofile_testvsr.dat")
+	defer os.Remove(filename)
+
+	{
+		// Write a temporary file containing two value streams
+		file, err := Write(filename)
+		c.Assert(err, IsNil)
+		defer file.Close()
+		writer, done := file.ValueStreamWriter(10)
+
+		vs := &oproto.ValueStream{
+			Variable: &oproto.StreamVariable{Name: proto.String("/test/bar")},
+			Value: []*oproto.Value{
+				{Timestamp: proto.Uint64(uint64(1)), DoubleValue: proto.Float64(1.1)},
+				{Timestamp: proto.Uint64(uint64(2)), DoubleValue: proto.Float64(1.2)},
+				{Timestamp: proto.Uint64(uint64(3)), DoubleValue: proto.Float64(1.3)},
+			},
+		}
+		writer <- vs
+
+		vs = &oproto.ValueStream{
+			Variable: &oproto.StreamVariable{Name: proto.String("/test/foo")},
+			Value: []*oproto.Value{
+				{Timestamp: proto.Uint64(uint64(1)), DoubleValue: proto.Float64(1.1)},
+				{Timestamp: proto.Uint64(uint64(2)), DoubleValue: proto.Float64(1.2)},
+				{Timestamp: proto.Uint64(uint64(3)), DoubleValue: proto.Float64(1.3)},
+			},
+		}
+		writer <- vs
+		close(writer)
+		<-done
+	}
+
+	{
+		// Read back the contents and check
+		file, err := Read(filename)
+		c.Assert(err, IsNil)
+		defer file.Close()
+		reader := file.ValueStreamReader(500)
+		vs := <-reader
+		c.Check(vs.GetVariable().GetName(), Equals, "/test/bar")
+		c.Check(vs.Value[0].GetDoubleValue(), Equals, 1.1)
+		c.Check(vs.Value[1].GetDoubleValue(), Equals, 1.2)
+		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
+
+		vs = <-reader
+		c.Check(vs.GetVariable().GetName(), Equals, "/test/foo")
+		c.Check(vs.Value[0].GetDoubleValue(), Equals, 1.1)
+		c.Check(vs.Value[1].GetDoubleValue(), Equals, 1.2)
+		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
+	}
+}
