@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"code.google.com/p/goprotobuf/proto"
+	"github.com/golang/protobuf/proto"
 	openinstrument_proto "github.com/dparrish/openinstrument/proto"
 )
 

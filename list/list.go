@@ -9,7 +9,7 @@ import (
 	"sort"
 	"time"
 
-	"code.google.com/p/goprotobuf/proto"
+	"github.com/golang/protobuf/proto"
 	storeclient "github.com/dparrish/openinstrument/client"
 	openinstrument_proto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"

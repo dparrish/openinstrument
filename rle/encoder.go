@@ -1,8 +1,8 @@
 package rle
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 func Encode(input <-chan *oproto.Value) <-chan *oproto.Value {

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"code.google.com/p/goprotobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 func NowMs() uint64 {

@@ -57,11 +57,22 @@ message StreamMutation {
 
 message StreamAggregation {
   enum AggregateType {
-    AVERAGE = 0;
-    MAX = 1;
-    MIN = 2;
-    MEDIAN = 3;
-    SUM = 4;
+		// Do not aggregate between streams
+		NONE = 0;
+		// Get an average of all values at a common time across streams
+    AVERAGE = 1;
+		// Get the maximum of all values at a common time across streams
+    MAX = 2;
+		// Get the minimum of all values at a common time across streams
+    MIN = 3;
+		// Get the median of all values at a common time across streams
+    MEDIAN = 4;
+		// Get the total of all values at a common time across streams
+    SUM = 5;
+		// Get the standard deviation of all values at a common time across streams
+    STDDEV = 6;
+		// Get a particular percentile (provided in percentile) of all values at a common time across streams
+		PERCENTILE = 7;
   }
   optional AggregateType type = 1;
 

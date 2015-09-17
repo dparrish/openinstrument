@@ -32,11 +32,13 @@ It has these top-level messages:
 */
 package openinstrument_proto
 
-import proto "code.google.com/p/goprotobuf/proto"
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
 import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
 var _ = math.Inf
 
 type StreamVariable_ValueType int32
@@ -145,26 +147,43 @@ func (x *StreamMutation_SampleType) UnmarshalJSON(data []byte) error {
 type StreamAggregation_AggregateType int32
 
 const (
-	StreamAggregation_AVERAGE StreamAggregation_AggregateType = 0
-	StreamAggregation_MAX     StreamAggregation_AggregateType = 1
-	StreamAggregation_MIN     StreamAggregation_AggregateType = 2
-	StreamAggregation_MEDIAN  StreamAggregation_AggregateType = 3
-	StreamAggregation_SUM     StreamAggregation_AggregateType = 4
+	// Do not aggregate between streams
+	StreamAggregation_NONE StreamAggregation_AggregateType = 0
+	// Get an average of all values at a common time across streams
+	StreamAggregation_AVERAGE StreamAggregation_AggregateType = 1
+	// Get the maximum of all values at a common time across streams
+	StreamAggregation_MAX StreamAggregation_AggregateType = 2
+	// Get the minimum of all values at a common time across streams
+	StreamAggregation_MIN StreamAggregation_AggregateType = 3
+	// Get the median of all values at a common time across streams
+	StreamAggregation_MEDIAN StreamAggregation_AggregateType = 4
+	// Get the total of all values at a common time across streams
+	StreamAggregation_SUM StreamAggregation_AggregateType = 5
+	// Get the standard deviation of all values at a common time across streams
+	StreamAggregation_STDDEV StreamAggregation_AggregateType = 6
+	// Get a particular percentile (provided in percentile) of all values at a common time across streams
+	StreamAggregation_PERCENTILE StreamAggregation_AggregateType = 7
 )
 
 var StreamAggregation_AggregateType_name = map[int32]string{
-	0: "AVERAGE",
-	1: "MAX",
-	2: "MIN",
-	3: "MEDIAN",
-	4: "SUM",
+	0: "NONE",
+	1: "AVERAGE",
+	2: "MAX",
+	3: "MIN",
+	4: "MEDIAN",
+	5: "SUM",
+	6: "STDDEV",
+	7: "PERCENTILE",
 }
 var StreamAggregation_AggregateType_value = map[string]int32{
-	"AVERAGE": 0,
-	"MAX":     1,
-	"MIN":     2,
-	"MEDIAN":  3,
-	"SUM":     4,
+	"NONE":       0,
+	"AVERAGE":    1,
+	"MAX":        2,
+	"MIN":        3,
+	"MEDIAN":     4,
+	"SUM":        5,
+	"STDDEV":     6,
+	"PERCENTILE": 7,
 }
 
 func (x StreamAggregation_AggregateType) Enum() *StreamAggregation_AggregateType {
@@ -401,7 +420,7 @@ func (m *StreamAggregation) GetType() StreamAggregation_AggregateType {
 	if m != nil && m.Type != nil {
 		return *m.Type
 	}
-	return StreamAggregation_AVERAGE
+	return StreamAggregation_NONE
 }
 
 func (m *StreamAggregation) GetLabel() []string {
