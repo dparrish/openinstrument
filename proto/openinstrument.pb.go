@@ -27,14 +27,21 @@ It has these top-level messages:
 	StoreFileHeader
 	RetentionPolicyItem
 	RetentionPolicy
-	StoreServer
+	StoreServerStatus
 	StoreConfig
+	PingRequest
+	PingResponse
 */
 package openinstrument_proto
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -60,21 +67,8 @@ var StreamVariable_ValueType_value = map[string]int32{
 	"RATE":    2,
 }
 
-func (x StreamVariable_ValueType) Enum() *StreamVariable_ValueType {
-	p := new(StreamVariable_ValueType)
-	*p = x
-	return p
-}
 func (x StreamVariable_ValueType) String() string {
 	return proto.EnumName(StreamVariable_ValueType_name, int32(x))
-}
-func (x *StreamVariable_ValueType) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(StreamVariable_ValueType_value, data, "StreamVariable_ValueType")
-	if err != nil {
-		return err
-	}
-	*x = StreamVariable_ValueType(value)
-	return nil
 }
 
 type StreamMutation_SampleType int32
@@ -127,21 +121,8 @@ var StreamMutation_SampleType_value = map[string]int32{
 	"ADD":         9,
 }
 
-func (x StreamMutation_SampleType) Enum() *StreamMutation_SampleType {
-	p := new(StreamMutation_SampleType)
-	*p = x
-	return p
-}
 func (x StreamMutation_SampleType) String() string {
 	return proto.EnumName(StreamMutation_SampleType_name, int32(x))
-}
-func (x *StreamMutation_SampleType) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(StreamMutation_SampleType_value, data, "StreamMutation_SampleType")
-	if err != nil {
-		return err
-	}
-	*x = StreamMutation_SampleType(value)
-	return nil
 }
 
 type StreamAggregation_AggregateType int32
@@ -186,68 +167,45 @@ var StreamAggregation_AggregateType_value = map[string]int32{
 	"PERCENTILE": 7,
 }
 
-func (x StreamAggregation_AggregateType) Enum() *StreamAggregation_AggregateType {
-	p := new(StreamAggregation_AggregateType)
-	*p = x
-	return p
-}
 func (x StreamAggregation_AggregateType) String() string {
 	return proto.EnumName(StreamAggregation_AggregateType_name, int32(x))
-}
-func (x *StreamAggregation_AggregateType) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(StreamAggregation_AggregateType_value, data, "StreamAggregation_AggregateType")
-	if err != nil {
-		return err
-	}
-	*x = StreamAggregation_AggregateType(value)
-	return nil
 }
 
 type RetentionPolicyItem_Target int32
 
 const (
-	RetentionPolicyItem_KEEP RetentionPolicyItem_Target = 1
-	RetentionPolicyItem_DROP RetentionPolicyItem_Target = 2
+	RetentionPolicyItem_UNKNOWN RetentionPolicyItem_Target = 0
+	RetentionPolicyItem_KEEP    RetentionPolicyItem_Target = 1
+	RetentionPolicyItem_DROP    RetentionPolicyItem_Target = 2
 )
 
 var RetentionPolicyItem_Target_name = map[int32]string{
+	0: "UNKNOWN",
 	1: "KEEP",
 	2: "DROP",
 }
 var RetentionPolicyItem_Target_value = map[string]int32{
-	"KEEP": 1,
-	"DROP": 2,
+	"UNKNOWN": 0,
+	"KEEP":    1,
+	"DROP":    2,
 }
 
-func (x RetentionPolicyItem_Target) Enum() *RetentionPolicyItem_Target {
-	p := new(RetentionPolicyItem_Target)
-	*p = x
-	return p
-}
 func (x RetentionPolicyItem_Target) String() string {
 	return proto.EnumName(RetentionPolicyItem_Target_name, int32(x))
 }
-func (x *RetentionPolicyItem_Target) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(RetentionPolicyItem_Target_value, data, "RetentionPolicyItem_Target")
-	if err != nil {
-		return err
-	}
-	*x = RetentionPolicyItem_Target(value)
-	return nil
-}
 
-type StoreServer_State int32
+type StoreServerStatus_State int32
 
 const (
-	StoreServer_UNKNOWN  StoreServer_State = 0
-	StoreServer_LOAD     StoreServer_State = 1
-	StoreServer_RUN      StoreServer_State = 2
-	StoreServer_DRAIN    StoreServer_State = 3
-	StoreServer_READONLY StoreServer_State = 4
-	StoreServer_SHUTDOWN StoreServer_State = 5
+	StoreServerStatus_UNKNOWN  StoreServerStatus_State = 0
+	StoreServerStatus_LOAD     StoreServerStatus_State = 1
+	StoreServerStatus_RUN      StoreServerStatus_State = 2
+	StoreServerStatus_DRAIN    StoreServerStatus_State = 3
+	StoreServerStatus_READONLY StoreServerStatus_State = 4
+	StoreServerStatus_SHUTDOWN StoreServerStatus_State = 5
 )
 
-var StoreServer_State_name = map[int32]string{
+var StoreServerStatus_State_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "LOAD",
 	2: "RUN",
@@ -255,7 +213,7 @@ var StoreServer_State_name = map[int32]string{
 	4: "READONLY",
 	5: "SHUTDOWN",
 }
-var StoreServer_State_value = map[string]int32{
+var StoreServerStatus_State_value = map[string]int32{
 	"UNKNOWN":  0,
 	"LOAD":     1,
 	"RUN":      2,
@@ -264,88 +222,37 @@ var StoreServer_State_value = map[string]int32{
 	"SHUTDOWN": 5,
 }
 
-func (x StoreServer_State) Enum() *StoreServer_State {
-	p := new(StoreServer_State)
-	*p = x
-	return p
-}
-func (x StoreServer_State) String() string {
-	return proto.EnumName(StoreServer_State_name, int32(x))
-}
-func (x *StoreServer_State) UnmarshalJSON(data []byte) error {
-	value, err := proto.UnmarshalJSONEnum(StoreServer_State_value, data, "StoreServer_State")
-	if err != nil {
-		return err
-	}
-	*x = StoreServer_State(value)
-	return nil
+func (x StoreServerStatus_State) String() string {
+	return proto.EnumName(StoreServerStatus_State_name, int32(x))
 }
 
 type LogMessage struct {
-	Timestamp        *uint64 `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
-	Message          *string `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Timestamp uint64 `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	Message   string `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
 }
 
 func (m *LogMessage) Reset()         { *m = LogMessage{} }
 func (m *LogMessage) String() string { return proto.CompactTextString(m) }
 func (*LogMessage) ProtoMessage()    {}
 
-func (m *LogMessage) GetTimestamp() uint64 {
-	if m != nil && m.Timestamp != nil {
-		return *m.Timestamp
-	}
-	return 0
-}
-
-func (m *LogMessage) GetMessage() string {
-	if m != nil && m.Message != nil {
-		return *m.Message
-	}
-	return ""
-}
-
 type Label struct {
-	Label            *string `protobuf:"bytes,1,req,name=label" json:"label,omitempty"`
-	Value            *string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Label string `protobuf:"bytes,1,opt,name=label" json:"label,omitempty"`
+	Value string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
 }
 
 func (m *Label) Reset()         { *m = Label{} }
 func (m *Label) String() string { return proto.CompactTextString(m) }
 func (*Label) ProtoMessage()    {}
 
-func (m *Label) GetLabel() string {
-	if m != nil && m.Label != nil {
-		return *m.Label
-	}
-	return ""
-}
-
-func (m *Label) GetValue() string {
-	if m != nil && m.Value != nil {
-		return *m.Value
-	}
-	return ""
-}
-
 type StreamVariable struct {
-	Name             *string                   `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
-	Label            []*Label                  `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
-	Type             *StreamVariable_ValueType `protobuf:"varint,3,opt,name=type,enum=openinstrument.proto.StreamVariable_ValueType" json:"type,omitempty"`
-	XXX_unrecognized []byte                    `json:"-"`
+	Name  string                   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Label []*Label                 `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
+	Type  StreamVariable_ValueType `protobuf:"varint,3,opt,name=type,enum=openinstrument.proto.StreamVariable_ValueType" json:"type,omitempty"`
 }
 
 func (m *StreamVariable) Reset()         { *m = StreamVariable{} }
 func (m *StreamVariable) String() string { return proto.CompactTextString(m) }
 func (*StreamVariable) ProtoMessage()    {}
-
-func (m *StreamVariable) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
 
 func (m *StreamVariable) GetLabel() []*Label {
 	if m != nil {
@@ -354,138 +261,53 @@ func (m *StreamVariable) GetLabel() []*Label {
 	return nil
 }
 
-func (m *StreamVariable) GetType() StreamVariable_ValueType {
-	if m != nil && m.Type != nil {
-		return *m.Type
-	}
-	return StreamVariable_UNKNOWN
-}
-
 type StreamMutation struct {
-	SampleType *StreamMutation_SampleType `protobuf:"varint,1,req,name=sample_type,enum=openinstrument.proto.StreamMutation_SampleType" json:"sample_type,omitempty"`
+	SampleType StreamMutation_SampleType `protobuf:"varint,1,opt,name=sample_type,enum=openinstrument.proto.StreamMutation_SampleType" json:"sample_type,omitempty"`
 	// Stretch or compress the stream so that there is a value every <sample_frequency> ms.
 	// Extra values between each sample will be aggregated according to <sample_type>.
 	// Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
 	// closest real values.
 	// Gaps in the stream of more than <max_gap_interpolate> samples will not be filled.
-	SampleFrequency   *uint32 `protobuf:"varint,2,opt,name=sample_frequency" json:"sample_frequency,omitempty"`
-	MaxGapInterpolate *uint32 `protobuf:"varint,3,opt,name=max_gap_interpolate,def=1" json:"max_gap_interpolate,omitempty"`
-	XXX_unrecognized  []byte  `json:"-"`
+	SampleFrequency   uint32 `protobuf:"varint,2,opt,name=sample_frequency" json:"sample_frequency,omitempty"`
+	MaxGapInterpolate uint32 `protobuf:"varint,3,opt,name=max_gap_interpolate" json:"max_gap_interpolate,omitempty"`
 }
 
 func (m *StreamMutation) Reset()         { *m = StreamMutation{} }
 func (m *StreamMutation) String() string { return proto.CompactTextString(m) }
 func (*StreamMutation) ProtoMessage()    {}
 
-const Default_StreamMutation_MaxGapInterpolate uint32 = 1
-
-func (m *StreamMutation) GetSampleType() StreamMutation_SampleType {
-	if m != nil && m.SampleType != nil {
-		return *m.SampleType
-	}
-	return StreamMutation_NONE
-}
-
-func (m *StreamMutation) GetSampleFrequency() uint32 {
-	if m != nil && m.SampleFrequency != nil {
-		return *m.SampleFrequency
-	}
-	return 0
-}
-
-func (m *StreamMutation) GetMaxGapInterpolate() uint32 {
-	if m != nil && m.MaxGapInterpolate != nil {
-		return *m.MaxGapInterpolate
-	}
-	return Default_StreamMutation_MaxGapInterpolate
-}
-
 type StreamAggregation struct {
-	Type *StreamAggregation_AggregateType `protobuf:"varint,1,opt,name=type,enum=openinstrument.proto.StreamAggregation_AggregateType" json:"type,omitempty"`
+	Type StreamAggregation_AggregateType `protobuf:"varint,1,opt,name=type,enum=openinstrument.proto.StreamAggregation_AggregateType" json:"type,omitempty"`
 	// Labels to aggregate by on the input streams. If no labels are specified, aggregation will be done on the variable
 	// only.
 	Label []string `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
 	// Points will be aggregated if they are less than sample_interval ms apart. Default is 30 seconds.
-	SampleInterval   *uint32 `protobuf:"varint,3,opt,name=sample_interval,def=30000" json:"sample_interval,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	SampleInterval uint32 `protobuf:"varint,3,opt,name=sample_interval" json:"sample_interval,omitempty"`
 }
 
 func (m *StreamAggregation) Reset()         { *m = StreamAggregation{} }
 func (m *StreamAggregation) String() string { return proto.CompactTextString(m) }
 func (*StreamAggregation) ProtoMessage()    {}
 
-const Default_StreamAggregation_SampleInterval uint32 = 30000
-
-func (m *StreamAggregation) GetType() StreamAggregation_AggregateType {
-	if m != nil && m.Type != nil {
-		return *m.Type
-	}
-	return StreamAggregation_NONE
-}
-
-func (m *StreamAggregation) GetLabel() []string {
-	if m != nil {
-		return m.Label
-	}
-	return nil
-}
-
-func (m *StreamAggregation) GetSampleInterval() uint32 {
-	if m != nil && m.SampleInterval != nil {
-		return *m.SampleInterval
-	}
-	return Default_StreamAggregation_SampleInterval
-}
-
 type Value struct {
 	// Milliseconds since epoch
-	Timestamp   *uint64  `protobuf:"varint,1,req,name=timestamp" json:"timestamp,omitempty"`
-	DoubleValue *float64 `protobuf:"fixed64,2,opt,name=double_value" json:"double_value,omitempty"`
-	StringValue *string  `protobuf:"bytes,3,opt,name=string_value" json:"string_value,omitempty"`
+	Timestamp   uint64  `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	DoubleValue float64 `protobuf:"fixed64,2,opt,name=double_value" json:"double_value,omitempty"`
+	StringValue string  `protobuf:"bytes,3,opt,name=string_value" json:"string_value,omitempty"`
 	// Used for run-length encoding
-	EndTimestamp     *uint64 `protobuf:"varint,4,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	EndTimestamp uint64 `protobuf:"varint,4,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
 }
 
 func (m *Value) Reset()         { *m = Value{} }
 func (m *Value) String() string { return proto.CompactTextString(m) }
 func (*Value) ProtoMessage()    {}
 
-func (m *Value) GetTimestamp() uint64 {
-	if m != nil && m.Timestamp != nil {
-		return *m.Timestamp
-	}
-	return 0
-}
-
-func (m *Value) GetDoubleValue() float64 {
-	if m != nil && m.DoubleValue != nil {
-		return *m.DoubleValue
-	}
-	return 0
-}
-
-func (m *Value) GetStringValue() string {
-	if m != nil && m.StringValue != nil {
-		return *m.StringValue
-	}
-	return ""
-}
-
-func (m *Value) GetEndTimestamp() uint64 {
-	if m != nil && m.EndTimestamp != nil {
-		return *m.EndTimestamp
-	}
-	return 0
-}
-
 type ValueStream struct {
 	Variable *StreamVariable `protobuf:"bytes,2,opt,name=variable" json:"variable,omitempty"`
 	Value    []*Value        `protobuf:"bytes,4,rep,name=value" json:"value,omitempty"`
 	// An optional set of mutations that have been applied to this stream.
 	// If the stream contains the raw data, this should be empty.
-	Mutation         []*StreamMutation `protobuf:"bytes,5,rep,name=mutation" json:"mutation,omitempty"`
-	XXX_unrecognized []byte            `json:"-"`
+	Mutation []*StreamMutation `protobuf:"bytes,5,rep,name=mutation" json:"mutation,omitempty"`
 }
 
 func (m *ValueStream) Reset()         { *m = ValueStream{} }
@@ -519,11 +341,10 @@ type Query struct {
 	Variable []*StreamVariable `protobuf:"bytes,2,rep,name=variable" json:"variable,omitempty"`
 	Constant []float64         `protobuf:"fixed64,3,rep,name=constant" json:"constant,omitempty"`
 	// Milliseconds since epoch
-	MinTimestamp     *uint64              `protobuf:"varint,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
-	MaxTimestamp     *uint64              `protobuf:"varint,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
-	Mutation         []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
-	Aggregation      []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
-	XXX_unrecognized []byte               `json:"-"`
+	MinTimestamp uint64               `protobuf:"varint,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
+	MaxTimestamp uint64               `protobuf:"varint,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
+	Mutation     []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
+	Aggregation  []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
 }
 
 func (m *Query) Reset()         { *m = Query{} }
@@ -544,27 +365,6 @@ func (m *Query) GetVariable() []*StreamVariable {
 	return nil
 }
 
-func (m *Query) GetConstant() []float64 {
-	if m != nil {
-		return m.Constant
-	}
-	return nil
-}
-
-func (m *Query) GetMinTimestamp() uint64 {
-	if m != nil && m.MinTimestamp != nil {
-		return *m.MinTimestamp
-	}
-	return 0
-}
-
-func (m *Query) GetMaxTimestamp() uint64 {
-	if m != nil && m.MaxTimestamp != nil {
-		return *m.MaxTimestamp
-	}
-	return 0
-}
-
 func (m *Query) GetMutation() []*StreamMutation {
 	if m != nil {
 		return m.Mutation
@@ -582,46 +382,29 @@ func (m *Query) GetAggregation() []*StreamAggregation {
 type GetRequest struct {
 	Variable *StreamVariable `protobuf:"bytes,9,opt,name=variable" json:"variable,omitempty"`
 	// Milliseconds since epoch
-	MinTimestamp *uint64 `protobuf:"varint,2,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
-	MaxTimestamp *uint64 `protobuf:"varint,3,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
+	MinTimestamp uint64 `protobuf:"varint,2,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
+	MaxTimestamp uint64 `protobuf:"varint,3,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
 	// If mutations or aggregations are supplied, the GetResponse will have a separate stream for each change requested.
 	Mutation    []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
 	Aggregation []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
 	// Limit to how many variables can be returned in a standard GetRequest. This can be overridden if required.
-	MaxVariables *uint32 `protobuf:"varint,8,opt,name=max_variables" json:"max_variables,omitempty"`
+	MaxVariables uint32 `protobuf:"varint,8,opt,name=max_variables" json:"max_variables,omitempty"`
 	// This request has been forwarded by another store server and should not be forwarded again.
 	// This shouldn't happen but is here as a failsafe.
-	Forwarded *bool `protobuf:"varint,10,opt,name=forwarded,def=0" json:"forwarded,omitempty"`
+	Forwarded bool `protobuf:"varint,10,opt,name=forwarded" json:"forwarded,omitempty"`
 	// Limit the number of values that can be returned for each variable.
-	MaxValues        *uint32 `protobuf:"varint,11,opt,name=max_values" json:"max_values,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	MaxValues uint32 `protobuf:"varint,11,opt,name=max_values" json:"max_values,omitempty"`
 }
 
 func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 
-const Default_GetRequest_Forwarded bool = false
-
 func (m *GetRequest) GetVariable() *StreamVariable {
 	if m != nil {
 		return m.Variable
 	}
 	return nil
-}
-
-func (m *GetRequest) GetMinTimestamp() uint64 {
-	if m != nil && m.MinTimestamp != nil {
-		return *m.MinTimestamp
-	}
-	return 0
-}
-
-func (m *GetRequest) GetMaxTimestamp() uint64 {
-	if m != nil && m.MaxTimestamp != nil {
-		return *m.MaxTimestamp
-	}
-	return 0
 }
 
 func (m *GetRequest) GetMutation() []*StreamMutation {
@@ -638,54 +421,18 @@ func (m *GetRequest) GetAggregation() []*StreamAggregation {
 	return nil
 }
 
-func (m *GetRequest) GetMaxVariables() uint32 {
-	if m != nil && m.MaxVariables != nil {
-		return *m.MaxVariables
-	}
-	return 0
-}
-
-func (m *GetRequest) GetForwarded() bool {
-	if m != nil && m.Forwarded != nil {
-		return *m.Forwarded
-	}
-	return Default_GetRequest_Forwarded
-}
-
-func (m *GetRequest) GetMaxValues() uint32 {
-	if m != nil && m.MaxValues != nil {
-		return *m.MaxValues
-	}
-	return 0
-}
-
 type GetResponse struct {
-	Success      *bool   `protobuf:"varint,1,req,name=success" json:"success,omitempty"`
-	Errormessage *string `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
+	Success      bool   `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
+	Errormessage string `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
 	// Contains a separate stream for every mutation requested in GetRequest, in the same order. If no mutations are
 	// requested, the response will contain a single stream of the raw data.
-	Stream           []*ValueStream `protobuf:"bytes,3,rep,name=stream" json:"stream,omitempty"`
-	Timer            []*LogMessage  `protobuf:"bytes,4,rep,name=timer" json:"timer,omitempty"`
-	XXX_unrecognized []byte         `json:"-"`
+	Stream []*ValueStream `protobuf:"bytes,3,rep,name=stream" json:"stream,omitempty"`
+	Timer  []*LogMessage  `protobuf:"bytes,4,rep,name=timer" json:"timer,omitempty"`
 }
 
 func (m *GetResponse) Reset()         { *m = GetResponse{} }
 func (m *GetResponse) String() string { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()    {}
-
-func (m *GetResponse) GetSuccess() bool {
-	if m != nil && m.Success != nil {
-		return *m.Success
-	}
-	return false
-}
-
-func (m *GetResponse) GetErrormessage() string {
-	if m != nil && m.Errormessage != nil {
-		return *m.Errormessage
-	}
-	return ""
-}
 
 func (m *GetResponse) GetStream() []*ValueStream {
 	if m != nil {
@@ -705,15 +452,12 @@ type AddRequest struct {
 	Stream []*ValueStream `protobuf:"bytes,1,rep,name=stream" json:"stream,omitempty"`
 	// This request has been forwarded by another store server and should not be forwarded again.
 	// This shouldn't happen but is here as a failsafe.
-	Forwarded        *bool  `protobuf:"varint,2,opt,name=forwarded,def=0" json:"forwarded,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Forwarded bool `protobuf:"varint,2,opt,name=forwarded" json:"forwarded,omitempty"`
 }
 
 func (m *AddRequest) Reset()         { *m = AddRequest{} }
 func (m *AddRequest) String() string { return proto.CompactTextString(m) }
 func (*AddRequest) ProtoMessage()    {}
-
-const Default_AddRequest_Forwarded bool = false
 
 func (m *AddRequest) GetStream() []*ValueStream {
 	if m != nil {
@@ -722,37 +466,15 @@ func (m *AddRequest) GetStream() []*ValueStream {
 	return nil
 }
 
-func (m *AddRequest) GetForwarded() bool {
-	if m != nil && m.Forwarded != nil {
-		return *m.Forwarded
-	}
-	return Default_AddRequest_Forwarded
-}
-
 type AddResponse struct {
-	Success          *bool         `protobuf:"varint,1,req,name=success" json:"success,omitempty"`
-	Errormessage     *string       `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
-	Timer            []*LogMessage `protobuf:"bytes,3,rep,name=timer" json:"timer,omitempty"`
-	XXX_unrecognized []byte        `json:"-"`
+	Success      bool          `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
+	Errormessage string        `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
+	Timer        []*LogMessage `protobuf:"bytes,3,rep,name=timer" json:"timer,omitempty"`
 }
 
 func (m *AddResponse) Reset()         { *m = AddResponse{} }
 func (m *AddResponse) String() string { return proto.CompactTextString(m) }
 func (*AddResponse) ProtoMessage()    {}
-
-func (m *AddResponse) GetSuccess() bool {
-	if m != nil && m.Success != nil {
-		return *m.Success
-	}
-	return false
-}
-
-func (m *AddResponse) GetErrormessage() string {
-	if m != nil && m.Errormessage != nil {
-		return *m.Errormessage
-	}
-	return ""
-}
 
 func (m *AddResponse) GetTimer() []*LogMessage {
 	if m != nil {
@@ -764,18 +486,15 @@ func (m *AddResponse) GetTimer() []*LogMessage {
 type ListRequest struct {
 	Prefix *StreamVariable `protobuf:"bytes,3,opt,name=prefix" json:"prefix,omitempty"`
 	// Limit to how many variables can be returned in a standard ListRequest. This can be overridden if required.
-	MaxVariables *uint32 `protobuf:"varint,2,opt,name=max_variables" json:"max_variables,omitempty"`
+	MaxVariables uint32 `protobuf:"varint,2,opt,name=max_variables" json:"max_variables,omitempty"`
 	// Maximum age of variable.
 	// This controls how far back the search will go for variables that were used in the past but not currently.
-	MaxAge           *uint64 `protobuf:"varint,4,opt,name=max_age,def=86400000" json:"max_age,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	MaxAge uint64 `protobuf:"varint,4,opt,name=max_age" json:"max_age,omitempty"`
 }
 
 func (m *ListRequest) Reset()         { *m = ListRequest{} }
 func (m *ListRequest) String() string { return proto.CompactTextString(m) }
 func (*ListRequest) ProtoMessage()    {}
-
-const Default_ListRequest_MaxAge uint64 = 86400000
 
 func (m *ListRequest) GetPrefix() *StreamVariable {
 	if m != nil {
@@ -784,48 +503,19 @@ func (m *ListRequest) GetPrefix() *StreamVariable {
 	return nil
 }
 
-func (m *ListRequest) GetMaxVariables() uint32 {
-	if m != nil && m.MaxVariables != nil {
-		return *m.MaxVariables
-	}
-	return 0
-}
-
-func (m *ListRequest) GetMaxAge() uint64 {
-	if m != nil && m.MaxAge != nil {
-		return *m.MaxAge
-	}
-	return Default_ListRequest_MaxAge
-}
-
 type ListResponse struct {
-	Success      *bool   `protobuf:"varint,1,req,name=success" json:"success,omitempty"`
-	Errormessage *string `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
+	Success      bool   `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
+	Errormessage string `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
 	// Although this uses the ValueStream for returning a list of variables, the expectation is that the value field is
 	// empty.
-	Stream           []*ValueStream    `protobuf:"bytes,3,rep,name=stream" json:"stream,omitempty"`
-	Variable         []*StreamVariable `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
-	Timer            []*LogMessage     `protobuf:"bytes,5,rep,name=timer" json:"timer,omitempty"`
-	XXX_unrecognized []byte            `json:"-"`
+	Stream   []*ValueStream    `protobuf:"bytes,3,rep,name=stream" json:"stream,omitempty"`
+	Variable []*StreamVariable `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
+	Timer    []*LogMessage     `protobuf:"bytes,5,rep,name=timer" json:"timer,omitempty"`
 }
 
 func (m *ListResponse) Reset()         { *m = ListResponse{} }
 func (m *ListResponse) String() string { return proto.CompactTextString(m) }
 func (*ListResponse) ProtoMessage()    {}
-
-func (m *ListResponse) GetSuccess() bool {
-	if m != nil && m.Success != nil {
-		return *m.Success
-	}
-	return false
-}
-
-func (m *ListResponse) GetErrormessage() string {
-	if m != nil && m.Errormessage != nil {
-		return *m.Errormessage
-	}
-	return ""
-}
 
 func (m *ListResponse) GetStream() []*ValueStream {
 	if m != nil {
@@ -849,19 +539,16 @@ func (m *ListResponse) GetTimer() []*LogMessage {
 }
 
 type StoreFileHeaderIndex struct {
-	Variable         *StreamVariable `protobuf:"bytes,1,req,name=variable" json:"variable,omitempty"`
-	Offset           *uint64         `protobuf:"fixed64,2,req,name=offset" json:"offset,omitempty"`
-	NumValues        *uint32         `protobuf:"fixed32,3,opt,name=num_values,def=0" json:"num_values,omitempty"`
-	MinTimestamp     *uint64         `protobuf:"fixed64,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
-	MaxTimestamp     *uint64         `protobuf:"fixed64,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
-	XXX_unrecognized []byte          `json:"-"`
+	Variable     *StreamVariable `protobuf:"bytes,1,opt,name=variable" json:"variable,omitempty"`
+	Offset       uint64          `protobuf:"fixed64,2,opt,name=offset" json:"offset,omitempty"`
+	NumValues    uint32          `protobuf:"fixed32,3,opt,name=num_values" json:"num_values,omitempty"`
+	MinTimestamp uint64          `protobuf:"fixed64,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
+	MaxTimestamp uint64          `protobuf:"fixed64,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
 }
 
 func (m *StoreFileHeaderIndex) Reset()         { *m = StoreFileHeaderIndex{} }
 func (m *StoreFileHeaderIndex) String() string { return proto.CompactTextString(m) }
 func (*StoreFileHeaderIndex) ProtoMessage()    {}
-
-const Default_StoreFileHeaderIndex_NumValues uint32 = 0
 
 func (m *StoreFileHeaderIndex) GetVariable() *StreamVariable {
 	if m != nil {
@@ -870,70 +557,18 @@ func (m *StoreFileHeaderIndex) GetVariable() *StreamVariable {
 	return nil
 }
 
-func (m *StoreFileHeaderIndex) GetOffset() uint64 {
-	if m != nil && m.Offset != nil {
-		return *m.Offset
-	}
-	return 0
-}
-
-func (m *StoreFileHeaderIndex) GetNumValues() uint32 {
-	if m != nil && m.NumValues != nil {
-		return *m.NumValues
-	}
-	return Default_StoreFileHeaderIndex_NumValues
-}
-
-func (m *StoreFileHeaderIndex) GetMinTimestamp() uint64 {
-	if m != nil && m.MinTimestamp != nil {
-		return *m.MinTimestamp
-	}
-	return 0
-}
-
-func (m *StoreFileHeaderIndex) GetMaxTimestamp() uint64 {
-	if m != nil && m.MaxTimestamp != nil {
-		return *m.MaxTimestamp
-	}
-	return 0
-}
-
 type StoreFileHeader struct {
-	Version          *uint32                 `protobuf:"varint,6,opt,name=version,def=1" json:"version,omitempty"`
-	StartTimestamp   *uint64                 `protobuf:"varint,1,opt,name=start_timestamp" json:"start_timestamp,omitempty"`
-	EndTimestamp     *uint64                 `protobuf:"varint,2,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
-	Variable         []*StreamVariable       `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
-	Index            []*StoreFileHeaderIndex `protobuf:"bytes,5,rep,name=index" json:"index,omitempty"`
-	EndKey           *string                 `protobuf:"bytes,7,opt,name=end_key" json:"end_key,omitempty"`
-	XXX_unrecognized []byte                  `json:"-"`
+	Version        uint32                  `protobuf:"varint,6,opt,name=version" json:"version,omitempty"`
+	StartTimestamp uint64                  `protobuf:"varint,1,opt,name=start_timestamp" json:"start_timestamp,omitempty"`
+	EndTimestamp   uint64                  `protobuf:"varint,2,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
+	Variable       []*StreamVariable       `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
+	Index          []*StoreFileHeaderIndex `protobuf:"bytes,5,rep,name=index" json:"index,omitempty"`
+	EndKey         string                  `protobuf:"bytes,7,opt,name=end_key" json:"end_key,omitempty"`
 }
 
 func (m *StoreFileHeader) Reset()         { *m = StoreFileHeader{} }
 func (m *StoreFileHeader) String() string { return proto.CompactTextString(m) }
 func (*StoreFileHeader) ProtoMessage()    {}
-
-const Default_StoreFileHeader_Version uint32 = 1
-
-func (m *StoreFileHeader) GetVersion() uint32 {
-	if m != nil && m.Version != nil {
-		return *m.Version
-	}
-	return Default_StoreFileHeader_Version
-}
-
-func (m *StoreFileHeader) GetStartTimestamp() uint64 {
-	if m != nil && m.StartTimestamp != nil {
-		return *m.StartTimestamp
-	}
-	return 0
-}
-
-func (m *StoreFileHeader) GetEndTimestamp() uint64 {
-	if m != nil && m.EndTimestamp != nil {
-		return *m.EndTimestamp
-	}
-	return 0
-}
 
 func (m *StoreFileHeader) GetVariable() []*StreamVariable {
 	if m != nil {
@@ -949,49 +584,24 @@ func (m *StoreFileHeader) GetIndex() []*StoreFileHeaderIndex {
 	return nil
 }
 
-func (m *StoreFileHeader) GetEndKey() string {
-	if m != nil && m.EndKey != nil {
-		return *m.EndKey
-	}
-	return ""
-}
-
 type RetentionPolicyItem struct {
-	Variable         []*StreamVariable           `protobuf:"bytes,1,rep,name=variable" json:"variable,omitempty"`
-	Comment          []string                    `protobuf:"bytes,2,rep,name=comment" json:"comment,omitempty"`
-	Policy           *RetentionPolicyItem_Target `protobuf:"varint,3,req,name=policy,enum=openinstrument.proto.RetentionPolicyItem_Target" json:"policy,omitempty"`
-	Mutation         []*StreamMutation           `protobuf:"bytes,4,rep,name=mutation" json:"mutation,omitempty"`
-	MinAge           *uint64                     `protobuf:"varint,5,opt,name=min_age,def=0" json:"min_age,omitempty"`
-	MaxAge           *uint64                     `protobuf:"varint,6,opt,name=max_age,def=0" json:"max_age,omitempty"`
-	XXX_unrecognized []byte                      `json:"-"`
+	Variable []*StreamVariable          `protobuf:"bytes,1,rep,name=variable" json:"variable,omitempty"`
+	Comment  []string                   `protobuf:"bytes,2,rep,name=comment" json:"comment,omitempty"`
+	Policy   RetentionPolicyItem_Target `protobuf:"varint,3,opt,name=policy,enum=openinstrument.proto.RetentionPolicyItem_Target" json:"policy,omitempty"`
+	Mutation []*StreamMutation          `protobuf:"bytes,4,rep,name=mutation" json:"mutation,omitempty"`
+	MinAge   uint64                     `protobuf:"varint,5,opt,name=min_age" json:"min_age,omitempty"`
+	MaxAge   uint64                     `protobuf:"varint,6,opt,name=max_age" json:"max_age,omitempty"`
 }
 
 func (m *RetentionPolicyItem) Reset()         { *m = RetentionPolicyItem{} }
 func (m *RetentionPolicyItem) String() string { return proto.CompactTextString(m) }
 func (*RetentionPolicyItem) ProtoMessage()    {}
 
-const Default_RetentionPolicyItem_MinAge uint64 = 0
-const Default_RetentionPolicyItem_MaxAge uint64 = 0
-
 func (m *RetentionPolicyItem) GetVariable() []*StreamVariable {
 	if m != nil {
 		return m.Variable
 	}
 	return nil
-}
-
-func (m *RetentionPolicyItem) GetComment() []string {
-	if m != nil {
-		return m.Comment
-	}
-	return nil
-}
-
-func (m *RetentionPolicyItem) GetPolicy() RetentionPolicyItem_Target {
-	if m != nil && m.Policy != nil {
-		return *m.Policy
-	}
-	return RetentionPolicyItem_KEEP
 }
 
 func (m *RetentionPolicyItem) GetMutation() []*StreamMutation {
@@ -1001,31 +611,14 @@ func (m *RetentionPolicyItem) GetMutation() []*StreamMutation {
 	return nil
 }
 
-func (m *RetentionPolicyItem) GetMinAge() uint64 {
-	if m != nil && m.MinAge != nil {
-		return *m.MinAge
-	}
-	return Default_RetentionPolicyItem_MinAge
-}
-
-func (m *RetentionPolicyItem) GetMaxAge() uint64 {
-	if m != nil && m.MaxAge != nil {
-		return *m.MaxAge
-	}
-	return Default_RetentionPolicyItem_MaxAge
-}
-
 type RetentionPolicy struct {
-	Policy           []*RetentionPolicyItem `protobuf:"bytes,1,rep,name=policy" json:"policy,omitempty"`
-	Interval         *uint32                `protobuf:"varint,2,opt,name=interval,def=600" json:"interval,omitempty"`
-	XXX_unrecognized []byte                 `json:"-"`
+	Policy   []*RetentionPolicyItem `protobuf:"bytes,1,rep,name=policy" json:"policy,omitempty"`
+	Interval uint32                 `protobuf:"varint,2,opt,name=interval" json:"interval,omitempty"`
 }
 
 func (m *RetentionPolicy) Reset()         { *m = RetentionPolicy{} }
 func (m *RetentionPolicy) String() string { return proto.CompactTextString(m) }
 func (*RetentionPolicy) ProtoMessage()    {}
-
-const Default_RetentionPolicy_Interval uint32 = 600
 
 func (m *RetentionPolicy) GetPolicy() []*RetentionPolicyItem {
 	if m != nil {
@@ -1034,77 +627,33 @@ func (m *RetentionPolicy) GetPolicy() []*RetentionPolicyItem {
 	return nil
 }
 
-func (m *RetentionPolicy) GetInterval() uint32 {
-	if m != nil && m.Interval != nil {
-		return *m.Interval
-	}
-	return Default_RetentionPolicy_Interval
-}
-
-type StoreServer struct {
-	Address     *string            `protobuf:"bytes,1,req,name=address" json:"address,omitempty"`
-	State       *StoreServer_State `protobuf:"varint,2,opt,name=state,enum=openinstrument.proto.StoreServer_State" json:"state,omitempty"`
-	LastUpdated *uint64            `protobuf:"varint,3,opt,name=last_updated" json:"last_updated,omitempty"`
+type StoreServerStatus struct {
+	Address     string                  `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
+	State       StoreServerStatus_State `protobuf:"varint,2,opt,name=state,enum=openinstrument.proto.StoreServerStatus_State" json:"state,omitempty"`
+	LastUpdated uint64                  `protobuf:"varint,3,opt,name=last_updated" json:"last_updated,omitempty"`
 	// Optional name for use in the hash ring. This should never change once the
 	// server has been added but can be used to replace a server with another one
 	// on a different host.
 	// If this is not set, the address is used.
-	Name *string `protobuf:"bytes,5,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,5,opt,name=name" json:"name,omitempty"`
 	// Desired size in bytes for indexed datastore files
-	TargetIndexedFileSize *uint64 `protobuf:"varint,4,opt,name=target_indexed_file_size" json:"target_indexed_file_size,omitempty"`
-	XXX_unrecognized      []byte  `json:"-"`
+	TargetIndexedFileSize uint64 `protobuf:"varint,4,opt,name=target_indexed_file_size" json:"target_indexed_file_size,omitempty"`
 }
 
-func (m *StoreServer) Reset()         { *m = StoreServer{} }
-func (m *StoreServer) String() string { return proto.CompactTextString(m) }
-func (*StoreServer) ProtoMessage()    {}
-
-func (m *StoreServer) GetAddress() string {
-	if m != nil && m.Address != nil {
-		return *m.Address
-	}
-	return ""
-}
-
-func (m *StoreServer) GetState() StoreServer_State {
-	if m != nil && m.State != nil {
-		return *m.State
-	}
-	return StoreServer_UNKNOWN
-}
-
-func (m *StoreServer) GetLastUpdated() uint64 {
-	if m != nil && m.LastUpdated != nil {
-		return *m.LastUpdated
-	}
-	return 0
-}
-
-func (m *StoreServer) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
-}
-
-func (m *StoreServer) GetTargetIndexedFileSize() uint64 {
-	if m != nil && m.TargetIndexedFileSize != nil {
-		return *m.TargetIndexedFileSize
-	}
-	return 0
-}
+func (m *StoreServerStatus) Reset()         { *m = StoreServerStatus{} }
+func (m *StoreServerStatus) String() string { return proto.CompactTextString(m) }
+func (*StoreServerStatus) ProtoMessage()    {}
 
 type StoreConfig struct {
-	Server           []*StoreServer   `protobuf:"bytes,1,rep,name=server" json:"server,omitempty"`
-	RetentionPolicy  *RetentionPolicy `protobuf:"bytes,2,opt,name=retention_policy" json:"retention_policy,omitempty"`
-	XXX_unrecognized []byte           `json:"-"`
+	Server          []*StoreServerStatus `protobuf:"bytes,1,rep,name=server" json:"server,omitempty"`
+	RetentionPolicy *RetentionPolicy     `protobuf:"bytes,2,opt,name=retention_policy" json:"retention_policy,omitempty"`
 }
 
 func (m *StoreConfig) Reset()         { *m = StoreConfig{} }
 func (m *StoreConfig) String() string { return proto.CompactTextString(m) }
 func (*StoreConfig) ProtoMessage()    {}
 
-func (m *StoreConfig) GetServer() []*StoreServer {
+func (m *StoreConfig) GetServer() []*StoreServerStatus {
 	if m != nil {
 		return m.Server
 	}
@@ -1118,10 +667,168 @@ func (m *StoreConfig) GetRetentionPolicy() *RetentionPolicy {
 	return nil
 }
 
+type PingRequest struct {
+	Payload string `protobuf:"bytes,1,opt,name=payload" json:"payload,omitempty"`
+}
+
+func (m *PingRequest) Reset()         { *m = PingRequest{} }
+func (m *PingRequest) String() string { return proto.CompactTextString(m) }
+func (*PingRequest) ProtoMessage()    {}
+
+type PingResponse struct {
+	Payload string `protobuf:"bytes,1,opt,name=payload" json:"payload,omitempty"`
+}
+
+func (m *PingResponse) Reset()         { *m = PingResponse{} }
+func (m *PingResponse) String() string { return proto.CompactTextString(m) }
+func (*PingResponse) ProtoMessage()    {}
+
 func init() {
 	proto.RegisterEnum("openinstrument.proto.StreamVariable_ValueType", StreamVariable_ValueType_name, StreamVariable_ValueType_value)
 	proto.RegisterEnum("openinstrument.proto.StreamMutation_SampleType", StreamMutation_SampleType_name, StreamMutation_SampleType_value)
 	proto.RegisterEnum("openinstrument.proto.StreamAggregation_AggregateType", StreamAggregation_AggregateType_name, StreamAggregation_AggregateType_value)
 	proto.RegisterEnum("openinstrument.proto.RetentionPolicyItem_Target", RetentionPolicyItem_Target_name, RetentionPolicyItem_Target_value)
-	proto.RegisterEnum("openinstrument.proto.StoreServer_State", StoreServer_State_name, StoreServer_State_value)
+	proto.RegisterEnum("openinstrument.proto.StoreServerStatus_State", StoreServerStatus_State_name, StoreServerStatus_State_value)
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// Client API for Store service
+
+type StoreClient interface {
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error)
+}
+
+type storeClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewStoreClient(cc *grpc.ClientConn) StoreClient {
+	return &storeClient{cc}
+}
+
+func (c *storeClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/Ping", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
+	out := new(ListResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/List", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/Get", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeClient) Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error) {
+	out := new(AddResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/Add", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for Store service
+
+type StoreServer interface {
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	List(context.Context, *ListRequest) (*ListResponse, error)
+	Get(context.Context, *GetRequest) (*GetResponse, error)
+	Add(context.Context, *AddRequest) (*AddResponse, error)
+}
+
+func RegisterStoreServer(s *grpc.Server, srv StoreServer) {
+	s.RegisterService(&_Store_serviceDesc, srv)
+}
+
+func _Store_Ping_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(PingRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).Ping(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Store_List_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(ListRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).List(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Store_Get_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(GetRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).Get(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Store_Add_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(AddRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).Add(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+var _Store_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "openinstrument.proto.Store",
+	HandlerType: (*StoreServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Ping",
+			Handler:    _Store_Ping_Handler,
+		},
+		{
+			MethodName: "List",
+			Handler:    _Store_List_Handler,
+		},
+		{
+			MethodName: "Get",
+			Handler:    _Store_Get_Handler,
+		},
+		{
+			MethodName: "Add",
+			Handler:    _Store_Add_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{},
 }

@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	openinstrument_proto "github.com/dparrish/openinstrument/proto"
 )
 
@@ -73,11 +72,11 @@ func (v Variable) AsProto() (p *openinstrument_proto.StreamVariable) {
 // AsProto encodes the Variable into an existing protobuf.
 func (v Variable) ToProto(p *openinstrument_proto.StreamVariable) {
 	p.Reset()
-	p.Name = proto.String(v.Variable)
+	p.Name = v.Variable
 	p.Label = make([]*openinstrument_proto.Label, len(v.Labels))
 	var i int
 	for key, value := range v.Labels {
-		p.Label[i] = &openinstrument_proto.Label{Label: proto.String(key), Value: proto.String(value)}
+		p.Label[i] = &openinstrument_proto.Label{Label: key, Value: value}
 		i++
 	}
 }
@@ -110,11 +109,11 @@ func (v *Variable) ParseFromString(textvar string) error {
 
 // ParseFromProto extracts the details from a protobuf.
 func (v *Variable) ParseFromProto(p *openinstrument_proto.StreamVariable) error {
-	v.Variable = p.GetName()
+	v.Variable = p.Name
 	// Copy labels
-	v.Labels = make(map[string]string, len(p.GetLabel()))
-	for _, label := range p.GetLabel() {
-		v.Labels[label.GetLabel()] = label.GetValue()
+	v.Labels = make(map[string]string, len(p.Label))
+	for _, label := range p.Label {
+		v.Labels[label.Label] = label.Value
 	}
 	return nil
 }
@@ -175,6 +174,9 @@ func NewFromString(textvar string) *Variable {
 // NewFromProto creates a new Variable from the supplied protobuf.
 func NewFromProto(p *openinstrument_proto.StreamVariable) *Variable {
 	v := new(Variable)
+	if p == nil {
+		return v
+	}
 	if err := v.ParseFromProto(p); err != nil {
 		log.Println(err)
 		return nil

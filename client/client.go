@@ -10,14 +10,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/variable"
+	"github.com/golang/protobuf/proto"
 )
 
 type StoreClient struct {
-	servers  []oproto.StoreServer
+	servers  []oproto.StoreServerStatus
 	hostport []string
 }
 
@@ -32,7 +32,7 @@ func NewAuto(hostport string) (*StoreClient, error) {
 	}
 
 	// Use the returned config to create a new client
-	client.servers = make([]oproto.StoreServer, 0)
+	client.servers = make([]oproto.StoreServerStatus, 0)
 	for _, server := range config.GetServer() {
 		client.servers = append(client.servers, *server)
 	}
@@ -41,7 +41,7 @@ func NewAuto(hostport string) (*StoreClient, error) {
 
 // New uses a config file to create a new StoreClient that can talk to the entire cluster.
 func New(configFile string) (*StoreClient, error) {
-	config, err := store_config.NewConfig(configFile)
+	config, err := store_config.New(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func New(configFile string) (*StoreClient, error) {
 	}
 
 	client := new(StoreClient)
-	client.servers = make([]oproto.StoreServer, 0)
+	client.servers = make([]oproto.StoreServerStatus, 0)
 	for _, server := range config.Config.GetServer() {
 		client.servers = append(client.servers, *server)
 	}
@@ -60,10 +60,10 @@ func New(configFile string) (*StoreClient, error) {
 // NewDirect creates a StoreClient that will talk to a single server.
 func NewDirect(hostport string) *StoreClient {
 	client := new(StoreClient)
-	state := oproto.StoreServer_RUN
-	client.servers = append(make([]oproto.StoreServer, 0), oproto.StoreServer{
-		Address: &hostport,
-		State:   &state,
+	state := oproto.StoreServerStatus_RUN
+	client.servers = append(make([]oproto.StoreServerStatus, 0), oproto.StoreServerStatus{
+		Address: hostport,
+		State:   state,
 	})
 	return client
 }
@@ -119,9 +119,9 @@ func (sc *StoreClient) doRequest(hostport string, path string, request, response
 func (sc *StoreClient) SimpleList(prefix string) ([]*oproto.ListResponse, error) {
 	request := &oproto.ListRequest{
 		Prefix: &oproto.StreamVariable{
-			Name: proto.String(prefix),
+			Name: prefix,
 		},
-		MaxVariables: proto.Uint32(10),
+		MaxVariables: 10,
 	}
 	return sc.List(request)
 }
@@ -131,26 +131,26 @@ func (sc *StoreClient) List(request *oproto.ListRequest) ([]*oproto.ListResponse
 	waitgroup := new(sync.WaitGroup)
 	count := 0
 	for _, server := range sc.servers {
-		switch server.GetState() {
-		case oproto.StoreServer_UNKNOWN:
+		switch server.State {
+		case oproto.StoreServerStatus_UNKNOWN:
 			continue
-		case oproto.StoreServer_LOAD:
+		case oproto.StoreServerStatus_LOAD:
 			continue
-		case oproto.StoreServer_DRAIN:
+		case oproto.StoreServerStatus_DRAIN:
 			continue
-		case oproto.StoreServer_READONLY:
+		case oproto.StoreServerStatus_READONLY:
 			continue
-		case oproto.StoreServer_SHUTDOWN:
+		case oproto.StoreServerStatus_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
 		count++
-		go func(server oproto.StoreServer) {
+		go func(server oproto.StoreServerStatus) {
 			defer waitgroup.Done()
 			response := new(oproto.ListResponse)
-			err := sc.doRequest(server.GetAddress(), "list", request, response)
+			err := sc.doRequest(server.Address, "list", request, response)
 			if err != nil {
-				log.Printf("Error in Get to %s: %s", server.GetAddress(), err)
+				log.Printf("Error in Get to %s: %s", server.Address, err)
 				return
 			}
 			c <- response
@@ -178,10 +178,10 @@ func (sc *StoreClient) SimpleGet(varName string, minTimestamp, maxTimestamp uint
 		Variable: reqvar.AsProto(),
 	}
 	if minTimestamp > 0 {
-		request.MinTimestamp = proto.Uint64(minTimestamp)
+		request.MinTimestamp = minTimestamp
 	}
 	if maxTimestamp > 0 {
-		request.MaxTimestamp = proto.Uint64(maxTimestamp)
+		request.MaxTimestamp = maxTimestamp
 	}
 	return sc.Get(request)
 }
@@ -191,26 +191,26 @@ func (sc *StoreClient) Get(request *oproto.GetRequest) ([]*oproto.GetResponse, e
 	waitgroup := new(sync.WaitGroup)
 	count := 0
 	for _, server := range sc.servers {
-		switch server.GetState() {
-		case oproto.StoreServer_UNKNOWN:
+		switch server.State {
+		case oproto.StoreServerStatus_UNKNOWN:
 			continue
-		case oproto.StoreServer_LOAD:
+		case oproto.StoreServerStatus_LOAD:
 			continue
-		case oproto.StoreServer_DRAIN:
+		case oproto.StoreServerStatus_DRAIN:
 			continue
-		case oproto.StoreServer_READONLY:
+		case oproto.StoreServerStatus_READONLY:
 			continue
-		case oproto.StoreServer_SHUTDOWN:
+		case oproto.StoreServerStatus_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
 		count++
-		go func(server oproto.StoreServer) {
+		go func(server oproto.StoreServerStatus) {
 			defer waitgroup.Done()
 			response := new(oproto.GetResponse)
-			err := sc.doRequest(server.GetAddress(), "get", request, response)
+			err := sc.doRequest(server.Address, "get", request, response)
 			if err != nil {
-				log.Printf("Error in Get to %s: %s", server.GetAddress(), err)
+				log.Printf("Error in Get to %s: %s", server.Address, err)
 				return
 			}
 			c <- response
@@ -237,27 +237,27 @@ func (sc *StoreClient) GetConfig() *oproto.StoreConfig {
 	waitgroup := new(sync.WaitGroup)
 	count := 0
 	for _, server := range sc.servers {
-		switch server.GetState() {
-		case oproto.StoreServer_UNKNOWN:
+		switch server.State {
+		case oproto.StoreServerStatus_UNKNOWN:
 			continue
-		case oproto.StoreServer_LOAD:
+		case oproto.StoreServerStatus_LOAD:
 			continue
-		case oproto.StoreServer_DRAIN:
+		case oproto.StoreServerStatus_DRAIN:
 			continue
-		case oproto.StoreServer_READONLY:
+		case oproto.StoreServerStatus_READONLY:
 			continue
-		case oproto.StoreServer_SHUTDOWN:
+		case oproto.StoreServerStatus_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
 		count++
-		go func(server oproto.StoreServer) {
+		go func(server oproto.StoreServerStatus) {
 			defer waitgroup.Done()
 			request := new(oproto.GetRequest)
 			response := new(oproto.StoreConfig)
-			err := sc.doRequest(server.GetAddress(), "config", request, response)
+			err := sc.doRequest(server.Address, "config", request, response)
 			if err != nil {
-				log.Printf("Error in GetConfig to %s: %s", server.GetAddress(), err)
+				log.Printf("Error in GetConfig to %s: %s", server.Address, err)
 				return
 			}
 			c <- response

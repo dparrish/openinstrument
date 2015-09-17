@@ -3,7 +3,6 @@ package variable
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	. "gopkg.in/check.v1"
 )
@@ -20,10 +19,10 @@ func (s *MySuite) TestVariableCreation(c *C) {
 	c.Check(newvar.String(), Equals, "/openinstrument/test{label1=value1,label2=spaced value}")
 
 	labels := make([]*oproto.Label, 2)
-	labels[0] = &oproto.Label{Label: proto.String("label1"), Value: proto.String("value1")}
-	labels[1] = &oproto.Label{Label: proto.String("label2"), Value: proto.String("spaced value")}
+	labels[0] = &oproto.Label{Label: "label1", Value: "value1"}
+	labels[1] = &oproto.Label{Label: "label2", Value: "spaced value"}
 	newvar = NewFromProto(&oproto.StreamVariable{
-		Name:  proto.String("/openinstrument/test"),
+		Name:  "/openinstrument/test",
 		Label: labels,
 	})
 	c.Check(newvar.String(), Equals, "/openinstrument/test{label1=value1,label2=spaced value}")
@@ -57,6 +56,6 @@ func (s *MySuite) TestMatch(c *C) {
 func (s *MySuite) TestInvalidVariable(c *C) {
 	c.Check(NewFromProto(nil).String(), Equals, "")
 	c.Check(NewFromProto(&oproto.StreamVariable{}).String(), Equals, "")
-	v := &oproto.StreamVariable{Label: []*oproto.Label{{Label: proto.String("foo"), Value: proto.String("bar")}}}
+	v := &oproto.StreamVariable{Label: []*oproto.Label{{Label: "foo", Value: "bar"}}}
 	c.Check(NewFromProto(v).String(), Equals, "{foo=bar}")
 }

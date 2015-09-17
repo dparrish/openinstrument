@@ -23,7 +23,7 @@ func (policy *RetentionPolicy) Apply(itemVar *variable.Variable, input <-chan *o
 	output := make(chan *oproto.Value, 1000)
 	matchingPolicies := make([]*oproto.RetentionPolicyItem, 0)
 	for _, p := range policy.policy.Policy {
-		if doesVariableMatch(itemVar, p.GetVariable()) {
+		if doesVariableMatch(itemVar, p.Variable) {
 			matchingPolicies = append(matchingPolicies, p)
 		}
 	}
@@ -45,7 +45,7 @@ func (policy *RetentionPolicy) Apply(itemVar *variable.Variable, input <-chan *o
 				continue
 			}
 			log.Printf("Found matching policy %s", p)
-			if p.GetPolicy() == oproto.RetentionPolicyItem_DROP {
+			if p.Policy == oproto.RetentionPolicyItem_DROP {
 				// Matching policy is DROP, so don't output this value
 				continue
 			}
@@ -70,20 +70,20 @@ func doesVariableMatch(itemVar *variable.Variable, policyVars []*oproto.StreamVa
 
 func findFirstMatchingPolicy(value *oproto.Value, policies []*oproto.RetentionPolicyItem) *oproto.RetentionPolicyItem {
 	now := openinstrument.NowMs()
-	valueStartAge := now - value.GetTimestamp()
-	if value.EndTimestamp == nil {
+	valueStartAge := now - value.Timestamp
+	if value.EndTimestamp == 0 && value.Timestamp != 0 {
 		value.EndTimestamp = value.Timestamp
 	}
-	valueEndAge := now - value.GetEndTimestamp()
+	valueEndAge := now - value.EndTimestamp
 	for _, item := range policies {
 		// Look for policies that match the variable age
-		if item.MinAge != nil {
-			if valueStartAge < item.GetMinAge() || valueEndAge < item.GetMinAge() {
+		if item.MinAge != 0 {
+			if valueStartAge < item.MinAge || valueEndAge < item.MinAge {
 				continue
 			}
 		}
-		if item.MaxAge != nil {
-			if valueStartAge > item.GetMaxAge() || valueEndAge > item.GetMaxAge() {
+		if item.MaxAge != 0 {
+			if valueStartAge > item.MaxAge || valueEndAge > item.MaxAge {
 				continue
 			}
 		}

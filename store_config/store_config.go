@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 type config struct {
@@ -21,7 +21,7 @@ type config struct {
 
 var globalConfig *config
 
-func NewConfig(filename string) (*config, error) {
+func New(filename string) (*config, error) {
 	globalConfig = new(config)
 	globalConfig.filename = filename
 	if err := globalConfig.ReadConfig(); err != nil {
@@ -67,23 +67,24 @@ func (c *config) handleNewConfig(text string) error {
 }
 
 func (c *config) watchConfigFile() {
-	tick := time.Tick(10 * time.Second)
+	tick := time.Tick(1 * time.Second)
 	for {
 		select {
 		case <-tick:
 			stat, _ := os.Stat(c.filename)
-			stat = stat
-			c.ReadConfig()
+			if !os.SameFile(stat, c.stat) {
+				c.ReadConfig()
+			}
 		}
 	}
 }
 
-func (c *config) ThisServer(port string) *oproto.StoreServer {
+func (c *config) ThisServer(port string) *oproto.StoreServerStatus {
 	addrs, _ := net.InterfaceAddrs()
 	for _, server := range c.Config.Server {
 		for _, addr := range addrs {
 			parts := strings.SplitN(addr.String(), "/", 2)
-			if server.GetAddress() == net.JoinHostPort(parts[0], port) {
+			if server.Address == net.JoinHostPort(parts[0], port) {
 				return server
 			}
 		}

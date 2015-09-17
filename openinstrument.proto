@@ -1,13 +1,15 @@
+syntax = "proto3";
+
 package openinstrument.proto;
 
 message LogMessage {
-  optional uint64 timestamp = 1;
-  optional string message = 2;
+  uint64 timestamp = 1;
+  string message = 2;
 }
 
 message Label {
-  required string label = 1;
-  optional string value = 2;
+  string label = 1;
+  string value = 2;
 }
 
 message StreamVariable {
@@ -16,9 +18,9 @@ message StreamVariable {
     GAUGE = 1;
     RATE = 2;
   }
-  required string name = 1;
+  string name = 1;
   repeated Label label = 2;
-  optional ValueType type = 3;
+  ValueType type = 3;
 }
 
 message StreamMutation {
@@ -44,58 +46,58 @@ message StreamMutation {
     // Add a constant to each value
     ADD = 9;
   }
-  required SampleType sample_type = 1;
+  SampleType sample_type = 1;
 
   // Stretch or compress the stream so that there is a value every <sample_frequency> ms.
   // Extra values between each sample will be aggregated according to <sample_type>.
   // Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
   // closest real values.
   // Gaps in the stream of more than <max_gap_interpolate> samples will not be filled.
-  optional uint32 sample_frequency = 2;
-  optional uint32 max_gap_interpolate = 3 [ default = 1 ];
+  uint32 sample_frequency = 2;
+  uint32 max_gap_interpolate = 3;
 }
 
 message StreamAggregation {
   enum AggregateType {
-		// Do not aggregate between streams
-		NONE = 0;
-		// Get an average of all values at a common time across streams
+    // Do not aggregate between streams
+    NONE = 0;
+    // Get an average of all values at a common time across streams
     AVERAGE = 1;
-		// Get the maximum of all values at a common time across streams
+    // Get the maximum of all values at a common time across streams
     MAX = 2;
-		// Get the minimum of all values at a common time across streams
+    // Get the minimum of all values at a common time across streams
     MIN = 3;
-		// Get the median of all values at a common time across streams
+    // Get the median of all values at a common time across streams
     MEDIAN = 4;
-		// Get the total of all values at a common time across streams
+    // Get the total of all values at a common time across streams
     SUM = 5;
-		// Get the standard deviation of all values at a common time across streams
+    // Get the standard deviation of all values at a common time across streams
     STDDEV = 6;
-		// Get a particular percentile (provided in percentile) of all values at a common time across streams
-		PERCENTILE = 7;
+    // Get a particular percentile (provided in percentile) of all values at a common time across streams
+    PERCENTILE = 7;
   }
-  optional AggregateType type = 1;
+  AggregateType type = 1;
 
   // Labels to aggregate by on the input streams. If no labels are specified, aggregation will be done on the variable
   // only.
   repeated string label = 2;
 
   // Points will be aggregated if they are less than sample_interval ms apart. Default is 30 seconds.
-  optional uint32 sample_interval = 3 [ default = 30000 ];
+  uint32 sample_interval = 3;
 }
 
 message Value {
   // Milliseconds since epoch
-  required uint64 timestamp = 1;
-  optional double double_value = 2;
-  optional string string_value = 3;
+  uint64 timestamp = 1;
+  double double_value = 2;
+  string string_value = 3;
 
   // Used for run-length encoding
-  optional uint64 end_timestamp = 4;
+  uint64 end_timestamp = 4;
 }
 
 message ValueStream {
-  optional StreamVariable variable = 2;
+  StreamVariable variable = 2;
   repeated Value value = 4;
 
   // An optional set of mutations that have been applied to this stream.
@@ -110,38 +112,38 @@ message Query {
   repeated double constant = 3;
 
   // Milliseconds since epoch
-  optional uint64 min_timestamp = 4;
-  optional uint64 max_timestamp = 5;
+  uint64 min_timestamp = 4;
+  uint64 max_timestamp = 5;
 
   repeated StreamMutation mutation = 6;
   repeated StreamAggregation aggregation = 7;
 }
 
 message GetRequest {
-  optional StreamVariable variable = 9;
+  StreamVariable variable = 9;
 
   // Milliseconds since epoch
-  optional uint64 min_timestamp = 2;
-  optional uint64 max_timestamp = 3;
+  uint64 min_timestamp = 2;
+  uint64 max_timestamp = 3;
 
   // If mutations or aggregations are supplied, the GetResponse will have a separate stream for each change requested.
   repeated StreamMutation mutation = 6;
   repeated StreamAggregation aggregation = 7;
 
   // Limit to how many variables can be returned in a standard GetRequest. This can be overridden if required.
-  optional uint32 max_variables = 8;
+  uint32 max_variables = 8;
 
   // This request has been forwarded by another store server and should not be forwarded again.
   // This shouldn't happen but is here as a failsafe.
-  optional bool forwarded = 10 [ default = false ];
+  bool forwarded = 10;
 
   // Limit the number of values that can be returned for each variable.
-  optional uint32 max_values = 11;
+  uint32 max_values = 11;
 }
 
 message GetResponse {
-  required bool success = 1;
-  optional string errormessage = 2;
+  bool success = 1;
+  string errormessage = 2;
 
   // Contains a separate stream for every mutation requested in GetRequest, in the same order. If no mutations are
   // requested, the response will contain a single stream of the raw data.
@@ -154,29 +156,29 @@ message AddRequest {
 
   // This request has been forwarded by another store server and should not be forwarded again.
   // This shouldn't happen but is here as a failsafe.
-  optional bool forwarded = 2 [ default = false ];
+  bool forwarded = 2;
 }
 
 message AddResponse {
-  required bool success = 1;
-  optional string errormessage = 2;
+  bool success = 1;
+  string errormessage = 2;
   repeated LogMessage timer = 3;
 }
 
 message ListRequest {
-  optional StreamVariable prefix = 3;
+  StreamVariable prefix = 3;
 
   // Limit to how many variables can be returned in a standard ListRequest. This can be overridden if required.
-  optional uint32 max_variables = 2;
+  uint32 max_variables = 2;
 
   // Maximum age of variable.
   // This controls how far back the search will go for variables that were used in the past but not currently.
-  optional uint64 max_age = 4 [ default = 86400000 ];
+  uint64 max_age = 4;
 }
 
 message ListResponse {
-  required bool success = 1;
-  optional string errormessage = 2;
+  bool success = 1;
+  string errormessage = 2;
 
   // Although this uses the ValueStream for returning a list of variables, the expectation is that the value field is
   // empty.
@@ -186,42 +188,43 @@ message ListResponse {
 }
 
 message StoreFileHeaderIndex {
-  required StreamVariable variable = 1;
-  required fixed64 offset = 2;
-  optional fixed32 num_values = 3 [ default = 0 ];
-  optional fixed64 min_timestamp = 4;
-  optional fixed64 max_timestamp = 5;
+  StreamVariable variable = 1;
+  fixed64 offset = 2;
+  fixed32 num_values = 3;
+  fixed64 min_timestamp = 4;
+  fixed64 max_timestamp = 5;
 }
 
 message StoreFileHeader {
-  optional uint32 version = 6 [ default = 1 ];
-  optional uint64 start_timestamp = 1;
-  optional uint64 end_timestamp = 2;
+  uint32 version = 6;
+  uint64 start_timestamp = 1;
+  uint64 end_timestamp = 2;
   repeated StreamVariable variable = 4;
   repeated StoreFileHeaderIndex index = 5;
-  optional string end_key = 7;
+  string end_key = 7;
 }
 
 message RetentionPolicyItem {
   enum Target {
+    UNKNOWN = 0;
     KEEP = 1;
     DROP = 2;
   }
   repeated StreamVariable variable = 1;
   repeated string comment = 2;
-  required Target policy = 3;
+  Target policy = 3;
 
   repeated StreamMutation mutation = 4;
-  optional uint64 min_age = 5 [ default = 0 ];
-  optional uint64 max_age = 6 [ default = 0 ];
+  uint64 min_age = 5;
+  uint64 max_age = 6;
 }
 
 message RetentionPolicy {
   repeated RetentionPolicyItem policy = 1;
-  optional uint32 interval = 2 [ default = 600 ];
+  uint32 interval = 2;
 }
 
-message StoreServer {
+message StoreServerStatus {
   enum State {
     UNKNOWN = 0;
     LOAD = 1;
@@ -230,21 +233,36 @@ message StoreServer {
     READONLY = 4;
     SHUTDOWN = 5;
   }
-  required string address = 1;
-  optional State state = 2;
-  optional uint64 last_updated = 3;
+  string address = 1;
+  State state = 2;
+  uint64 last_updated = 3;
 
   // Optional name for use in the hash ring. This should never change once the
   // server has been added but can be used to replace a server with another one
   // on a different host.
   // If this is not set, the address is used.
-  optional string name = 5;
+  string name = 5;
 
   // Desired size in bytes for indexed datastore files
-  optional uint64 target_indexed_file_size = 4;
+  uint64 target_indexed_file_size = 4;
 }
 
 message StoreConfig {
-  repeated StoreServer server = 1;
-  optional RetentionPolicy retention_policy = 2;
+  repeated StoreServerStatus server = 1;
+  RetentionPolicy retention_policy = 2;
+}
+
+message PingRequest {
+  string payload = 1;
+}
+
+message PingResponse {
+  string payload = 1;
+}
+
+service Store {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc List(ListRequest) returns (ListResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Add(AddRequest) returns (AddResponse);
 }

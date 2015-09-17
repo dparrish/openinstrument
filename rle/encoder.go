@@ -1,9 +1,6 @@
 package rle
 
-import (
-	oproto "github.com/dparrish/openinstrument/proto"
-	"github.com/golang/protobuf/proto"
-)
+import oproto "github.com/dparrish/openinstrument/proto"
 
 func Encode(input <-chan *oproto.Value) <-chan *oproto.Value {
 	output := make(chan *oproto.Value)
@@ -15,40 +12,38 @@ func Encode(input <-chan *oproto.Value) <-chan *oproto.Value {
 				continue
 			}
 
-			if last.StringValue != nil && value.StringValue != nil {
-				//log.Printf("Last at %d is %s, this is %s", last.GetTimestamp(), last.GetStringValue(), value.GetStringValue())
-				if last.GetStringValue() == value.GetStringValue() {
-					if value.GetEndTimestamp() > value.GetTimestamp() {
-						last.EndTimestamp = proto.Uint64(value.GetEndTimestamp())
+			if last.StringValue != "" && value.StringValue != "" {
+				//log.Printf("Last at %d is %s, this is %s", last.Timestamp, last.StringValue, value.StringValue)
+				if last.StringValue == value.StringValue {
+					if value.EndTimestamp > value.Timestamp {
+						last.EndTimestamp = value.EndTimestamp
 					} else {
-						last.EndTimestamp = proto.Uint64(value.GetTimestamp())
+						last.EndTimestamp = value.Timestamp
+					}
+					continue
+				}
+			} else {
+				//log.Printf("Last is at %d %f, this is %f", last.Timestamp, last.DoubleValue, value.DoubleValue)
+				if last.DoubleValue == value.DoubleValue {
+					if value.EndTimestamp > value.Timestamp {
+						last.EndTimestamp = value.EndTimestamp
+					} else {
+						last.EndTimestamp = value.Timestamp
 					}
 					continue
 				}
 			}
 
-			if last.DoubleValue != nil && value.DoubleValue != nil {
-				//log.Printf("Last is at %d %f, this is %f", last.GetTimestamp(), last.GetDoubleValue(), value.GetDoubleValue())
-				if last.GetDoubleValue() == value.GetDoubleValue() {
-					if value.GetEndTimestamp() > value.GetTimestamp() {
-						last.EndTimestamp = proto.Uint64(value.GetEndTimestamp())
-					} else {
-						last.EndTimestamp = proto.Uint64(value.GetTimestamp())
-					}
-					continue
-				}
-			}
-
-			if last.EndTimestamp == nil {
-				last.EndTimestamp = proto.Uint64(last.GetTimestamp())
+			if last.EndTimestamp == 0 && last.Timestamp != 0 {
+				last.EndTimestamp = last.Timestamp
 			}
 			output <- last
 			last = value
 		}
 
 		if last != nil {
-			if last.EndTimestamp == nil {
-				last.EndTimestamp = proto.Uint64(last.GetTimestamp())
+			if last.EndTimestamp == 0 && last.Timestamp != 0 {
+				last.EndTimestamp = last.Timestamp
 			}
 			output <- last
 		}

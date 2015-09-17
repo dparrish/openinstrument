@@ -1,9 +1,6 @@
 package mutations
 
-import (
-	"github.com/golang/protobuf/proto"
-	oproto "github.com/dparrish/openinstrument/proto"
-)
+import oproto "github.com/dparrish/openinstrument/proto"
 
 type MutateFunc func(duration uint64, input chan *oproto.Value) <-chan *oproto.Value
 
@@ -35,29 +32,29 @@ func Mean(duration uint64, input <-chan *oproto.Value) <-chan *oproto.Value {
 			}
 
 			if first {
-				firstTimestamp = v.GetTimestamp()
+				firstTimestamp = v.Timestamp
 				first = false
 			}
 
-			if v.GetTimestamp()-firstTimestamp > duration {
+			if v.Timestamp-firstTimestamp > duration {
 				mean := sum / float64(count)
 				output <- &oproto.Value{
-					Timestamp:   proto.Uint64(lastTimestamp),
-					DoubleValue: proto.Float64(mean),
+					Timestamp:   lastTimestamp,
+					DoubleValue: mean,
 				}
-				firstTimestamp = v.GetTimestamp()
+				firstTimestamp = v.Timestamp
 				count = 0
 				sum = 0
 			}
-			sum += v.GetDoubleValue()
+			sum += v.DoubleValue
 			count++
-			lastTimestamp = v.GetTimestamp()
+			lastTimestamp = v.Timestamp
 		}
 		if count > 0 {
 			mean := sum / float64(count)
 			output <- &oproto.Value{
-				Timestamp:   proto.Uint64(lastTimestamp),
-				DoubleValue: proto.Float64(mean),
+				Timestamp:   lastTimestamp,
+				DoubleValue: mean,
 			}
 		}
 		close(output)
@@ -72,22 +69,22 @@ func SignedRate(duration uint64, input <-chan *oproto.Value) <-chan *oproto.Valu
 		var lastTimestamp uint64
 		first := true
 		for v := range input {
-			if v.DoubleValue == nil {
+			if v.StringValue != "" {
 				continue
 			}
 			if first {
-				lastValue = v.GetDoubleValue()
-				lastTimestamp = v.GetTimestamp()
+				lastValue = v.DoubleValue
+				lastTimestamp = v.Timestamp
 				first = false
 				continue
 			}
-			rate := (v.GetDoubleValue() - lastValue) / float64(v.GetTimestamp()-lastTimestamp)
+			rate := (v.DoubleValue - lastValue) / float64(v.Timestamp-lastTimestamp)
 			output <- &oproto.Value{
 				Timestamp:   v.Timestamp,
-				DoubleValue: proto.Float64(rate),
+				DoubleValue: rate,
 			}
-			lastValue = v.GetDoubleValue()
-			lastTimestamp = v.GetTimestamp()
+			lastValue = v.DoubleValue
+			lastTimestamp = v.Timestamp
 		}
 		close(output)
 	}()
@@ -99,7 +96,7 @@ func Rate(duration uint64, input <-chan *oproto.Value) <-chan *oproto.Value {
 	go func() {
 		newoutput := SignedRate(duration, input)
 		for v := range newoutput {
-			if v.GetDoubleValue() >= 0 {
+			if v.DoubleValue >= 0 {
 				output <- v
 			}
 		}
@@ -118,31 +115,31 @@ func Interpolate(duration uint64, input <-chan *oproto.Value) <-chan *oproto.Val
 		var timestamp uint64
 		for v := range input {
 			if previousValue == nil {
-				if v.GetTimestamp()%duration == 0 {
+				if v.Timestamp%duration == 0 {
 					// Value is exactly on a timestamp
 					output <- v
 					previousValue = v
-					timestamp = v.GetTimestamp() + duration
+					timestamp = v.Timestamp + duration
 				} else {
 					previousValue = v
-					previousValue.Timestamp = proto.Uint64(v.GetTimestamp() / duration * duration)
-					timestamp = previousValue.GetTimestamp() + duration
+					previousValue.Timestamp = v.Timestamp / duration * duration
+					timestamp = previousValue.Timestamp + duration
 				}
 				continue
 			}
-			if v.GetTimestamp() >= timestamp {
+			if v.Timestamp >= timestamp {
 				// Fill in any missing values before this one
-				rate := float64((v.GetDoubleValue() - previousValue.GetDoubleValue()))
-				for ; timestamp <= v.GetTimestamp(); timestamp += duration {
-					pct := float64(timestamp-previousValue.GetTimestamp()) / float64(v.GetTimestamp()-previousValue.GetTimestamp())
-					newValue := previousValue.GetDoubleValue() + (rate * pct)
+				rate := float64((v.DoubleValue - previousValue.DoubleValue))
+				for ; timestamp <= v.Timestamp; timestamp += duration {
+					pct := float64(timestamp-previousValue.Timestamp) / float64(v.Timestamp-previousValue.Timestamp)
+					newValue := previousValue.DoubleValue + (rate * pct)
 					output <- &oproto.Value{
-						Timestamp:   proto.Uint64(timestamp),
-						DoubleValue: proto.Float64(newValue),
+						Timestamp:   timestamp,
+						DoubleValue: newValue,
 					}
 				}
-				if previousValue.GetTimestamp() < v.GetTimestamp() {
-					if v.GetTimestamp()%duration == 0 {
+				if previousValue.Timestamp < v.Timestamp {
+					if v.Timestamp%duration == 0 {
 						// Value is exactly on a timestamp
 						output <- v
 						previousValue = v
@@ -166,21 +163,21 @@ func Min(duration uint64, input <-chan *oproto.Value) <-chan *oproto.Value {
 		first := true
 		for v := range input {
 			if first {
-				lastTimestamp = v.GetTimestamp()
-				min = v.GetDoubleValue()
+				lastTimestamp = v.Timestamp
+				min = v.DoubleValue
 				first = false
 				continue
 			}
-			if v.GetTimestamp() >= lastTimestamp+duration {
+			if v.Timestamp >= lastTimestamp+duration {
 				output <- &oproto.Value{
-					Timestamp:   proto.Uint64(v.GetTimestamp()),
-					DoubleValue: proto.Float64(min),
+					Timestamp:   v.Timestamp,
+					DoubleValue: min,
 				}
-				lastTimestamp = v.GetTimestamp()
+				lastTimestamp = v.Timestamp
 				first = true
 			}
-			if first || v.GetDoubleValue() < min {
-				min = v.GetDoubleValue()
+			if first || v.DoubleValue < min {
+				min = v.DoubleValue
 			}
 			first = false
 		}
@@ -197,21 +194,21 @@ func Max(duration uint64, input <-chan *oproto.Value) <-chan *oproto.Value {
 		first := true
 		for v := range input {
 			if first {
-				lastTimestamp = v.GetTimestamp()
-				max = v.GetDoubleValue()
+				lastTimestamp = v.Timestamp
+				max = v.DoubleValue
 				first = false
 				continue
 			}
-			if v.GetTimestamp() >= lastTimestamp+duration {
+			if v.Timestamp >= lastTimestamp+duration {
 				output <- &oproto.Value{
-					Timestamp:   proto.Uint64(v.GetTimestamp()),
-					DoubleValue: proto.Float64(max),
+					Timestamp:   v.Timestamp,
+					DoubleValue: max,
 				}
-				lastTimestamp = v.GetTimestamp()
+				lastTimestamp = v.Timestamp
 				first = true
 			}
-			if first || v.GetDoubleValue() > max {
-				max = v.GetDoubleValue()
+			if first || v.DoubleValue > max {
+				max = v.DoubleValue
 			}
 			first = false
 		}

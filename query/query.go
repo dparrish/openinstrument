@@ -3,9 +3,9 @@ package query
 import (
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
+	"github.com/golang/protobuf/proto"
 )
 
 type Query struct {
@@ -64,12 +64,12 @@ func (query *Query) AddConstant(constant float64) *Query {
 }
 
 func (query *Query) SetMinTimestamp(minTimestamp time.Time) *Query {
-	query.q.MinTimestamp = proto.Uint64(uint64(minTimestamp.UnixNano() / 1000000))
+	query.q.MinTimestamp = uint64(minTimestamp.UnixNano() / 1000000)
 	return query
 }
 
 func (query *Query) SetMaxTimestamp(maxTimestamp time.Time) *Query {
-	query.q.MaxTimestamp = proto.Uint64(uint64(maxTimestamp.UnixNano() / 1000000))
+	query.q.MaxTimestamp = uint64(maxTimestamp.UnixNano() / 1000000)
 	return query
 }
 
@@ -78,7 +78,7 @@ func (query *Query) AddAggregation(t oproto.StreamAggregation_AggregateType, lab
 		query.q.Aggregation = make([]*oproto.StreamAggregation, 0)
 	}
 	agg := &oproto.StreamAggregation{
-		Type: oproto.StreamAggregation_AggregateType.Enum(t),
+		Type: t,
 	}
 	agg.Label = labels
 	query.q.Aggregation = append(query.q.Aggregation, agg)
@@ -90,13 +90,13 @@ func (query *Query) AddMutation(t oproto.StreamMutation_SampleType, sampleFreque
 		query.q.Mutation = make([]*oproto.StreamMutation, 0)
 	}
 	agg := &oproto.StreamMutation{
-		SampleType: oproto.StreamMutation_SampleType.Enum(t),
+		SampleType: t,
 	}
 	if sampleFrequency > 0 {
-		agg.SampleFrequency = proto.Uint32(sampleFrequency)
+		agg.SampleFrequency = sampleFrequency
 	}
 	if maxGapInterpolate > 0 {
-		agg.MaxGapInterpolate = proto.Uint32(maxGapInterpolate)
+		agg.MaxGapInterpolate = maxGapInterpolate
 	}
 	query.q.Mutation = append(query.q.Mutation, agg)
 	return query

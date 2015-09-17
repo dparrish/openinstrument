@@ -49,8 +49,8 @@ func Merge(streams []*oproto.ValueStream) <-chan *oproto.Value {
 					continue
 				}
 				v := streams[i].Value[indexes[i]]
-				if minStream == nil || v.GetTimestamp() < minTimestamp {
-					minTimestamp = v.GetTimestamp()
+				if minStream == nil || v.Timestamp < minTimestamp {
+					minTimestamp = v.Timestamp
 					minStream = streams[i]
 					minValue = v
 					indexes[i]++

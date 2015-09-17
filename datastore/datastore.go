@@ -29,8 +29,9 @@ type Datastore struct {
 	Path string
 
 	// A list of blocks making up the entire datastore.
-	Blocks    map[string]*Block
-	blockKeys []string
+	Blocks     map[string]*Block
+	blocksLock sync.Mutex
+	blockKeys  []string
 
 	shutdown bool
 }
@@ -127,12 +128,12 @@ func (ds *Datastore) readBlock(filename string, waitgroup *sync.WaitGroup) {
 		return
 	}
 
-	if block.BlockHeader.GetVersion() != 2 {
-		log.Printf("Block file %s has incorrect version identifier '%v'\n", block.Filename(), block.BlockHeader.GetVersion())
+	if block.BlockHeader.Version != 2 {
+		log.Printf("Block file %s has incorrect version identifier '%v'\n", block.Filename(), block.BlockHeader.Version)
 		return
 	}
 
-	block.EndKey = block.BlockHeader.GetEndKey()
+	block.EndKey = block.BlockHeader.EndKey
 	ds.insertBlock(block)
 	log.Printf("Read %s with end key %s containing %d streams\n", block.Filename(), block.EndKey, len(block.BlockHeader.Index))
 }
@@ -155,26 +156,33 @@ func (ds *Datastore) readBlockLog(filename string, waitgroup *sync.WaitGroup) {
 		if v > block.EndKey {
 			block.EndKey = v
 		}
+		block.logLock.Lock()
 		existingstream, found := block.LogStreams[v]
 		if found {
 			existingstream.Value = append(existingstream.Value, stream.Value...)
 		} else {
 			block.LogStreams[v] = stream
 		}
+		block.logLock.Unlock()
 	}
+	ds.blocksLock.Lock()
 	for _, existingblock := range ds.Blocks {
 		if existingblock.ID == block.ID {
 			existingblock.logLock.Lock()
 			existingblock.LogStreams = block.LogStreams
 			existingblock.logLock.Unlock()
+			ds.blocksLock.Unlock()
 			return
 		}
 	}
+	ds.blocksLock.Unlock()
 	// There is no existing block file for this log.
 	ds.insertBlock(block)
 }
 
 func (ds *Datastore) insertBlock(block *Block) {
+	ds.blocksLock.Lock()
+	defer ds.blocksLock.Unlock()
 	_, found := ds.Blocks[block.EndKey]
 	ds.Blocks[block.EndKey] = block
 	if !found {
@@ -192,7 +200,7 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 	go func() {
 		for stream := range c {
 			// Write this stream
-			v := variable.NewFromProto(stream.GetVariable())
+			v := variable.NewFromProto(stream.Variable)
 			//log.Printf("Writing stream for %s\n", v.String())
 			if block := ds.findBlock(v); block != nil {
 				block.NewStreamsLock.Lock()
@@ -209,8 +217,8 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 // If min/maxTimestamp are not nil, streams will only be returned if SOME values inside the stream match.
 // The supplied variable may be a search or a single.
 // The streams returned may be out of order with respect to variable names or timestamps.
-func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp *uint64, fetchValues bool) chan *oproto.ValueStream {
-	log.Printf("Creating Reader for %s\n", v.String())
+func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uint64, fetchValues bool) chan *oproto.ValueStream {
+	log.Printf("Creating Reader for %s between %d and %d\n", v.String(), minTimestamp, maxTimestamp)
 	c := make(chan *oproto.ValueStream, 1000)
 	go func() {
 		maybeReturnStreams := func(block *Block, stream *oproto.ValueStream) {
@@ -221,10 +229,10 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp *ui
 			if len(stream.Value) == 0 {
 				return
 			}
-			if minTimestamp != nil && stream.Value[len(stream.Value)-1].GetTimestamp() < *minTimestamp {
+			if minTimestamp != 0 && stream.Value[len(stream.Value)-1].Timestamp < minTimestamp {
 				return
 			}
-			if maxTimestamp != nil && stream.Value[0].GetTimestamp() > *maxTimestamp {
+			if maxTimestamp != 0 && stream.Value[0].Timestamp > maxTimestamp {
 				return
 			}
 			c <- stream
@@ -238,24 +246,28 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp *ui
 				if v.String() > block.EndKey {
 					return
 				}
+				block.logLock.Lock()
 				for _, stream := range block.LogStreams {
 					maybeReturnStreams(block, stream)
 				}
+				block.logLock.Unlock()
+				block.NewStreamsLock.Lock()
 				for _, stream := range block.NewStreams {
 					maybeReturnStreams(block, stream)
 				}
+				block.NewStreamsLock.Unlock()
 				for _, index := range block.BlockHeader.Index {
 					cv := variable.NewFromProto(index.Variable)
 					if !cv.Match(v) {
 						continue
 					}
-					if index.GetNumValues() == 0 {
+					if index.NumValues == 0 {
 						continue
 					}
-					if minTimestamp != nil && index.MaxTimestamp != nil && index.GetMaxTimestamp() < *minTimestamp {
+					if minTimestamp != 0 && index.MaxTimestamp < minTimestamp {
 						continue
 					}
-					if maxTimestamp != nil && index.MinTimestamp != nil && index.GetMinTimestamp() > *maxTimestamp {
+					if maxTimestamp != 0 && index.MinTimestamp > maxTimestamp {
 						continue
 					}
 					if fetchValues {
@@ -283,10 +295,10 @@ func (ds *Datastore) Flush() error {
 	for _, block := range ds.Blocks {
 		block.NewStreamsLock.Lock()
 		defer block.NewStreamsLock.Unlock()
+		block.logLock.Lock()
+		defer block.logLock.Unlock()
 		if len(block.NewStreams) > 0 {
 			// There are streams that need to be flushed to disk
-			block.logLock.Lock()
-			defer block.logLock.Unlock()
 			//log.Printf("Flushing streams for block %s to log %s\n", block, block.logFilename())
 
 			file, err := protofile.Write(filepath.Join(ds.Path, block.logFilename()))
@@ -302,7 +314,9 @@ func (ds *Datastore) Flush() error {
 					return err
 				}
 			}
-			for _, stream := range block.NewStreams {
+			flushStreams := block.NewStreams
+			block.NewStreams = make([]*oproto.ValueStream, 0)
+			for _, stream := range flushStreams {
 				v := variable.NewFromProto(stream.Variable).String()
 				existingstream, found := block.LogStreams[v]
 				if found {
@@ -311,7 +325,6 @@ func (ds *Datastore) Flush() error {
 					block.LogStreams[v] = stream
 				}
 			}
-			block.NewStreams = make([]*oproto.ValueStream, 0)
 		}
 	}
 	return nil
@@ -327,10 +340,12 @@ func (ds *Datastore) splitBlock(block *Block) error {
 		v := variable.NewFromProto(index.Variable)
 		keys[v.String()] = true
 	}
+	block.logLock.Lock()
 	for _, stream := range block.LogStreams {
 		v := variable.NewFromProto(stream.Variable)
 		keys[v.String()] = true
 	}
+	block.logLock.Unlock()
 	for _, stream := range block.NewStreams {
 		v := variable.NewFromProto(stream.Variable)
 		keys[v.String()] = true

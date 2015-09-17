@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 
 	. "gopkg.in/check.v1"
@@ -30,8 +29,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 		c.Assert(writer.Tell(), Equals, int64(0))
 
 		msg := &oproto.Label{
-			Label: proto.String("greeting"),
-			Value: proto.String("Hello world!"),
+			Label: "greeting",
+			Value: "Hello world!",
 		}
 		i, err := writer.Write(msg)
 		c.Assert(err, IsNil)
@@ -40,8 +39,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 		c.Assert(writer.Tell(), Equals, j)
 
 		msg = &oproto.Label{
-			Label: proto.String("greeting"),
-			Value: proto.String("Hola!"),
+			Label: "greeting",
+			Value: "Hola!",
 		}
 		i, err = writer.Write(msg)
 		j += i
@@ -51,8 +50,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 
 		// Write to a specific place in the file
 		msg = &oproto.Label{
-			Label: proto.String("greeting"),
-			Value: proto.String("Far out man"),
+			Label: "greeting",
+			Value: "Far out man",
 		}
 		i, err = writer.WriteAt(60, msg)
 		c.Assert(i, Equals, int64(31))
@@ -72,8 +71,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 		i, err := reader.Read(msg)
 		c.Assert(err, IsNil)
 		c.Assert(i, Equals, int64(32))
-		c.Assert(msg.GetLabel(), Equals, "greeting")
-		c.Assert(msg.GetValue(), Equals, "Hello world!")
+		c.Assert(msg.Label, Equals, "greeting")
+		c.Assert(msg.Value, Equals, "Hello world!")
 		j := i
 		c.Assert(reader.Tell(), Equals, j)
 
@@ -82,8 +81,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 		j += i
 		c.Assert(err, IsNil)
 		c.Assert(i, Equals, int64(25))
-		c.Assert(msg.GetLabel(), Equals, "greeting")
-		c.Assert(msg.GetValue(), Equals, "Hola!")
+		c.Assert(msg.Label, Equals, "greeting")
+		c.Assert(msg.Value, Equals, "Hola!")
 		c.Assert(reader.Tell(), Equals, j)
 
 		// Read the next message, which is after a few random bytes
@@ -92,8 +91,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 		j = 60 + i
 		c.Assert(err, IsNil)
 		c.Assert(i, Equals, int64(31))
-		c.Assert(msg.GetLabel(), Equals, "greeting")
-		c.Assert(msg.GetValue(), Equals, "Far out man")
+		c.Assert(msg.Label, Equals, "greeting")
+		c.Assert(msg.Value, Equals, "Far out man")
 		c.Assert(reader.Tell(), Equals, j)
 
 		// Read from a specific place in the file
@@ -101,8 +100,8 @@ func (s *MySuite) TestWriteFile(c *C) {
 		i, err = reader.ReadAt(60, msg)
 		c.Assert(err, IsNil)
 		c.Assert(i, Equals, int64(31))
-		c.Assert(msg.GetLabel(), Equals, "greeting")
-		c.Assert(msg.GetValue(), Equals, "Far out man")
+		c.Assert(msg.Label, Equals, "greeting")
+		c.Assert(msg.Value, Equals, "Far out man")
 		c.Assert(reader.Tell(), Equals, j)
 
 		// An attempt to read past the end of the file should return an error
@@ -124,21 +123,21 @@ func (s *MySuite) TestValueStreamReader(c *C) {
 		defer writer.Close()
 
 		vs := &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: proto.String("/test/bar")},
+			Variable: &oproto.StreamVariable{Name: "/test/bar"},
 			Value: []*oproto.Value{
-				{Timestamp: proto.Uint64(uint64(1)), DoubleValue: proto.Float64(1.1)},
-				{Timestamp: proto.Uint64(uint64(2)), DoubleValue: proto.Float64(1.2)},
-				{Timestamp: proto.Uint64(uint64(3)), DoubleValue: proto.Float64(1.3)},
+				{Timestamp: uint64(1), DoubleValue: 1.1},
+				{Timestamp: uint64(2), DoubleValue: 1.2},
+				{Timestamp: uint64(3), DoubleValue: 1.3},
 			},
 		}
 		writer.Write(vs)
 
 		vs = &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: proto.String("/test/foo")},
+			Variable: &oproto.StreamVariable{Name: "/test/foo"},
 			Value: []*oproto.Value{
-				{Timestamp: proto.Uint64(uint64(1)), DoubleValue: proto.Float64(1.1)},
-				{Timestamp: proto.Uint64(uint64(2)), DoubleValue: proto.Float64(1.2)},
-				{Timestamp: proto.Uint64(uint64(3)), DoubleValue: proto.Float64(1.3)},
+				{Timestamp: uint64(1), DoubleValue: 1.1},
+				{Timestamp: uint64(2), DoubleValue: 1.2},
+				{Timestamp: uint64(3), DoubleValue: 1.3},
 			},
 		}
 		writer.Write(vs)
@@ -151,16 +150,16 @@ func (s *MySuite) TestValueStreamReader(c *C) {
 		defer file.Close()
 		reader := file.ValueStreamReader(500)
 		vs := <-reader
-		c.Check(vs.GetVariable().GetName(), Equals, "/test/bar")
-		c.Check(vs.Value[0].GetDoubleValue(), Equals, 1.1)
-		c.Check(vs.Value[1].GetDoubleValue(), Equals, 1.2)
-		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
+		c.Check(vs.Variable.Name, Equals, "/test/bar")
+		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
+		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
+		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
 
 		vs = <-reader
-		c.Check(vs.GetVariable().GetName(), Equals, "/test/foo")
-		c.Check(vs.Value[0].GetDoubleValue(), Equals, 1.1)
-		c.Check(vs.Value[1].GetDoubleValue(), Equals, 1.2)
-		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
+		c.Check(vs.Variable.Name, Equals, "/test/foo")
+		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
+		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
+		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
 	}
 }
 
@@ -176,21 +175,21 @@ func (s *MySuite) TestValueStreamWriter(c *C) {
 		writer, done := file.ValueStreamWriter(10)
 
 		vs := &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: proto.String("/test/bar")},
+			Variable: &oproto.StreamVariable{Name: "/test/bar"},
 			Value: []*oproto.Value{
-				{Timestamp: proto.Uint64(uint64(1)), DoubleValue: proto.Float64(1.1)},
-				{Timestamp: proto.Uint64(uint64(2)), DoubleValue: proto.Float64(1.2)},
-				{Timestamp: proto.Uint64(uint64(3)), DoubleValue: proto.Float64(1.3)},
+				{Timestamp: uint64(1), DoubleValue: 1.1},
+				{Timestamp: uint64(2), DoubleValue: 1.2},
+				{Timestamp: uint64(3), DoubleValue: 1.3},
 			},
 		}
 		writer <- vs
 
 		vs = &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: proto.String("/test/foo")},
+			Variable: &oproto.StreamVariable{Name: "/test/foo"},
 			Value: []*oproto.Value{
-				{Timestamp: proto.Uint64(uint64(1)), DoubleValue: proto.Float64(1.1)},
-				{Timestamp: proto.Uint64(uint64(2)), DoubleValue: proto.Float64(1.2)},
-				{Timestamp: proto.Uint64(uint64(3)), DoubleValue: proto.Float64(1.3)},
+				{Timestamp: uint64(1), DoubleValue: 1.1},
+				{Timestamp: uint64(2), DoubleValue: 1.2},
+				{Timestamp: uint64(3), DoubleValue: 1.3},
 			},
 		}
 		writer <- vs
@@ -205,15 +204,15 @@ func (s *MySuite) TestValueStreamWriter(c *C) {
 		defer file.Close()
 		reader := file.ValueStreamReader(500)
 		vs := <-reader
-		c.Check(vs.GetVariable().GetName(), Equals, "/test/bar")
-		c.Check(vs.Value[0].GetDoubleValue(), Equals, 1.1)
-		c.Check(vs.Value[1].GetDoubleValue(), Equals, 1.2)
-		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
+		c.Check(vs.Variable.Name, Equals, "/test/bar")
+		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
+		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
+		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
 
 		vs = <-reader
-		c.Check(vs.GetVariable().GetName(), Equals, "/test/foo")
-		c.Check(vs.Value[0].GetDoubleValue(), Equals, 1.1)
-		c.Check(vs.Value[1].GetDoubleValue(), Equals, 1.2)
-		c.Check(vs.Value[2].GetDoubleValue(), Equals, 1.3)
+		c.Check(vs.Variable.Name, Equals, "/test/foo")
+		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
+		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
+		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
 	}
 }

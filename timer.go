@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/dparrish/openinstrument/proto"
 )
 
@@ -25,9 +24,9 @@ func NewTimer(message string, t *openinstrument_proto.LogMessage) *Timer {
 func (t *Timer) Stop() uint64 {
 	duration := time.Since(t.startTime)
 	if t.t != nil {
-		t.t.Timestamp = proto.Uint64(uint64(duration.Nanoseconds() / 1000000))
+		t.t.Timestamp = uint64(duration.Nanoseconds() / 1000000)
 		if t.message != "" {
-			t.t.Message = &t.message
+			t.t.Message = t.message
 		}
 	}
 	return uint64(duration.Nanoseconds() / 1000000)

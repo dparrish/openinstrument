@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
 	"github.com/dparrish/openinstrument/rle"
@@ -67,7 +66,7 @@ func newBlock(endKey, id string) *Block {
 		LogStreams: make(map[string]*oproto.ValueStream, 0),
 		NewStreams: make([]*oproto.ValueStream, 0),
 		BlockHeader: &oproto.StoreFileHeader{
-			Version: proto.Uint32(2),
+			Version: uint32(2),
 			Index:   make([]*oproto.StoreFileHeaderIndex, 0),
 		},
 	}
@@ -130,6 +129,8 @@ func (block *Block) NumStreams() uint32 {
 }
 
 func (block *Block) NumLogValues() uint32 {
+	block.logLock.Lock()
+	defer block.logLock.Unlock()
 	var values uint32
 	for _, stream := range block.LogStreams {
 		values += uint32(len(stream.Value))
@@ -140,7 +141,7 @@ func (block *Block) NumLogValues() uint32 {
 func (block *Block) NumValues() uint32 {
 	var values uint32
 	for _, index := range block.BlockHeader.Index {
-		values += index.GetNumValues()
+		values += index.NumValues
 	}
 	for _, stream := range block.LogStreams {
 		values += uint32(len(stream.Value))
@@ -189,18 +190,18 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 		if v > endKey {
 			endKey = v
 		}
-		wg.Add(1)
-		go func(v string, stream *oproto.ValueStream) {
-			// Sort values by timestamp
-			value.By(func(a, b *oproto.Value) bool { return a.GetTimestamp() < b.GetTimestamp() }).Sort(stream.Value)
+		//wg.Add(1)
+		//go func(v string, stream *oproto.ValueStream) {
+		// Sort values by timestamp
+		value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
 
-			// Run-length encode values
-			newstream := &oproto.ValueStream{Variable: stream.Variable}
-			<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
-			streams[v] = newstream
+		// Run-length encode values
+		newstream := &oproto.ValueStream{Variable: stream.Variable}
+		<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
+		streams[v] = newstream
 
-			wg.Done()
-		}(v, stream)
+		//wg.Done()
+		//}(v, stream)
 	}
 	wg.Wait()
 
@@ -211,24 +212,24 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 		// Add this stream to the index
 		block.BlockHeader.Index = append(block.BlockHeader.Index, &oproto.StoreFileHeaderIndex{
 			Variable:     stream.Variable,
-			Offset:       proto.Uint64(0),
-			MinTimestamp: proto.Uint64(stream.Value[0].GetTimestamp()),
-			MaxTimestamp: proto.Uint64(stream.Value[len(stream.Value)-1].GetTimestamp()),
-			NumValues:    proto.Uint32(uint32(len(stream.Value))),
+			Offset:       uint64(0),
+			MinTimestamp: stream.Value[0].Timestamp,
+			MaxTimestamp: stream.Value[len(stream.Value)-1].Timestamp,
+			NumValues:    uint32(len(stream.Value)),
 		})
 
-		if minTimestamp == 0 || stream.Value[0].GetTimestamp() < minTimestamp {
-			minTimestamp = stream.Value[0].GetTimestamp()
+		if minTimestamp == 0 || stream.Value[0].Timestamp < minTimestamp {
+			minTimestamp = stream.Value[0].Timestamp
 		}
-		if stream.Value[len(stream.Value)-1].GetTimestamp() > maxTimestamp {
-			maxTimestamp = stream.Value[len(stream.Value)-1].GetTimestamp()
+		if stream.Value[len(stream.Value)-1].Timestamp > maxTimestamp {
+			maxTimestamp = stream.Value[len(stream.Value)-1].Timestamp
 		}
 		outputValues += len(stream.Value)
 	}
 
-	block.BlockHeader.StartTimestamp = proto.Uint64(minTimestamp)
-	block.BlockHeader.EndTimestamp = proto.Uint64(maxTimestamp)
-	block.BlockHeader.EndKey = proto.String(endKey)
+	block.BlockHeader.StartTimestamp = minTimestamp
+	block.BlockHeader.EndTimestamp = maxTimestamp
+	block.BlockHeader.EndKey = endKey
 
 	log.Printf("Run-length encoded %d streams to %d in %s", len(streams), outputValues, time.Since(st))
 
@@ -254,7 +255,7 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	// Update the offsets in the header, now that all the data has been written
 	for _, index := range block.BlockHeader.Index {
 		v := variable.NewFromProto(index.Variable).String()
-		index.Offset = proto.Uint64(indexPos[v])
+		index.Offset = indexPos[v]
 	}
 
 	log.Printf("Flushing data to disk")
@@ -284,11 +285,11 @@ func (block *Block) Read(path string) (<-chan *oproto.ValueStream, error) {
 		file.Close()
 		return nil, fmt.Errorf("Block %s has a corrupted header: %s\n", block.Filename(), err)
 	}
-	switch header.GetVersion() {
+	switch header.Version {
 	case 2:
 		return file.ValueStreamReader(500), nil
 	default:
-		return nil, fmt.Errorf("Block %s has unknown version '%v'\n", block.Filename(), header.GetVersion())
+		return nil, fmt.Errorf("Block %s has unknown version '%v'\n", block.Filename(), header.Version)
 	}
 }
 
@@ -302,9 +303,9 @@ func (block *Block) GetStreams(index *oproto.StoreFileHeaderIndex) <-chan *oprot
 			}
 		} else {
 			stream := new(oproto.ValueStream)
-			n, err := file.ReadAt(int64(index.GetOffset()), stream)
+			n, err := file.ReadAt(int64(index.Offset), stream)
 			if n < 1 && err != nil {
-				log.Printf("Couldn't read ValueStream at %s:%d: %s", block, index.GetOffset(), err)
+				log.Printf("Couldn't read ValueStream at %s:%d: %s", block, index.Offset, err)
 			} else {
 				c <- stream
 			}

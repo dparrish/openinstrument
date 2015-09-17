@@ -3,7 +3,6 @@ package rle
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	. "gopkg.in/check.v1"
 )
@@ -22,16 +21,16 @@ func (s *MySuite) TestEncodeDouble(c *C) {
 
 	push := func(input chan *oproto.Value, timestamp uint64, value float64) {
 		input <- &oproto.Value{
-			Timestamp:   proto.Uint64(timestamp),
-			DoubleValue: proto.Float64(value),
+			Timestamp:   timestamp,
+			DoubleValue: value,
 		}
 	}
 
 	test := func(output <-chan *oproto.Value, startTimestamp, endTimestamp uint64, testValue float64) {
 		value := <-output
-		c.Assert(value.GetDoubleValue(), Equals, testValue)
-		c.Assert(value.GetTimestamp(), Equals, startTimestamp)
-		c.Assert(value.GetEndTimestamp(), Equals, endTimestamp)
+		c.Assert(value.DoubleValue, Equals, testValue)
+		c.Assert(value.Timestamp, Equals, startTimestamp)
+		c.Assert(value.EndTimestamp, Equals, endTimestamp)
 	}
 
 	push(input, 1, 1.1)
@@ -53,16 +52,16 @@ func (s *MySuite) TestEncodeString(c *C) {
 
 	push := func(input chan *oproto.Value, timestamp uint64, value string) {
 		input <- &oproto.Value{
-			Timestamp:   proto.Uint64(timestamp),
-			StringValue: proto.String(value),
+			Timestamp:   timestamp,
+			StringValue: value,
 		}
 	}
 
 	test := func(output <-chan *oproto.Value, startTimestamp, endTimestamp uint64, testValue string) {
 		value := <-output
-		c.Assert(value.GetStringValue(), Equals, testValue)
-		c.Assert(value.GetTimestamp(), Equals, startTimestamp)
-		c.Assert(value.GetEndTimestamp(), Equals, endTimestamp)
+		c.Assert(value.StringValue, Equals, testValue)
+		c.Assert(value.Timestamp, Equals, startTimestamp)
+		c.Assert(value.EndTimestamp, Equals, endTimestamp)
 	}
 
 	push(input, 1, "Hello")

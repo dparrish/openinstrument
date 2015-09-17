@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 )
@@ -69,8 +68,8 @@ func (ei *Integer) Export() chan *oproto.ValueStream {
 		stream := new(oproto.ValueStream)
 		stream.Variable = ei.v.AsProto()
 		stream.Value = append(stream.Value, &oproto.Value{
-			Timestamp:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-			DoubleValue: proto.Float64(float64(ei.value)),
+			Timestamp:   uint64(time.Now().UnixNano() / 1000000),
+			DoubleValue: float64(ei.value),
 		})
 		c <- stream
 		close(c)
@@ -121,8 +120,8 @@ func (ef *Float) Export() chan *oproto.ValueStream {
 		stream := new(oproto.ValueStream)
 		stream.Variable = ef.v.AsProto()
 		stream.Value = append(stream.Value, &oproto.Value{
-			Timestamp:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-			DoubleValue: proto.Float64(ef.value),
+			Timestamp:   uint64(time.Now().UnixNano() / 1000000),
+			DoubleValue: ef.value,
 		})
 		c <- stream
 		close(c)
@@ -282,8 +281,8 @@ func (es *String) Export() chan *oproto.ValueStream {
 		stream := new(oproto.ValueStream)
 		stream.Variable = es.v.AsProto()
 		stream.Value = append(stream.Value, &oproto.Value{
-			Timestamp:   proto.Uint64(uint64(time.Now().UnixNano() / 1000000)),
-			StringValue: proto.String(es.value),
+			Timestamp:   uint64(time.Now().UnixNano() / 1000000),
+			StringValue: es.value,
 		})
 		c <- stream
 		close(c)
