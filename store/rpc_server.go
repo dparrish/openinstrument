@@ -54,12 +54,11 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 		minTimestamp := time.Now().Add(time.Duration(-request.MaxAge) * time.Millisecond)
 		unix = uint64(minTimestamp.Unix()) * 1000
 	}
-	streamChan := s.ds.Reader(requestVariable, unix, 0, false)
-	for stream := range streamChan {
-		vars[variable.NewFromProto(stream.Variable).String()] = stream.Variable
-		if request.MaxVariables > 0 && len(vars) == int(request.MaxVariables) {
-			break
+	for stream := range s.ds.Reader(requestVariable, unix, 0) {
+		if request.MaxVariables > 0 && len(vars) >= int(request.MaxVariables) {
+			continue
 		}
+		vars[variable.NewFromProto(stream.Variable).String()] = stream.Variable
 	}
 	timer.Stop()
 
@@ -87,10 +86,9 @@ func (s *server) Get(ctx context.Context, request *oproto.GetRequest) (*oproto.G
 	if request.MaxTimestamp == 0 {
 		request.MaxTimestamp = openinstrument.NowMs()
 	}
-	log.Println(openinstrument.ProtoText(request))
-	streamChan := s.ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp, true)
+	//log.Println(openinstrument.ProtoText(request))
 	streams := make([]*oproto.ValueStream, 0)
-	for stream := range streamChan {
+	for stream := range s.ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp) {
 		streams = append(streams, stream)
 	}
 	mergeBy := ""

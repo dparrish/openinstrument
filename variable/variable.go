@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	openinstrument_proto "github.com/dparrish/openinstrument/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
 )
 
 // Variable represents a variable name with all labels.
@@ -63,20 +63,20 @@ func (v Variable) String() string {
 }
 
 // AsProto returns the Varabile encoded as a new StreamVariable protobuf.
-func (v Variable) AsProto() (p *openinstrument_proto.StreamVariable) {
-	p = new(openinstrument_proto.StreamVariable)
+func (v Variable) AsProto() (p *oproto.StreamVariable) {
+	p = new(oproto.StreamVariable)
 	v.ToProto(p)
 	return
 }
 
 // AsProto encodes the Variable into an existing protobuf.
-func (v Variable) ToProto(p *openinstrument_proto.StreamVariable) {
+func (v Variable) ToProto(p *oproto.StreamVariable) {
 	p.Reset()
 	p.Name = v.Variable
-	p.Label = make([]*openinstrument_proto.Label, len(v.Labels))
+	p.Label = make([]*oproto.Label, len(v.Labels))
 	var i int
 	for key, value := range v.Labels {
-		p.Label[i] = &openinstrument_proto.Label{Label: key, Value: value}
+		p.Label[i] = &oproto.Label{Label: key, Value: value}
 		i++
 	}
 }
@@ -108,7 +108,7 @@ func (v *Variable) ParseFromString(textvar string) error {
 }
 
 // ParseFromProto extracts the details from a protobuf.
-func (v *Variable) ParseFromProto(p *openinstrument_proto.StreamVariable) error {
+func (v *Variable) ParseFromProto(p *oproto.StreamVariable) error {
 	v.Variable = p.Name
 	// Copy labels
 	v.Labels = make(map[string]string, len(p.Label))
@@ -172,7 +172,7 @@ func NewFromString(textvar string) *Variable {
 }
 
 // NewFromProto creates a new Variable from the supplied protobuf.
-func NewFromProto(p *openinstrument_proto.StreamVariable) *Variable {
+func NewFromProto(p *oproto.StreamVariable) *Variable {
 	v := new(Variable)
 	if p == nil {
 		return v

@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dparrish/openinstrument/proto"
+	oproto "github.com/dparrish/openinstrument/proto"
 )
 
 type Timer struct {
-	t         *openinstrument_proto.LogMessage
+	t         *oproto.LogMessage
 	startTime time.Time
 	message   string
 }
 
-func NewTimer(message string, t *openinstrument_proto.LogMessage) *Timer {
+func NewTimer(message string, t *oproto.LogMessage) *Timer {
 	return &Timer{
 		startTime: time.Now(),
 		t:         t,

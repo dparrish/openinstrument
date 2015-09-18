@@ -87,7 +87,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Println(openinstrument.ProtoText(&request))
-	streamChan := ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp, true)
+	streamChan := ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp)
 	streams := make([]*oproto.ValueStream, 0)
 	for stream := range streamChan {
 		streams = append(streams, stream)
@@ -189,7 +189,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 	vars := make(map[string]*oproto.StreamVariable)
 	minTimestamp := time.Now().Add(time.Duration(-request.MaxAge) * time.Millisecond)
 	unix := uint64(minTimestamp.Unix()) * 1000
-	streamChan := ds.Reader(requestVariable, unix, 0, false)
+	streamChan := ds.Reader(requestVariable, unix, 0)
 	for stream := range streamChan {
 		vars[variable.NewFromProto(stream.Variable).String()] = stream.Variable
 		if request.MaxVariables > 0 && len(vars) == int(request.MaxVariables) {
@@ -281,7 +281,7 @@ func InspectVariable(w http.ResponseWriter, req *http.Request) {
 	}
 
 	v := variable.NewFromString(p.Query)
-	c := ds.Reader(v, 0, 0, true)
+	c := ds.Reader(v, 0, 0)
 	for stream := range c {
 		lt := stream.Value[len(stream.Value)-1].EndTimestamp
 		if lt == 0 {
@@ -331,7 +331,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 
 	results := make([]Result, 0)
 
-	for stream := range ds.Reader(variable.NewFromString(query), minTimestamp, maxTimestamp, showValues) {
+	for stream := range ds.Reader(variable.NewFromString(query), minTimestamp, maxTimestamp) {
 		r := Result{
 			Variable: variable.NewFromProto(stream.Variable).String(),
 		}

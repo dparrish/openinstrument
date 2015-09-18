@@ -1,6 +1,7 @@
 package protofile
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -160,6 +161,11 @@ func (s *MySuite) TestValueStreamReader(c *C) {
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
 		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
 		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
+
+		for range reader {
+			log.Printf("Got unexpected value")
+			c.Fail()
+		}
 	}
 }
 
@@ -214,5 +220,10 @@ func (s *MySuite) TestValueStreamWriter(c *C) {
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
 		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
 		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
+
+		for range reader {
+			log.Printf("Got unexpected value")
+			c.Fail()
+		}
 	}
 }
