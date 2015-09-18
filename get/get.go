@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -138,24 +139,34 @@ func main() {
 	}
 
 	stub := oproto.NewStoreClient(conn)
-	response, err := stub.Get(context.Background(), request)
+	response_stream, err := stub.Get(context.Background(), request)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, stream := range response.Stream {
-		variable := variable.NewFromProto(stream.Variable).String()
-		for _, value := range stream.Value {
-			fmt.Printf("%s\t%s\t", variable, time.Unix(int64(value.Timestamp/1000), 0))
-			if value.StringValue == "" {
-				if isRate {
-					fmt.Printf("%f\n", value.DoubleValue*1000.0)
+	for {
+		response, err := response_stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("%s", err)
+		}
+		for _, stream := range response.Stream {
+			variable := variable.NewFromProto(stream.Variable).String()
+			for _, value := range stream.Value {
+				fmt.Printf("%s\t%s\t", variable, time.Unix(int64(value.Timestamp/1000), 0))
+				if value.StringValue == "" {
+					if isRate {
+						fmt.Printf("%f\n", value.DoubleValue*1000.0)
+					} else {
+						fmt.Printf("%f\n", value.DoubleValue)
+					}
 				} else {
-					fmt.Printf("%f\n", value.DoubleValue)
+					fmt.Printf("%s\n", value.StringValue)
 				}
-			} else {
-				fmt.Printf("%s\n", value.StringValue)
 			}
 		}
 	}
+
 }

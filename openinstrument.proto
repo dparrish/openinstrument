@@ -263,6 +263,6 @@ message PingResponse {
 service Store {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc List(ListRequest) returns (ListResponse);
-  rpc Get(GetRequest) returns (GetResponse);
-  rpc Add(AddRequest) returns (AddResponse);
+  rpc Get(GetRequest) returns (stream GetResponse);
+  rpc Add(stream AddRequest) returns (stream AddResponse);
 }

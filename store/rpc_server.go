@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -74,20 +76,19 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 	return response, nil
 }
 
-func (s *server) Get(ctx context.Context, request *oproto.GetRequest) (*oproto.GetResponse, error) {
-	response := &oproto.GetResponse{}
+func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) error {
 	if request.GetVariable() == nil {
-		return nil, fmt.Errorf("No variable specified")
+		return fmt.Errorf("No variable specified")
 	}
 	requestVariable := variable.NewFromProto(request.Variable)
-	if len(requestVariable.Variable) == 0 {
-		return nil, fmt.Errorf("No variable specified")
+	if len(requestVariable.String()) == 0 {
+		return fmt.Errorf("No variable specified")
 	}
 	if request.MaxTimestamp == 0 {
 		request.MaxTimestamp = openinstrument.NowMs()
 	}
 	//log.Println(openinstrument.ProtoText(request))
-	streams := make([]*oproto.ValueStream, 0)
+	var streams []*oproto.ValueStream
 	for stream := range s.ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp) {
 		streams = append(streams, stream)
 	}
@@ -95,65 +96,82 @@ func (s *server) Get(ctx context.Context, request *oproto.GetRequest) (*oproto.G
 	if len(request.Aggregation) > 0 {
 		mergeBy = request.Aggregation[0].Label[0]
 	}
-	sc := valuestream.MergeBy(streams, mergeBy)
-	response.Stream = make([]*oproto.ValueStream, 0)
-	for streams := range sc {
-		output := valuestream.Merge(streams)
+	wg := new(sync.WaitGroup)
+	for streams := range valuestream.MergeBy(streams, mergeBy) {
+		wg.Add(1)
+		go func(streams []*oproto.ValueStream) {
+			output := valuestream.Merge(streams)
 
-		if request.Mutation != nil && len(request.Mutation) > 0 {
-			for _, mut := range request.Mutation {
-				switch mut.SampleType {
-				case oproto.StreamMutation_AVERAGE:
-					output = mutations.Mean(uint64(mut.SampleFrequency), output)
-				case oproto.StreamMutation_MIN:
-					output = mutations.Min(uint64(mut.SampleFrequency), output)
-				case oproto.StreamMutation_MAX:
-					output = mutations.Max(uint64(mut.SampleFrequency), output)
-				case oproto.StreamMutation_RATE:
-					output = mutations.Rate(uint64(mut.SampleFrequency), output)
-				case oproto.StreamMutation_RATE_SIGNED:
-					output = mutations.SignedRate(uint64(mut.SampleFrequency), output)
+			if request.Mutation != nil && len(request.Mutation) > 0 {
+				for _, mut := range request.Mutation {
+					switch mut.SampleType {
+					case oproto.StreamMutation_AVERAGE:
+						output = mutations.Mean(uint64(mut.SampleFrequency), output)
+					case oproto.StreamMutation_MIN:
+						output = mutations.Min(uint64(mut.SampleFrequency), output)
+					case oproto.StreamMutation_MAX:
+						output = mutations.Max(uint64(mut.SampleFrequency), output)
+					case oproto.StreamMutation_RATE:
+						output = mutations.Rate(uint64(mut.SampleFrequency), output)
+					case oproto.StreamMutation_RATE_SIGNED:
+						output = mutations.SignedRate(uint64(mut.SampleFrequency), output)
+					}
 				}
 			}
-		}
 
-		newstream := new(oproto.ValueStream)
-		newstream.Variable = variable.NewFromProto(streams[0].Variable).AsProto()
-		var valueCount uint32
-		for value := range output {
-			if request.MinTimestamp != 0 && value.Timestamp < request.MinTimestamp {
-				// Too old
-				continue
+			newstream := &oproto.ValueStream{Variable: streams[0].Variable}
+			for value := range output {
+				if request.MaxValues != 0 && uint32(len(newstream.Value)) >= request.MaxValues {
+					// More values than requested, remove the oldest element
+					newstream.Value = newstream.Value[1:]
+				}
+
+				if request.MinTimestamp != 0 && value.Timestamp < request.MinTimestamp {
+					// Too old
+					continue
+				}
+				if request.MaxTimestamp != 0 && value.Timestamp > request.MaxTimestamp {
+					// Too new
+					continue
+				}
+				newstream.Value = append(newstream.Value, value)
 			}
-			if request.MaxTimestamp != 0 && value.Timestamp > request.MaxTimestamp {
-				// Too new
-				continue
-			}
-			newstream.Value = append(newstream.Value, value)
-			valueCount++
-		}
 
-		if request.MaxValues != 0 && valueCount >= request.MaxValues {
-			newstream.Value = newstream.Value[uint32(len(newstream.Value))-request.MaxValues:]
-		}
-
-		response.Stream = append(response.Stream, newstream)
+			server.Send(&oproto.GetResponse{
+				Success: true,
+				Stream:  []*oproto.ValueStream{newstream},
+			})
+			wg.Done()
+		}(streams)
 	}
-	response.Success = true
-	return response, nil
+	wg.Wait()
+	return nil
 }
 
-func (s *server) Add(ctx context.Context, request *oproto.AddRequest) (*oproto.AddResponse, error) {
-	response := &oproto.AddResponse{}
-
-	c := s.ds.Writer()
-	for _, stream := range request.Stream {
-		c <- stream
+func (s *server) Add(server oproto.Store_AddServer) error {
+	wg := new(sync.WaitGroup)
+	for {
+		request, err := server.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		wg.Add(1)
+		go func(request *oproto.AddRequest) {
+			response := &oproto.AddResponse{Success: true}
+			c := s.ds.Writer()
+			for _, stream := range request.Stream {
+				c <- stream
+			}
+			close(c)
+			server.Send(response)
+			wg.Done()
+		}(request)
 	}
-	close(c)
-
-	response.Success = true
-	return response, nil
+	wg.Wait()
+	return nil
 }
 
 func serveRPC(ds *datastore.Datastore) {

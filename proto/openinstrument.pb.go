@@ -700,8 +700,8 @@ var _ grpc.ClientConn
 type StoreClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (Store_GetClient, error)
+	Add(ctx context.Context, opts ...grpc.CallOption) (Store_AddClient, error)
 }
 
 type storeClient struct {
@@ -730,22 +730,67 @@ func (c *storeClient) List(ctx context.Context, in *ListRequest, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *storeClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
-	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/Get", in, out, c.cc, opts...)
+func (c *storeClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (Store_GetClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_Store_serviceDesc.Streams[0], c.cc, "/openinstrument.proto.Store/Get", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &storeGetClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *storeClient) Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error) {
-	out := new(AddResponse)
-	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/Add", in, out, c.cc, opts...)
+type Store_GetClient interface {
+	Recv() (*GetResponse, error)
+	grpc.ClientStream
+}
+
+type storeGetClient struct {
+	grpc.ClientStream
+}
+
+func (x *storeGetClient) Recv() (*GetResponse, error) {
+	m := new(GetResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *storeClient) Add(ctx context.Context, opts ...grpc.CallOption) (Store_AddClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_Store_serviceDesc.Streams[1], c.cc, "/openinstrument.proto.Store/Add", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &storeAddClient{stream}
+	return x, nil
+}
+
+type Store_AddClient interface {
+	Send(*AddRequest) error
+	Recv() (*AddResponse, error)
+	grpc.ClientStream
+}
+
+type storeAddClient struct {
+	grpc.ClientStream
+}
+
+func (x *storeAddClient) Send(m *AddRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *storeAddClient) Recv() (*AddResponse, error) {
+	m := new(AddResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // Server API for Store service
@@ -753,8 +798,8 @@ func (c *storeClient) Add(ctx context.Context, in *AddRequest, opts ...grpc.Call
 type StoreServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	List(context.Context, *ListRequest) (*ListResponse, error)
-	Get(context.Context, *GetRequest) (*GetResponse, error)
-	Add(context.Context, *AddRequest) (*AddResponse, error)
+	Get(*GetRequest, Store_GetServer) error
+	Add(Store_AddServer) error
 }
 
 func RegisterStoreServer(s *grpc.Server, srv StoreServer) {
@@ -785,28 +830,51 @@ func _Store_List_Handler(srv interface{}, ctx context.Context, codec grpc.Codec,
 	return out, nil
 }
 
-func _Store_Get_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(GetRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
+func _Store_Get_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	out, err := srv.(StoreServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+	return srv.(StoreServer).Get(m, &storeGetServer{stream})
 }
 
-func _Store_Add_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(AddRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
+type Store_GetServer interface {
+	Send(*GetResponse) error
+	grpc.ServerStream
+}
+
+type storeGetServer struct {
+	grpc.ServerStream
+}
+
+func (x *storeGetServer) Send(m *GetResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Store_Add_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StoreServer).Add(&storeAddServer{stream})
+}
+
+type Store_AddServer interface {
+	Send(*AddResponse) error
+	Recv() (*AddRequest, error)
+	grpc.ServerStream
+}
+
+type storeAddServer struct {
+	grpc.ServerStream
+}
+
+func (x *storeAddServer) Send(m *AddResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *storeAddServer) Recv() (*AddRequest, error) {
+	m := new(AddRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	out, err := srv.(StoreServer).Add(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+	return m, nil
 }
 
 var _Store_serviceDesc = grpc.ServiceDesc{
@@ -821,14 +889,18 @@ var _Store_serviceDesc = grpc.ServiceDesc{
 			MethodName: "List",
 			Handler:    _Store_List_Handler,
 		},
+	},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Get",
-			Handler:    _Store_Get_Handler,
+			StreamName:    "Get",
+			Handler:       _Store_Get_Handler,
+			ServerStreams: true,
 		},
 		{
-			MethodName: "Add",
-			Handler:    _Store_Add_Handler,
+			StreamName:    "Add",
+			Handler:       _Store_Add_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
 }

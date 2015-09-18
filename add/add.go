@@ -67,7 +67,12 @@ func main() {
 	}
 
 	stub := oproto.NewStoreClient(conn)
-	response, err := stub.Add(context.Background(), request)
+	server_stream, err := stub.Add(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	server_stream.Send(request)
+	response, err := server_stream.Recv()
 	if err != nil {
 		log.Fatal(err)
 	}
