@@ -240,16 +240,14 @@ func StoreStatus(w http.ResponseWriter, req *http.Request) {
 
 func CompactBlock(w http.ResponseWriter, req *http.Request) {
 	for _, block := range ds.Blocks {
-		if strings.HasPrefix(strings.ToLower(block.ID), strings.ToLower(req.FormValue("block"))) {
-			log.Printf("User request compaction of block %s", req.FormValue("block"))
-			block.RequestCompact = true
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "compaction requested\n")
-			return
+		if !strings.HasPrefix(strings.ToLower(block.ID), strings.ToLower(req.FormValue("block"))) {
+			continue
 		}
+		log.Printf("User request compaction of block %s", req.FormValue("block"))
+		block.RequestCompact()
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "compaction requested\n")
 	}
-	w.WriteHeader(404)
-	fmt.Fprintf(w, "block %s not found\n", req.FormValue("block"))
 }
 
 func InspectVariable(w http.ResponseWriter, req *http.Request) {

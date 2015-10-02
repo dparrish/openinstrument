@@ -8,8 +8,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/joaojeronimo/go-crc16"
 )
 
@@ -82,7 +82,7 @@ func (pf *ProtoFile) Read(message proto.Message) (int64, error) {
 
 		// Read Magic header
 		if h.Magic != protoMagic {
-			log.Printf("Protobuf delimeter at %s:%x does not match %#x", pf.filename, pf.pos, protoMagic)
+			//log.Printf("Protobuf delimeter at %s:%x does not match %#x", pf.filename, pf.pos, protoMagic)
 			pf.Seek(pf.pos + 1)
 			continue
 		}

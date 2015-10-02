@@ -28,12 +28,6 @@ type server struct {
 	ds *datastore.Datastore
 }
 
-func (s *server) Ping(ctx context.Context, request *oproto.PingRequest) (*oproto.PingResponse, error) {
-	return &oproto.PingResponse{
-		Payload: request.Payload,
-	}, nil
-}
-
 func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto.ListResponse, error) {
 	log.Printf("%s", request)
 	response := &oproto.ListResponse{
@@ -172,6 +166,53 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 	}
 	wg.Wait()
 	return nil
+}
+
+func (s *server) LookupBlock(ctx context.Context, request *oproto.LookupBlockRequest) (*oproto.LookupBlockResponse, error) {
+	block, err := s.ds.GetBlock(request.Block.Id, request.Block.EndKey)
+	if err != nil {
+		return nil, err
+	}
+	return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
+}
+
+func (s *server) SplitBlock(ctx context.Context, request *oproto.SplitBlockRequest) (*oproto.SplitBlockResponse, error) {
+	block, err := s.ds.GetBlock(request.Block.Id, request.Block.EndKey)
+	if err != nil {
+		return nil, err
+	}
+	left, right, err := s.ds.SplitBlock(block)
+	if err != nil {
+		return nil, err
+	}
+	return &oproto.SplitBlockResponse{
+		Block: []*oproto.Block{
+			left.ToProto(),
+			right.ToProto(),
+		},
+	}, nil
+}
+
+func (s *server) JoinBlock(ctx context.Context, request *oproto.JoinBlockRequest) (*oproto.JoinBlockResponse, error) {
+	block, err := s.ds.GetBlock(request.Block.Id, request.Block.EndKey)
+	if err != nil {
+		return nil, err
+	}
+	if block, err = s.ds.JoinBlock(block); err != nil {
+		return nil, err
+	}
+	return &oproto.JoinBlockResponse{Block: block.ToProto()}, nil
+}
+
+func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockRequest) (*oproto.CompactBlockResponse, error) {
+	block, err := s.ds.GetBlock(request.Block.Id, request.Block.EndKey)
+	if err != nil {
+		return nil, err
+	}
+	if err = s.ds.CompactBlock(block); err != nil {
+		return nil, err
+	}
+	return &oproto.CompactBlockResponse{Block: block.ToProto()}, nil
 }
 
 func serveRPC(ds *datastore.Datastore) {

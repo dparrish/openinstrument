@@ -29,8 +29,15 @@ It has these top-level messages:
 	RetentionPolicy
 	StoreServerStatus
 	StoreConfig
-	PingRequest
-	PingResponse
+	Block
+	LookupBlockRequest
+	LookupBlockResponse
+	SplitBlockRequest
+	SplitBlockResponse
+	JoinBlockRequest
+	JoinBlockResponse
+	CompactBlockRequest
+	CompactBlockResponse
 */
 package openinstrument_proto
 
@@ -667,21 +674,143 @@ func (m *StoreConfig) GetRetentionPolicy() *RetentionPolicy {
 	return nil
 }
 
-type PingRequest struct {
-	Payload string `protobuf:"bytes,1,opt,name=payload" json:"payload,omitempty"`
+type Block struct {
+	Id              string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	EndKey          string `protobuf:"bytes,2,opt,name=end_key" json:"end_key,omitempty"`
+	IndexedStreams  uint32 `protobuf:"varint,3,opt,name=indexed_streams" json:"indexed_streams,omitempty"`
+	IndexedValues   uint32 `protobuf:"varint,4,opt,name=indexed_values" json:"indexed_values,omitempty"`
+	LoggedStreams   uint32 `protobuf:"varint,5,opt,name=logged_streams" json:"logged_streams,omitempty"`
+	LoggedValues    uint32 `protobuf:"varint,6,opt,name=logged_values" json:"logged_values,omitempty"`
+	UnloggedStreams uint32 `protobuf:"varint,7,opt,name=unlogged_streams" json:"unlogged_streams,omitempty"`
+	UnloggedValues  uint32 `protobuf:"varint,8,opt,name=unlogged_values" json:"unlogged_values,omitempty"`
 }
 
-func (m *PingRequest) Reset()         { *m = PingRequest{} }
-func (m *PingRequest) String() string { return proto.CompactTextString(m) }
-func (*PingRequest) ProtoMessage()    {}
+func (m *Block) Reset()         { *m = Block{} }
+func (m *Block) String() string { return proto.CompactTextString(m) }
+func (*Block) ProtoMessage()    {}
 
-type PingResponse struct {
-	Payload string `protobuf:"bytes,1,opt,name=payload" json:"payload,omitempty"`
+type LookupBlockRequest struct {
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
 }
 
-func (m *PingResponse) Reset()         { *m = PingResponse{} }
-func (m *PingResponse) String() string { return proto.CompactTextString(m) }
-func (*PingResponse) ProtoMessage()    {}
+func (m *LookupBlockRequest) Reset()         { *m = LookupBlockRequest{} }
+func (m *LookupBlockRequest) String() string { return proto.CompactTextString(m) }
+func (*LookupBlockRequest) ProtoMessage()    {}
+
+func (m *LookupBlockRequest) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type LookupBlockResponse struct {
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+}
+
+func (m *LookupBlockResponse) Reset()         { *m = LookupBlockResponse{} }
+func (m *LookupBlockResponse) String() string { return proto.CompactTextString(m) }
+func (*LookupBlockResponse) ProtoMessage()    {}
+
+func (m *LookupBlockResponse) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type SplitBlockRequest struct {
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+}
+
+func (m *SplitBlockRequest) Reset()         { *m = SplitBlockRequest{} }
+func (m *SplitBlockRequest) String() string { return proto.CompactTextString(m) }
+func (*SplitBlockRequest) ProtoMessage()    {}
+
+func (m *SplitBlockRequest) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type SplitBlockResponse struct {
+	Block []*Block `protobuf:"bytes,1,rep,name=block" json:"block,omitempty"`
+}
+
+func (m *SplitBlockResponse) Reset()         { *m = SplitBlockResponse{} }
+func (m *SplitBlockResponse) String() string { return proto.CompactTextString(m) }
+func (*SplitBlockResponse) ProtoMessage()    {}
+
+func (m *SplitBlockResponse) GetBlock() []*Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type JoinBlockRequest struct {
+	// This the last block in the sequence. The block with the previous end key
+	// will be joined with this one, so the output block will have the same end
+	// key, but a different ID.
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+}
+
+func (m *JoinBlockRequest) Reset()         { *m = JoinBlockRequest{} }
+func (m *JoinBlockRequest) String() string { return proto.CompactTextString(m) }
+func (*JoinBlockRequest) ProtoMessage()    {}
+
+func (m *JoinBlockRequest) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type JoinBlockResponse struct {
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+}
+
+func (m *JoinBlockResponse) Reset()         { *m = JoinBlockResponse{} }
+func (m *JoinBlockResponse) String() string { return proto.CompactTextString(m) }
+func (*JoinBlockResponse) ProtoMessage()    {}
+
+func (m *JoinBlockResponse) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type CompactBlockRequest struct {
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+}
+
+func (m *CompactBlockRequest) Reset()         { *m = CompactBlockRequest{} }
+func (m *CompactBlockRequest) String() string { return proto.CompactTextString(m) }
+func (*CompactBlockRequest) ProtoMessage()    {}
+
+func (m *CompactBlockRequest) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+type CompactBlockResponse struct {
+	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+}
+
+func (m *CompactBlockResponse) Reset()         { *m = CompactBlockResponse{} }
+func (m *CompactBlockResponse) String() string { return proto.CompactTextString(m) }
+func (*CompactBlockResponse) ProtoMessage()    {}
+
+func (m *CompactBlockResponse) GetBlock() *Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
 
 func init() {
 	proto.RegisterEnum("openinstrument.proto.StreamVariable_ValueType", StreamVariable_ValueType_name, StreamVariable_ValueType_value)
@@ -698,10 +827,13 @@ var _ grpc.ClientConn
 // Client API for Store service
 
 type StoreClient interface {
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (Store_GetClient, error)
 	Add(ctx context.Context, opts ...grpc.CallOption) (Store_AddClient, error)
+	LookupBlock(ctx context.Context, in *LookupBlockRequest, opts ...grpc.CallOption) (*LookupBlockResponse, error)
+	SplitBlock(ctx context.Context, in *SplitBlockRequest, opts ...grpc.CallOption) (*SplitBlockResponse, error)
+	JoinBlock(ctx context.Context, in *JoinBlockRequest, opts ...grpc.CallOption) (*JoinBlockResponse, error)
+	CompactBlock(ctx context.Context, in *CompactBlockRequest, opts ...grpc.CallOption) (*CompactBlockResponse, error)
 }
 
 type storeClient struct {
@@ -710,15 +842,6 @@ type storeClient struct {
 
 func NewStoreClient(cc *grpc.ClientConn) StoreClient {
 	return &storeClient{cc}
-}
-
-func (c *storeClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
-	out := new(PingResponse)
-	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/Ping", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *storeClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
@@ -793,29 +916,56 @@ func (x *storeAddClient) Recv() (*AddResponse, error) {
 	return m, nil
 }
 
-// Server API for Store service
-
-type StoreServer interface {
-	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	List(context.Context, *ListRequest) (*ListResponse, error)
-	Get(*GetRequest, Store_GetServer) error
-	Add(Store_AddServer) error
-}
-
-func RegisterStoreServer(s *grpc.Server, srv StoreServer) {
-	s.RegisterService(&_Store_serviceDesc, srv)
-}
-
-func _Store_Ping_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
-	in := new(PingRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(StoreServer).Ping(ctx, in)
+func (c *storeClient) LookupBlock(ctx context.Context, in *LookupBlockRequest, opts ...grpc.CallOption) (*LookupBlockResponse, error) {
+	out := new(LookupBlockResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/LookupBlock", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *storeClient) SplitBlock(ctx context.Context, in *SplitBlockRequest, opts ...grpc.CallOption) (*SplitBlockResponse, error) {
+	out := new(SplitBlockResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/SplitBlock", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeClient) JoinBlock(ctx context.Context, in *JoinBlockRequest, opts ...grpc.CallOption) (*JoinBlockResponse, error) {
+	out := new(JoinBlockResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/JoinBlock", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeClient) CompactBlock(ctx context.Context, in *CompactBlockRequest, opts ...grpc.CallOption) (*CompactBlockResponse, error) {
+	out := new(CompactBlockResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/CompactBlock", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for Store service
+
+type StoreServer interface {
+	List(context.Context, *ListRequest) (*ListResponse, error)
+	Get(*GetRequest, Store_GetServer) error
+	Add(Store_AddServer) error
+	LookupBlock(context.Context, *LookupBlockRequest) (*LookupBlockResponse, error)
+	SplitBlock(context.Context, *SplitBlockRequest) (*SplitBlockResponse, error)
+	JoinBlock(context.Context, *JoinBlockRequest) (*JoinBlockResponse, error)
+	CompactBlock(context.Context, *CompactBlockRequest) (*CompactBlockResponse, error)
+}
+
+func RegisterStoreServer(s *grpc.Server, srv StoreServer) {
+	s.RegisterService(&_Store_serviceDesc, srv)
 }
 
 func _Store_List_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
@@ -877,17 +1027,77 @@ func (x *storeAddServer) Recv() (*AddRequest, error) {
 	return m, nil
 }
 
+func _Store_LookupBlock_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(LookupBlockRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).LookupBlock(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Store_SplitBlock_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(SplitBlockRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).SplitBlock(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Store_JoinBlock_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(JoinBlockRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).JoinBlock(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Store_CompactBlock_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(CompactBlockRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).CompactBlock(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Store_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "openinstrument.proto.Store",
 	HandlerType: (*StoreServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Ping",
-			Handler:    _Store_Ping_Handler,
-		},
-		{
 			MethodName: "List",
 			Handler:    _Store_List_Handler,
+		},
+		{
+			MethodName: "LookupBlock",
+			Handler:    _Store_LookupBlock_Handler,
+		},
+		{
+			MethodName: "SplitBlock",
+			Handler:    _Store_SplitBlock_Handler,
+		},
+		{
+			MethodName: "JoinBlock",
+			Handler:    _Store_JoinBlock_Handler,
+		},
+		{
+			MethodName: "CompactBlock",
+			Handler:    _Store_CompactBlock_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

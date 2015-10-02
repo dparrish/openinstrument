@@ -18,6 +18,12 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
+const (
+	maxLogValues      uint32 = 10000
+	splitPointStreams uint32 = 1500
+	splitPointValues  uint32 = 1000000
+)
+
 type BlockManager interface {
 	Filename() string
 	IsCompacting() bool
@@ -39,16 +45,17 @@ type Block struct {
 
 	// Contains any streams that have been written to disk but not yet indexed
 	LogStreams map[string]*oproto.ValueStream
-	logLock    sync.Mutex
+	LogLock    sync.RWMutex
 
 	// Contains any streams that have not yet been written to disk
 	NewStreams     []*oproto.ValueStream
-	NewStreamsLock sync.Mutex
+	NewStreamsLock sync.RWMutex
 
 	isCompacting     bool
 	compactStartTime time.Time
 	compactEndTime   time.Time
-	RequestCompact   bool
+	requestCompact   bool
+	FlagsLock        sync.Mutex
 }
 
 func newBlock(endKey, id string) *Block {
@@ -82,6 +89,12 @@ func (block *Block) Filename() string {
 
 func (block *Block) IsCompacting() bool {
 	return block.isCompacting
+}
+
+func (block *Block) RequestCompact() {
+	block.FlagsLock.Lock()
+	defer block.FlagsLock.Unlock()
+	block.requestCompact = true
 }
 
 func (block *Block) CompactDuration() time.Duration {
@@ -120,7 +133,31 @@ func (block *Block) String() string {
 	return block.ID
 }
 
+func (block *Block) ToProto() *oproto.Block {
+	b := &oproto.Block{
+		Id:              block.ID,
+		EndKey:          block.EndKey,
+		IndexedStreams:  uint32(len(block.BlockHeader.Index)),
+		IndexedValues:   uint32(0),
+		LoggedStreams:   uint32(len(block.LogStreams)),
+		LoggedValues:    block.NumLogValues(),
+		UnloggedStreams: uint32(len(block.NewStreams)),
+		UnloggedValues:  uint32(0),
+	}
+	for _, index := range block.BlockHeader.Index {
+		b.IndexedValues += uint32(index.NumValues)
+	}
+	for _, stream := range block.NewStreams {
+		b.UnloggedValues += uint32(len(stream.Value))
+	}
+	return b
+}
+
 func (block *Block) NumStreams() uint32 {
+	block.LogLock.RLock()
+	defer block.LogLock.RUnlock()
+	block.NewStreamsLock.RLock()
+	defer block.NewStreamsLock.RUnlock()
 	var streams uint32
 	streams += uint32(len(block.BlockHeader.Index))
 	streams += uint32(len(block.LogStreams))
@@ -129,8 +166,8 @@ func (block *Block) NumStreams() uint32 {
 }
 
 func (block *Block) NumLogValues() uint32 {
-	block.logLock.Lock()
-	defer block.logLock.Unlock()
+	block.LogLock.RLock()
+	defer block.LogLock.RUnlock()
 	var values uint32
 	for _, stream := range block.LogStreams {
 		values += uint32(len(stream.Value))
@@ -139,6 +176,8 @@ func (block *Block) NumLogValues() uint32 {
 }
 
 func (block *Block) NumValues() uint32 {
+	block.LogLock.RLock()
+	defer block.LogLock.RUnlock()
 	var values uint32
 	for _, index := range block.BlockHeader.Index {
 		values += index.NumValues
@@ -153,6 +192,8 @@ func (block *Block) NumValues() uint32 {
 }
 
 func (block *Block) shouldCompact() bool {
+	block.LogLock.RLock()
+	defer block.LogLock.RUnlock()
 	if len(block.LogStreams) > 10000 {
 		log.Printf("Block %s has %d (> %d) log streams, scheduling compaction", block, len(block.LogStreams), 10000)
 		return true
@@ -161,16 +202,23 @@ func (block *Block) shouldCompact() bool {
 		log.Printf("Block %s has %d (> %d) log values, scheduling compaction", block, block.NumLogValues(), maxLogValues)
 		return true
 	}
-	return block.RequestCompact
+	block.FlagsLock.Lock()
+	defer block.FlagsLock.Unlock()
+	return block.requestCompact
 }
 
 func (block *Block) shouldSplit() bool {
-	if uint32(len(block.BlockHeader.Index)) > splitPoint {
-		log.Printf("Block %s contains %d vars, split", block, len(block.BlockHeader.Index))
+	ns := block.NumStreams()
+	if ns <= 1 {
+		return false
+	}
+	if ns > splitPointStreams {
+		log.Printf("Block %s contains %d streams, split", block, ns)
 		return true
 	}
-	if uint32(len(block.LogStreams)) > splitPoint {
-		log.Printf("Block %s contains %d vars, split", block, len(block.BlockHeader.Index))
+	nv := block.NumValues()
+	if nv >= splitPointValues {
+		log.Printf("Block %s contains %d values, split", block, nv)
 		return true
 	}
 	return false
