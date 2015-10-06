@@ -13,7 +13,6 @@ func Encode(input <-chan *oproto.Value) <-chan *oproto.Value {
 			}
 
 			if last.StringValue != "" && value.StringValue != "" {
-				//log.Printf("Last at %d is %s, this is %s", last.Timestamp, last.StringValue, value.StringValue)
 				if last.StringValue == value.StringValue {
 					if value.EndTimestamp > value.Timestamp {
 						last.EndTimestamp = value.EndTimestamp
@@ -23,7 +22,6 @@ func Encode(input <-chan *oproto.Value) <-chan *oproto.Value {
 					continue
 				}
 			} else {
-				//log.Printf("Last is at %d %f, this is %f", last.Timestamp, last.DoubleValue, value.DoubleValue)
 				if last.DoubleValue == value.DoubleValue {
 					if value.EndTimestamp > value.Timestamp {
 						last.EndTimestamp = value.EndTimestamp

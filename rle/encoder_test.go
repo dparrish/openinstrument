@@ -75,3 +75,27 @@ func (s *MySuite) TestEncodeString(c *C) {
 	test(output, 4, 4, "Goodbye")
 	test(output, 5, 5, "Friend")
 }
+
+func (s *MySuite) BenchmarkEncodeDouble(c *C) {
+	// Create pipeline
+	for run := 0; run < c.N; run++ {
+		input := make(chan *oproto.Value, 100000)
+		output := Encode(input)
+
+		// Number of repetitions of each value
+		const blockSize = 100
+
+		go func() {
+			for i := 1; i <= 1000000; i++ {
+				input <- &oproto.Value{
+					Timestamp:   uint64(i),
+					DoubleValue: float64(i - (i % blockSize)),
+				}
+			}
+			close(input)
+		}()
+
+		for range output {
+		}
+	}
+}
