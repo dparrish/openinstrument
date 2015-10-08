@@ -62,7 +62,7 @@ func (v Variable) String() string {
 	return str
 }
 
-// AsProto returns the Varabile encoded as a new StreamVariable protobuf.
+// AsProto returns the Variable encoded as a new StreamVariable protobuf.
 func (v Variable) AsProto() (p *oproto.StreamVariable) {
 	p = new(oproto.StreamVariable)
 	v.ToProto(p)

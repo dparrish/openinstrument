@@ -2,6 +2,7 @@ package protofile
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -258,26 +259,64 @@ func (s *MySuite) BenchmarkReader(c *C) {
 	}
 }
 
-func (s *MySuite) BenchmarkWriter(c *C) {
+// Write 100000 ValueStreams containing 1 value each
+func (s *MySuite) BenchmarkWriterManyStreams(c *C) {
 	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
 
+	vs := &oproto.ValueStream{
+		Variable: &oproto.StreamVariable{Name: "/test/bar"},
+		Value: []*oproto.Value{
+			{Timestamp: uint64(1), DoubleValue: float64(1.1)},
+		},
+	}
+
 	for run := 0; run < c.N; run++ {
-		// Write a temporary file containing lots of data
+		os.Remove(filename)
 		file, err := Write(filename)
 		c.Assert(err, IsNil)
 		defer file.Close()
-		writer, done := file.ValueStreamWriter(10)
+		writer, done := file.ValueStreamWriter(100000)
 
-		for i := 0; i < 10000; i++ {
-			vs := &oproto.ValueStream{
-				Variable: &oproto.StreamVariable{Name: "/test/bar"},
-				Value: []*oproto.Value{
-					{Timestamp: uint64(i), DoubleValue: float64(i)},
-				},
-			}
+		for i := 0; i < 100000; i++ {
 			writer <- vs
 		}
 		close(writer)
 		<-done
 	}
+
+	file, _ := Read(filename)
+	defer file.Close()
+	stat, _ := file.Stat()
+	log.Printf("BenchmarkWriterManyStreams wrote %d kB", stat.Size()/1024)
+}
+
+// Write 1 ValueStream with 100000 values
+func (s *MySuite) BenchmarkWriterManyValues(c *C) {
+	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
+
+	vs := &oproto.ValueStream{
+		Variable: &oproto.StreamVariable{Name: "/test/bar"},
+		Value:    []*oproto.Value{},
+	}
+	for j := 0; j < 100000; j++ {
+		vs.Value = append(vs.Value, &oproto.Value{Timestamp: uint64(j), DoubleValue: float64(1.1)})
+	}
+
+	for run := 0; run < c.N; run++ {
+		os.Remove(filename)
+		file, err := Write(filename)
+		c.Assert(err, IsNil)
+		defer file.Close()
+		writer, done := file.ValueStreamWriter(10)
+
+		writer <- vs
+
+		close(writer)
+		<-done
+	}
+
+	file, _ := Read(filename)
+	defer file.Close()
+	stat, _ := file.Stat()
+	log.Printf("BenchmarkWriterManyValues wrote %d kB", stat.Size()/1024)
 }

@@ -62,11 +62,9 @@ func Open(path string) *Datastore {
 			// Compact any blocks that need it
 			for _, block := range ds.Blocks {
 				if block.shouldCompact() {
-					startTime := time.Now()
 					if err := ds.CompactBlock(block); err != nil {
 						log.Printf("Error compacting block: %s\n", err)
 					}
-					log.Printf("Finished compaction of %s in %v", block, time.Since(startTime))
 				}
 			}
 			ds.blocksLock.Unlock()
@@ -465,6 +463,7 @@ func (ds *Datastore) JoinBlock(block *Block) (*Block, error) {
 
 func (ds *Datastore) CompactBlock(block *Block) error {
 	log.Printf("Compacting block %s\n", block)
+	startTime := time.Now()
 
 	block.FlagsLock.Lock()
 	defer block.FlagsLock.Unlock()
@@ -514,6 +513,7 @@ func (ds *Datastore) CompactBlock(block *Block) error {
 
 	block.compactEndTime = time.Now()
 	block.isCompacting = false
+	log.Printf("Finished compaction of %s in %v", block, time.Since(startTime))
 	return nil
 }
 

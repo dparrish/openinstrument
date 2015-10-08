@@ -134,13 +134,19 @@ func (block *Block) String() string {
 }
 
 func (block *Block) ToProto() *oproto.Block {
+	block.NewStreamsLock.RLock()
+	defer block.NewStreamsLock.RUnlock()
+	block.LogLock.RLock()
+	defer block.LogLock.RUnlock()
+	block.NewStreamsLock.RLock()
+	defer block.NewStreamsLock.RUnlock()
 	b := &oproto.Block{
 		Id:              block.ID,
 		EndKey:          block.EndKey,
 		IndexedStreams:  uint32(len(block.BlockHeader.Index)),
 		IndexedValues:   uint32(0),
 		LoggedStreams:   uint32(len(block.LogStreams)),
-		LoggedValues:    block.NumLogValues(),
+		LoggedValues:    uint32(0),
 		UnloggedStreams: uint32(len(block.NewStreams)),
 		UnloggedValues:  uint32(0),
 		IsCompacting:    block.IsCompacting(),
@@ -151,6 +157,9 @@ func (block *Block) ToProto() *oproto.Block {
 	}
 	for _, stream := range block.NewStreams {
 		b.UnloggedValues += uint32(len(stream.Value))
+	}
+	for _, stream := range block.LogStreams {
+		b.LoggedValues += uint32(len(stream.Value))
 	}
 	return b
 }
@@ -233,27 +242,30 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	startTime := time.Now()
 	var endKey string
 
-	var wg sync.WaitGroup
 	st := time.Now()
+	// Run-length encode all streams in parallel
+	c := make(chan *oproto.ValueStream, len(streams))
 	for v, stream := range streams {
-		// Run-length encode all streams in parallel
 		if v > endKey {
 			endKey = v
 		}
-		//wg.Add(1)
-		//go func(v string, stream *oproto.ValueStream) {
-		// Sort values by timestamp
-		value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
+		go func(v string, stream *oproto.ValueStream) {
+			// Sort values by timestamp
+			value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
 
-		// Run-length encode values
-		newstream := &oproto.ValueStream{Variable: stream.Variable}
-		<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
-		streams[v] = newstream
-
-		//wg.Done()
-		//}(v, stream)
+			// Run-length encode values
+			newstream := &oproto.ValueStream{Variable: stream.Variable}
+			<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
+			c <- newstream
+		}(v, stream)
 	}
-	wg.Wait()
+	ns := make(map[string]*oproto.ValueStream, 0)
+	for i := 0; i < len(streams); i++ {
+		stream := <-c
+		ns[variable.NewFromProto(stream.Variable).String()] = stream
+	}
+	streams = ns
+	close(c)
 
 	var minTimestamp, maxTimestamp uint64
 	var outputValues int
