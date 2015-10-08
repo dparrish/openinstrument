@@ -18,8 +18,7 @@ type Variable struct {
 }
 
 func valueNeedsQuotes(str string) bool {
-	matched, _ := regexp.MatchString("^[,}]*$", str)
-	return matched
+	return strings.ContainsAny(str, ",[]{}")
 }
 
 func sortedKeys(m map[string]string) []string {
@@ -34,7 +33,7 @@ func sortedKeys(m map[string]string) []string {
 }
 
 // String returns the complete variable as a string, including all labels correctly quoted.
-func (v Variable) String() string {
+func (v *Variable) String() string {
 	str := v.Variable
 	if len(v.Labels) > 0 {
 		str += "{"
@@ -63,14 +62,14 @@ func (v Variable) String() string {
 }
 
 // AsProto returns the Variable encoded as a new StreamVariable protobuf.
-func (v Variable) AsProto() (p *oproto.StreamVariable) {
+func (v *Variable) AsProto() (p *oproto.StreamVariable) {
 	p = new(oproto.StreamVariable)
 	v.ToProto(p)
 	return
 }
 
 // AsProto encodes the Variable into an existing protobuf.
-func (v Variable) ToProto(p *oproto.StreamVariable) {
+func (v *Variable) ToProto(p *oproto.StreamVariable) {
 	p.Reset()
 	p.Name = v.Variable
 	p.Label = make([]*oproto.Label, len(v.Labels))
@@ -163,7 +162,7 @@ func (v *Variable) Match(match *Variable) bool {
 
 // NewFromString creates a new Variable from the supplied string.
 func NewFromString(textvar string) *Variable {
-	v := new(Variable)
+	v := &Variable{}
 	if err := v.ParseFromString(textvar); err != nil {
 		log.Println(err)
 		return nil
@@ -173,7 +172,7 @@ func NewFromString(textvar string) *Variable {
 
 // NewFromProto creates a new Variable from the supplied protobuf.
 func NewFromProto(p *oproto.StreamVariable) *Variable {
-	v := new(Variable)
+	v := &Variable{}
 	if p == nil {
 		return v
 	}
@@ -182,4 +181,8 @@ func NewFromProto(p *oproto.StreamVariable) *Variable {
 		return nil
 	}
 	return v
+}
+
+func ProtoToString(p *oproto.StreamVariable) string {
+	return NewFromProto(p).String()
 }

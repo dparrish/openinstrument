@@ -104,13 +104,9 @@ func MergeBy(streams []*oproto.ValueStream, by string) <-chan []*oproto.ValueStr
 							continue
 						}
 						value, ok := testvar.Labels[by]
-						if !ok {
-							continue
+						if ok && value == labelvalue {
+							output = append(output, stream)
 						}
-						if value != labelvalue {
-							continue
-						}
-						output = append(output, stream)
 					}
 					if len(output) > 0 {
 						c <- output

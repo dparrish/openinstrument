@@ -24,19 +24,6 @@ const (
 	splitPointValues  uint32 = 1000000
 )
 
-type BlockManager interface {
-	Filename() string
-	IsCompacting() bool
-	CompactDuration() time.Duration
-	String() string
-	NumStreams() uint32
-	NumLogValues() uint32
-	NumValues() uint32
-	Read(path string) (<-chan *oproto.ValueStream, error)
-	Write(path string, streams map[string]*oproto.ValueStream)
-	GetStreams(index *oproto.StoreFileHeaderIndex) <-chan *oproto.ValueStream
-}
-
 type Block struct {
 	EndKey string
 	ID     string
@@ -45,17 +32,16 @@ type Block struct {
 
 	// Contains any streams that have been written to disk but not yet indexed
 	LogStreams map[string]*oproto.ValueStream
-	LogLock    sync.RWMutex
+	logLock    sync.RWMutex
 
 	// Contains any streams that have not yet been written to disk
 	NewStreams     []*oproto.ValueStream
-	NewStreamsLock sync.RWMutex
+	newStreamsLock sync.RWMutex
 
 	isCompacting     bool
 	compactStartTime time.Time
 	compactEndTime   time.Time
-	requestCompact   bool
-	FlagsLock        sync.Mutex
+	FlagsLock        sync.RWMutex
 }
 
 func newBlock(endKey, id string) *Block {
@@ -79,6 +65,28 @@ func newBlock(endKey, id string) *Block {
 	}
 }
 
+func (block *Block) GetLogStreams() map[string]*oproto.ValueStream {
+	block.logLock.RLock()
+	defer block.logLock.RUnlock()
+	return block.LogStreams
+}
+
+func (block *Block) LogReadLocker() sync.Locker {
+	return block.logLock.RLocker()
+}
+
+func (block *Block) LogWriteLocker() sync.Locker {
+	return &block.logLock
+}
+
+func (block *Block) UnloggedReadLocker() sync.Locker {
+	return block.newStreamsLock.RLocker()
+}
+
+func (block *Block) UnloggedWriteLocker() sync.Locker {
+	return &block.newStreamsLock
+}
+
 func (block *Block) logFilename() string {
 	return fmt.Sprintf("block.%s.log", block.ID)
 }
@@ -88,16 +96,14 @@ func (block *Block) Filename() string {
 }
 
 func (block *Block) IsCompacting() bool {
+	block.FlagsLock.RLock()
+	defer block.FlagsLock.RUnlock()
 	return block.isCompacting
 }
 
-func (block *Block) RequestCompact() {
-	block.FlagsLock.Lock()
-	defer block.FlagsLock.Unlock()
-	block.requestCompact = true
-}
-
 func (block *Block) CompactDuration() time.Duration {
+	block.FlagsLock.RLock()
+	defer block.FlagsLock.RUnlock()
 	return time.Since(block.compactStartTime)
 }
 
@@ -134,12 +140,12 @@ func (block *Block) String() string {
 }
 
 func (block *Block) ToProto() *oproto.Block {
-	block.NewStreamsLock.RLock()
-	defer block.NewStreamsLock.RUnlock()
-	block.LogLock.RLock()
-	defer block.LogLock.RUnlock()
-	block.NewStreamsLock.RLock()
-	defer block.NewStreamsLock.RUnlock()
+	block.newStreamsLock.RLock()
+	defer block.newStreamsLock.RUnlock()
+	block.logLock.RLock()
+	defer block.logLock.RUnlock()
+	block.newStreamsLock.RLock()
+	defer block.newStreamsLock.RUnlock()
 	b := &oproto.Block{
 		Id:              block.ID,
 		EndKey:          block.EndKey,
@@ -165,10 +171,10 @@ func (block *Block) ToProto() *oproto.Block {
 }
 
 func (block *Block) NumStreams() uint32 {
-	block.LogLock.RLock()
-	defer block.LogLock.RUnlock()
-	block.NewStreamsLock.RLock()
-	defer block.NewStreamsLock.RUnlock()
+	block.logLock.RLock()
+	defer block.logLock.RUnlock()
+	block.newStreamsLock.RLock()
+	defer block.newStreamsLock.RUnlock()
 	var streams uint32
 	streams += uint32(len(block.BlockHeader.Index))
 	streams += uint32(len(block.LogStreams))
@@ -177,8 +183,8 @@ func (block *Block) NumStreams() uint32 {
 }
 
 func (block *Block) NumLogValues() uint32 {
-	block.LogLock.RLock()
-	defer block.LogLock.RUnlock()
+	block.logLock.RLock()
+	defer block.logLock.RUnlock()
 	var values uint32
 	for _, stream := range block.LogStreams {
 		values += uint32(len(stream.Value))
@@ -187,8 +193,10 @@ func (block *Block) NumLogValues() uint32 {
 }
 
 func (block *Block) NumValues() uint32 {
-	block.LogLock.RLock()
-	defer block.LogLock.RUnlock()
+	block.logLock.RLock()
+	defer block.logLock.RUnlock()
+	block.newStreamsLock.RLock()
+	defer block.newStreamsLock.RUnlock()
 	var values uint32
 	for _, index := range block.BlockHeader.Index {
 		values += index.NumValues
@@ -203,8 +211,8 @@ func (block *Block) NumValues() uint32 {
 }
 
 func (block *Block) shouldCompact() bool {
-	block.LogLock.RLock()
-	defer block.LogLock.RUnlock()
+	block.logLock.RLock()
+	defer block.logLock.RUnlock()
 	if len(block.LogStreams) > 10000 {
 		log.Printf("Block %s has %d (> %d) log streams, scheduling compaction", block, len(block.LogStreams), 10000)
 		return true
@@ -213,9 +221,7 @@ func (block *Block) shouldCompact() bool {
 		log.Printf("Block %s has %d (> %d) log values, scheduling compaction", block, block.NumLogValues(), maxLogValues)
 		return true
 	}
-	block.FlagsLock.Lock()
-	defer block.FlagsLock.Unlock()
-	return block.requestCompact
+	return false
 }
 
 func (block *Block) shouldSplit() bool {
@@ -262,7 +268,7 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	ns := make(map[string]*oproto.ValueStream, 0)
 	for i := 0; i < len(streams); i++ {
 		stream := <-c
-		ns[variable.NewFromProto(stream.Variable).String()] = stream
+		ns[variable.ProtoToString(stream.Variable)] = stream
 	}
 	streams = ns
 	close(c)
@@ -308,7 +314,7 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	indexPos := make(map[string]uint64)
 	var outValues uint32
 	for _, stream := range streams {
-		v := variable.NewFromProto(stream.Variable).String()
+		v := variable.ProtoToString(stream.Variable)
 		indexPos[v] = uint64(newfile.Tell())
 		newfile.Write(stream)
 		outValues += uint32(len(stream.Value))
@@ -316,7 +322,7 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 
 	// Update the offsets in the header, now that all the data has been written
 	for _, index := range block.BlockHeader.Index {
-		v := variable.NewFromProto(index.Variable).String()
+		v := variable.ProtoToString(index.Variable)
 		index.Offset = indexPos[v]
 	}
 

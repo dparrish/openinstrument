@@ -308,9 +308,7 @@ func (s *MySuite) BenchmarkWriterManyValues(c *C) {
 		c.Assert(err, IsNil)
 		defer file.Close()
 		writer, done := file.ValueStreamWriter(10)
-
 		writer <- vs
-
 		close(writer)
 		<-done
 	}

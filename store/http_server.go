@@ -12,9 +12,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"text/template"
 	"time"
+
+	_ "net/http/pprof"
 
 	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
@@ -191,7 +192,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 	unix := uint64(minTimestamp.Unix()) * 1000
 	streamChan := ds.Reader(requestVariable, unix, 0)
 	for stream := range streamChan {
-		vars[variable.NewFromProto(stream.Variable).String()] = stream.Variable
+		vars[variable.ProtoToString(stream.Variable)] = stream.Variable
 		if request.MaxVariables > 0 && len(vars) == int(request.MaxVariables) {
 			break
 		}
@@ -226,7 +227,7 @@ func StoreStatus(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	b := []*oproto.Block{}
-	for _, block := range ds.Blocks {
+	for _, block := range ds.Blocks() {
 		b = append(b, block.ToProto())
 	}
 	datastore.ProtoBlockBy(func(a, b *oproto.Block) bool { return a.EndKey < b.EndKey }).Sort(b)
@@ -240,18 +241,6 @@ func StoreStatus(w http.ResponseWriter, req *http.Request) {
 	err = t.Execute(w, p)
 	if err != nil {
 		log.Println(err)
-	}
-}
-
-func CompactBlock(w http.ResponseWriter, req *http.Request) {
-	for _, block := range ds.Blocks {
-		if !strings.HasPrefix(strings.ToLower(block.ID), strings.ToLower(req.FormValue("block"))) {
-			continue
-		}
-		log.Printf("User request compaction of block %s", req.FormValue("block"))
-		block.RequestCompact()
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "compaction requested\n")
 	}
 }
 
@@ -291,7 +280,7 @@ func InspectVariable(w http.ResponseWriter, req *http.Request) {
 			lt = stream.Value[len(stream.Value)-1].Timestamp
 		}
 		p.Variables = append(p.Variables, varInfo{
-			Name:           variable.NewFromProto(stream.Variable).String(),
+			Name:           variable.ProtoToString(stream.Variable),
 			FirstTimestamp: time.Unix(int64(stream.Value[0].Timestamp/1000), 0),
 			LastTimestamp:  time.Unix(int64(lt/1000), 0),
 		})
@@ -336,7 +325,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 
 	for stream := range ds.Reader(variable.NewFromString(query), minTimestamp, maxTimestamp) {
 		r := Result{
-			Variable: variable.NewFromProto(stream.Variable).String(),
+			Variable: variable.ProtoToString(stream.Variable),
 		}
 		if !showValues {
 			results = append(results, r)
@@ -385,7 +374,6 @@ func serveHTTP() {
 	http.Handle("/args", http.HandlerFunc(Args))
 	http.Handle("/config", http.HandlerFunc(GetConfig))
 	http.Handle("/status", http.HandlerFunc(StoreStatus))
-	http.Handle("/compact", http.HandlerFunc(CompactBlock))
 	http.Handle("/inspect", http.HandlerFunc(InspectVariable))
 	http.Handle("/query", http.HandlerFunc(Query))
 	http.Serve(sock, nil)
