@@ -261,6 +261,8 @@ message Block {
   uint32 logged_values = 6;
   uint32 unlogged_streams = 7;
   uint32 unlogged_values = 8;
+  bool is_compacting = 9;
+  string compact_duration = 10;
 }
 
 message LookupBlockRequest {

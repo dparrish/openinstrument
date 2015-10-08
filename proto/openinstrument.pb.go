@@ -683,6 +683,8 @@ type Block struct {
 	LoggedValues    uint32 `protobuf:"varint,6,opt,name=logged_values" json:"logged_values,omitempty"`
 	UnloggedStreams uint32 `protobuf:"varint,7,opt,name=unlogged_streams" json:"unlogged_streams,omitempty"`
 	UnloggedValues  uint32 `protobuf:"varint,8,opt,name=unlogged_values" json:"unlogged_values,omitempty"`
+	IsCompacting    bool   `protobuf:"varint,9,opt,name=is_compacting" json:"is_compacting,omitempty"`
+	CompactDuration string `protobuf:"bytes,10,opt,name=compact_duration" json:"compact_duration,omitempty"`
 }
 
 func (m *Block) Reset()         { *m = Block{} }

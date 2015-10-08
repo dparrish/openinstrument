@@ -9,28 +9,25 @@ import (
 
 	"github.com/joaojeronimo/go-crc16"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 // Write creates a file handle for writing a protofile, returning a ProtoFile.
 // After calling this, the file is opened for writing and the file position it the end of the file, ready for appending.
 func Write(filename string) (ReaderWriter, error) {
-	writer := &ProtoFile{}
-	writer.filename = filename
+	pf := &ProtoFile{filename: filename}
 	var err error
-	writer.file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0664)
-	if err != nil {
+	if pf.file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0664); err != nil {
 		return nil, err
 	}
-	writer.file.Seek(0, os.SEEK_END)
-	return writer, nil
+	pf.file.Seek(0, os.SEEK_END)
+	return pf, nil
 }
 
 func (pf *ProtoFile) WriteAt(pos int64, message proto.Message) (int64, error) {
 	var err error
-	pf.pos, err = pf.file.Seek(pos, os.SEEK_SET)
-	if err != nil {
+	if pf.pos, err = pf.file.Seek(pos, os.SEEK_SET); err != nil {
 		return 0, err
 	}
 	return pf.Write(message)
@@ -47,14 +44,13 @@ func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 		data,
 		crc16.Crc16(data),
 	}
-	var bytes int64
 	for _, v := range buf {
 		err = binary.Write(pf.file, binary.LittleEndian, v)
 		if err != nil {
 			return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
 		}
-		bytes += int64(binary.Size(v))
 	}
+	bytes := int64(4 + 2 + len(data) + 2)
 	pf.pos += bytes
 	return bytes, nil
 }

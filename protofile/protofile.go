@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/golang/protobuf/proto"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 const protoMagic uint16 = 0xDEAD

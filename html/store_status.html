@@ -17,28 +17,36 @@
   <h1>{{ .Title }}</h1>
 
   <h2>Datastore Blocks</h2>
-  <table>
+  <table cellspacing='0'>
     <thead>
+      <tr valign='top'>
+        <th colspan='2'></th>
+        <th colspan='3' style='text-align: center; border-left: 1px solid darkgray;'>Streams</th>
+        <th colspan='3' style='text-align: center; border-left: 1px solid darkgray;'>Values</th>
+      </tr>
       <tr valign='top'>
         <th>End Key</th>
         <th>Id</th>
-        <th>Compacting?</th>
-        <th>Indexed</th>
+        <th style='border-left: 1px solid darkgray;'>Indexed</th>
         <th>Log</th>
         <th>New</th>
-        <th>Values T/L</th>
+        <th style='border-left: 1px solid darkgray;'>Indexed</th>
+        <th>Log</th>
+        <th>New</th>
       </tr>
     </thead>
     <tbody>
       {{ range .Blocks }}
       <tr valign='top'>
         <td style='font-family: monospace;'>{{ .EndKey }}</td>
-        <td style='font-family: monospace;'>{{ .Filename }}</td>
-        <td>{{ if .IsCompacting }}{{ .CompactDuration }}{{ end }}</td>
-        <td>{{ len .BlockHeader.Index }}</td>
-        <td>{{ len .LogStreams }}</td>
-        <td>{{ len .NewStreams }}</td>
-        <td>{{ .NumValues }} / {{ .NumLogValues }}</td>
+        <td style='font-family: monospace;'>{{ .Id }}</td>
+        <td style='text-align: right; border-left: 1px solid darkgray;'>{{ .IndexedStreams }}</td>
+        <td style='text-align: right;'>{{ .LoggedStreams }}</td>
+        <td style='text-align: right;'>{{ .UnloggedStreams }}</td>
+        <td style='text-align: right; border-left: 1px solid darkgray;'>{{ .IndexedValues }}</td>
+        <td style='text-align: right;'>{{ .LoggedValues }}</td>
+        <td style='text-align: right;'>{{ .UnloggedValues }}</td>
+				{{ if .IsCompacting }}<td>Compacting: {{ .CompactDuration }}</td>{{ end }}
       </tr>
       {{ end }}
     </tbody>

@@ -143,6 +143,8 @@ func (block *Block) ToProto() *oproto.Block {
 		LoggedValues:    block.NumLogValues(),
 		UnloggedStreams: uint32(len(block.NewStreams)),
 		UnloggedValues:  uint32(0),
+		IsCompacting:    block.IsCompacting(),
+		CompactDuration: block.CompactDuration().String(),
 	}
 	for _, index := range block.BlockHeader.Index {
 		b.IndexedValues += uint32(index.NumValues)
@@ -362,4 +364,32 @@ func (block *Block) GetStreams(index *oproto.StoreFileHeaderIndex) <-chan *oprot
 		close(c)
 	}()
 	return c
+}
+
+// Sorter for oproto.Block
+type ProtoBlockBy func(p1, p2 *oproto.Block) bool
+
+func (by ProtoBlockBy) Sort(blocks []*oproto.Block) {
+	sfs := &protoBlockSorter{
+		blocks: blocks,
+		by:     by,
+	}
+	sort.Sort(sfs)
+}
+
+type protoBlockSorter struct {
+	blocks []*oproto.Block
+	by     ProtoBlockBy
+}
+
+func (ds *protoBlockSorter) Len() int {
+	return len(ds.blocks)
+}
+
+func (ds *protoBlockSorter) Swap(i, j int) {
+	ds.blocks[i], ds.blocks[j] = ds.blocks[j], ds.blocks[i]
+}
+
+func (ds *protoBlockSorter) Less(i, j int) bool {
+	return ds.by(ds.blocks[i], ds.blocks[j])
 }

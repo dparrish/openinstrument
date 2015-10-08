@@ -225,12 +225,17 @@ func StoreStatus(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Couldn't find template file: %s", err)
 		return
 	}
+	b := []*oproto.Block{}
+	for _, block := range ds.Blocks {
+		b = append(b, block.ToProto())
+	}
+	datastore.ProtoBlockBy(func(a, b *oproto.Block) bool { return a.EndKey < b.EndKey }).Sort(b)
 	p := struct {
 		Title  string
-		Blocks *map[string]*datastore.Block
+		Blocks []*oproto.Block
 	}{
 		Title:  "Store Status",
-		Blocks: &ds.Blocks,
+		Blocks: b,
 	}
 	err = t.Execute(w, p)
 	if err != nil {

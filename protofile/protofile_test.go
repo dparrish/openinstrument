@@ -2,7 +2,6 @@ package protofile
 
 import (
 	"log"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -20,7 +19,6 @@ var _ = Suite(&MySuite{})
 
 func (s *MySuite) TestWriteFile(c *C) {
 	filename := filepath.Join(c.MkDir(), "protofile_testwrite.dat")
-	defer os.Remove(filename)
 
 	{
 		// Write a temporary file containing two labels
@@ -114,8 +112,7 @@ func (s *MySuite) TestWriteFile(c *C) {
 }
 
 func (s *MySuite) TestValueStreamReader(c *C) {
-	filename := filepath.Join(c.MkDir(), "protofile_testvsr.dat")
-	defer os.Remove(filename)
+	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
 
 	{
 		// Write a temporary file containing two value streams
@@ -170,8 +167,7 @@ func (s *MySuite) TestValueStreamReader(c *C) {
 }
 
 func (s *MySuite) TestValueStreamWriter(c *C) {
-	filename := filepath.Join(c.MkDir(), "protofile_testvsr.dat")
-	defer os.Remove(filename)
+	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
 
 	{
 		// Write a temporary file containing two value streams
@@ -225,5 +221,63 @@ func (s *MySuite) TestValueStreamWriter(c *C) {
 			log.Printf("Got unexpected value")
 			c.Fail()
 		}
+	}
+}
+
+func (s *MySuite) BenchmarkReader(c *C) {
+	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
+
+	{
+		// Write a temporary file containing lots of data
+		file, err := Write(filename)
+		c.Assert(err, IsNil)
+		writer, done := file.ValueStreamWriter(10)
+
+		for i := 0; i < 10000; i++ {
+			vs := &oproto.ValueStream{
+				Variable: &oproto.StreamVariable{Name: "/test/bar"},
+				Value: []*oproto.Value{
+					{Timestamp: uint64(i), DoubleValue: float64(i)},
+				},
+			}
+			writer <- vs
+		}
+		close(writer)
+		<-done
+		file.Close()
+	}
+
+	for run := 0; run < c.N; run++ {
+		// Read back the contents
+		file, err := Read(filename)
+		c.Assert(err, IsNil)
+		defer file.Close()
+		reader := file.ValueStreamReader(500)
+		for range reader {
+		}
+	}
+}
+
+func (s *MySuite) BenchmarkWriter(c *C) {
+	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
+
+	for run := 0; run < c.N; run++ {
+		// Write a temporary file containing lots of data
+		file, err := Write(filename)
+		c.Assert(err, IsNil)
+		defer file.Close()
+		writer, done := file.ValueStreamWriter(10)
+
+		for i := 0; i < 10000; i++ {
+			vs := &oproto.ValueStream{
+				Variable: &oproto.StreamVariable{Name: "/test/bar"},
+				Value: []*oproto.Value{
+					{Timestamp: uint64(i), DoubleValue: float64(i)},
+				},
+			}
+			writer <- vs
+		}
+		close(writer)
+		<-done
 	}
 }
