@@ -268,7 +268,10 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	ns := make(map[string]*oproto.ValueStream, 0)
 	for i := 0; i < len(streams); i++ {
 		stream := <-c
-		ns[variable.ProtoToString(stream.Variable)] = stream
+		if stream.VariableName == "" {
+			stream.VariableName = variable.ProtoToString(stream.Variable)
+		}
+		ns[stream.VariableName] = stream
 	}
 	streams = ns
 	close(c)
@@ -314,16 +317,18 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	indexPos := make(map[string]uint64)
 	var outValues uint32
 	for _, stream := range streams {
-		v := variable.ProtoToString(stream.Variable)
-		indexPos[v] = uint64(newfile.Tell())
+		if stream.VariableName == "" {
+			stream.VariableName = variable.ProtoToString(stream.Variable)
+		}
+
+		indexPos[stream.VariableName] = uint64(newfile.Tell())
 		newfile.Write(stream)
 		outValues += uint32(len(stream.Value))
 	}
 
 	// Update the offsets in the header, now that all the data has been written
 	for _, index := range block.BlockHeader.Index {
-		v := variable.ProtoToString(index.Variable)
-		index.Offset = indexPos[v]
+		index.Offset = indexPos[variable.ProtoToString(index.Variable)]
 	}
 
 	log.Printf("Flushing data to disk")

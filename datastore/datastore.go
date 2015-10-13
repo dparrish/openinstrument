@@ -152,17 +152,16 @@ func (ds *Datastore) readBlockLog(filename string, waitgroup *sync.WaitGroup) {
 	// Read all the streams from the log file
 	reader := file.ValueStreamReader(100)
 	for stream := range reader {
-		v := variable.ProtoToString(stream.Variable)
-		if v > block.EndKey {
-			block.EndKey = v
+		if stream.VariableName > block.EndKey {
+			block.EndKey = stream.VariableName
 		}
 		locker := block.LogWriteLocker()
 		locker.Lock()
-		existingstream, found := block.LogStreams[v]
+		existingstream, found := block.LogStreams[stream.VariableName]
 		if found {
 			existingstream.Value = append(existingstream.Value, stream.Value...)
 		} else {
-			block.LogStreams[v] = stream
+			block.LogStreams[stream.VariableName] = stream
 		}
 		locker.Unlock()
 	}
@@ -199,9 +198,11 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 	go func() {
 		for stream := range c {
 			// Write this stream
-			v := variable.NewFromProto(stream.Variable)
-			//log.Printf("Writing stream for %s\n", v.String())
-			if block := ds.findBlock(v); block != nil {
+			if stream.VariableName == "" {
+				stream.VariableName = variable.ProtoToString(stream.Variable)
+			}
+			//log.Printf("Writing stream for %s\n", stream.VariableName)
+			if block := ds.findBlock(stream.VariableName); block != nil {
 				locker := block.UnloggedWriteLocker()
 				locker.Lock()
 				block.NewStreams = append(block.NewStreams, stream)
@@ -218,7 +219,8 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 // The supplied variable may be a search or a single.
 // The streams returned may be out of order with respect to variable names or timestamps.
 func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uint64) chan *oproto.ValueStream {
-	log.Printf("Creating Reader for %s between %d and %d\n", v.String(), minTimestamp, maxTimestamp)
+	varName := v.String()
+	log.Printf("Creating Reader for %s between %d and %d\n", varName, minTimestamp, maxTimestamp)
 	c := make(chan *oproto.ValueStream, 1000)
 	go func() {
 		maybeReturnStreams := func(block *Block, stream *oproto.ValueStream) {
@@ -239,7 +241,7 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uin
 		}
 		// Search for streams to return
 		for _, block := range ds.Blocks() {
-			if v.String() > block.EndKey {
+			if varName > block.EndKey {
 				continue
 			}
 			for _, stream := range block.GetLogStreams() {
@@ -280,11 +282,17 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uin
 // Flush ensures that all pending streams are written to disk.
 // Returns once everything is written. Further writes will block until this is completed.
 func (ds *Datastore) Flush() error {
+	wg := new(sync.WaitGroup)
 	for _, block := range ds.Blocks() {
-		locker := block.UnloggedWriteLocker()
-		locker.Lock()
-		defer locker.Unlock()
-		if len(block.NewStreams) > 0 {
+		wg.Add(1)
+		go func(block *Block) {
+			defer wg.Done()
+			locker := block.UnloggedWriteLocker()
+			locker.Lock()
+			defer locker.Unlock()
+			if len(block.NewStreams) == 0 {
+				return
+			}
 			logLocker := block.LogWriteLocker()
 			logLocker.Lock()
 			defer logLocker.Unlock()
@@ -294,26 +302,26 @@ func (ds *Datastore) Flush() error {
 			file, err := protofile.Write(filepath.Join(ds.Path, block.logFilename()))
 			if err != nil {
 				log.Println(err)
-				return err
+				return
 			}
 			defer file.Close()
 			for _, stream := range block.NewStreams {
 				n, err := file.Write(stream)
 				if err != nil || n < 1 {
 					log.Println(err)
-					return err
+					return
 				}
-				v := variable.ProtoToString(stream.Variable)
-				existingstream, found := block.LogStreams[v]
+				existingstream, found := block.LogStreams[stream.VariableName]
 				if found {
 					existingstream.Value = append(existingstream.Value, stream.Value...)
 				} else {
-					block.LogStreams[v] = stream
+					block.LogStreams[stream.VariableName] = stream
 				}
 			}
 			block.NewStreams = make([]*oproto.ValueStream, 0)
-		}
+		}(block)
 	}
+	wg.Wait()
 	return nil
 }
 
@@ -360,11 +368,13 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 	locker.Lock()
 
 	for stream := range streams {
-		v := variable.NewFromProto(stream.Variable)
-		if v.String() <= leftBlock.EndKey {
-			leftStreams[v.String()] = stream
+		if stream.VariableName == "" {
+			stream.VariableName = variable.ProtoToString(stream.Variable)
+		}
+		if stream.VariableName <= leftBlock.EndKey {
+			leftStreams[stream.VariableName] = stream
 		} else {
-			rightStreams[v.String()] = stream
+			rightStreams[stream.VariableName] = stream
 		}
 	}
 
@@ -390,22 +400,21 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 
 // findBlock gets a datastore block that can have the variable written to.
 // If one doesn't exist, a new block is created.
-func (ds *Datastore) findBlock(v *variable.Variable) *Block {
+func (ds *Datastore) findBlock(variableName string) *Block {
 	// Search for a block with end key greater than the current key
 	// TODO(dparrish): Binary search for block
-	findKey := v.String()
 	ds.blocksLock.RLock()
 	keys := ds.blockKeys
 	ds.blocksLock.RUnlock()
 	for _, key := range keys {
-		if key >= findKey {
+		if key >= variableName {
 			return ds.blocks[key]
 		}
 	}
 	// Create a new block
-	block := newBlock(findKey, "")
+	block := newBlock(variableName, "")
 	ds.insertBlock(block)
-	log.Printf("Creating new block for %s\n", findKey)
+	log.Printf("Creating new block for %s\n", variableName)
 	return block
 }
 
@@ -472,14 +481,17 @@ func (ds *Datastore) CompactBlock(block *Block) error {
 		log.Printf("Unable to read block: %s", err)
 	} else {
 		for stream := range reader {
-			if stream.Variable != nil {
-				v := variable.ProtoToString(stream.Variable)
-				outstream, found := streams[v]
-				if found {
-					outstream.Value = append(outstream.Value, stream.Value...)
-				} else {
-					streams[v] = stream
-				}
+			if stream.Variable == nil {
+				continue
+			}
+			if stream.VariableName == "" {
+				stream.VariableName = variable.ProtoToString(stream.Variable)
+			}
+			outstream, found := streams[stream.VariableName]
+			if found {
+				outstream.Value = append(outstream.Value, stream.Value...)
+			} else {
+				streams[stream.VariableName] = stream
 			}
 		}
 		log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))

@@ -59,15 +59,19 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 		if request.MaxVariables > 0 && len(vars) >= int(request.MaxVariables) {
 			continue
 		}
-		vars[variable.ProtoToString(stream.Variable)] = stream.Variable
+		varName := stream.VariableName
+		if varName == "" {
+			varName = variable.ProtoToString(stream.Variable)
+		}
+		vars[varName] = stream.Variable
 	}
 	timer.Stop()
 
 	// Build the response out of the map
 	timer = addTimer("construct response", response)
 	response.Variable = make([]*oproto.StreamVariable, 0)
-	for varname := range vars {
-		response.Variable = append(response.Variable, variable.NewFromString(varname).AsProto())
+	for _, variable := range vars {
+		response.Variable = append(response.Variable, variable)
 	}
 	response.Success = true
 	timer.Stop()

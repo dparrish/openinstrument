@@ -112,62 +112,7 @@ func (s *MySuite) TestWriteFile(c *C) {
 	}
 }
 
-func (s *MySuite) TestValueStreamReader(c *C) {
-	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
-
-	{
-		// Write a temporary file containing two value streams
-		writer, err := Write(filename)
-		c.Assert(err, IsNil)
-		defer writer.Close()
-
-		vs := &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: "/test/bar"},
-			Value: []*oproto.Value{
-				{Timestamp: uint64(1), DoubleValue: 1.1},
-				{Timestamp: uint64(2), DoubleValue: 1.2},
-				{Timestamp: uint64(3), DoubleValue: 1.3},
-			},
-		}
-		writer.Write(vs)
-
-		vs = &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: "/test/foo"},
-			Value: []*oproto.Value{
-				{Timestamp: uint64(1), DoubleValue: 1.1},
-				{Timestamp: uint64(2), DoubleValue: 1.2},
-				{Timestamp: uint64(3), DoubleValue: 1.3},
-			},
-		}
-		writer.Write(vs)
-	}
-
-	{
-		// Read back the contents and check
-		file, err := Read(filename)
-		c.Assert(err, IsNil)
-		defer file.Close()
-		reader := file.ValueStreamReader(500)
-		vs := <-reader
-		c.Check(vs.Variable.Name, Equals, "/test/bar")
-		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
-		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
-		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
-
-		vs = <-reader
-		c.Check(vs.Variable.Name, Equals, "/test/foo")
-		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
-		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
-		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
-
-		for range reader {
-			log.Printf("Got unexpected value")
-			c.Fail()
-		}
-	}
-}
-
-func (s *MySuite) TestValueStreamWriter(c *C) {
+func (s *MySuite) TestValueStreamReadWrite(c *C) {
 	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
 
 	{
@@ -178,7 +123,12 @@ func (s *MySuite) TestValueStreamWriter(c *C) {
 		writer, done := file.ValueStreamWriter(10)
 
 		vs := &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: "/test/bar"},
+			Variable: &oproto.StreamVariable{
+				Name: "/test/bar",
+				Label: []*oproto.Label{
+					{Label: "test", Value: "bar"},
+				},
+			},
 			Value: []*oproto.Value{
 				{Timestamp: uint64(1), DoubleValue: 1.1},
 				{Timestamp: uint64(2), DoubleValue: 1.2},
@@ -208,12 +158,14 @@ func (s *MySuite) TestValueStreamWriter(c *C) {
 		reader := file.ValueStreamReader(500)
 		vs := <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/bar")
+		c.Check(vs.VariableName, Equals, "/test/bar{test=bar}")
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
 		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
 		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
 
 		vs = <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/foo")
+		c.Check(vs.VariableName, Equals, "/test/foo")
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
 		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
 		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)

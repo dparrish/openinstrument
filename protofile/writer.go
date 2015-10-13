@@ -62,6 +62,8 @@ func (pf *ProtoFile) ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream
 	go func() {
 		defer close(done)
 		for value := range c {
+			// Don't write the stringified variable name
+			value.VariableName = ""
 			_, err := pf.Write(value)
 			if err == io.EOF {
 				return
