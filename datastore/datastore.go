@@ -482,6 +482,7 @@ func (ds *Datastore) CompactBlock(block *Block) error {
 	} else {
 		for stream := range reader {
 			if stream.Variable == nil {
+				log.Printf("Skipping reading stream that contains no variable")
 				continue
 			}
 			if stream.VariableName == "" {

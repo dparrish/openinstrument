@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"fmt"
 	"testing"
 
 	oproto "github.com/dparrish/openinstrument/proto"
@@ -21,6 +22,29 @@ func (s *MySuite) SetUpSuite(c *C) {
 }
 
 func (s *MySuite) TestRead(c *C) {
+	block := newBlock("/test/foox", "")
+	streams := make(map[string]*oproto.ValueStream)
+	for i := 0; i < 1000; i++ {
+		key := fmt.Sprintf("/test/foo%d", i)
+		streams[key] = &oproto.ValueStream{
+			Variable: &oproto.StreamVariable{Name: key},
+			Value: []*oproto.Value{
+				{DoubleValue: 0.0},
+				{DoubleValue: 1.1},
+			},
+		}
+	}
+
+	err := block.Write(s.dataDir, streams)
+	c.Assert(err, Equals, nil)
+
+	reader, err := block.Read(s.dataDir)
+	c.Assert(err, Equals, nil)
+	readStreams := 0
+	for range reader {
+		readStreams++
+	}
+	c.Assert(readStreams, Equals, len(streams))
 }
 
 func (s *MySuite) TestWrite(c *C) {

@@ -43,7 +43,7 @@ func (pf *ProtoFile) ReadAt(pos int64, message proto.Message) (int64, error) {
 }
 
 func (pf *ProtoFile) ValueStreamReader(chanSize int) <-chan *oproto.ValueStream {
-	c := make(chan *oproto.ValueStream, chanSize)
+	c := make(chan *oproto.ValueStream, 10000)
 	go func() {
 		for {
 			value := &oproto.ValueStream{}

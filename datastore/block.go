@@ -251,30 +251,35 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	st := time.Now()
 	// Run-length encode all streams in parallel
 	c := make(chan *oproto.ValueStream, len(streams))
-	for v, stream := range streams {
-		if v > endKey {
-			endKey = v
-		}
-		go func(v string, stream *oproto.ValueStream) {
-			// Sort values by timestamp
-			value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
+	go func() {
+		wg := new(sync.WaitGroup)
+		for v, stream := range streams {
+			if v > endKey {
+				endKey = v
+			}
+			wg.Add(1)
+			go func(v string, stream *oproto.ValueStream) {
+				defer wg.Done()
+				// Sort values by timestamp
+				value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
 
-			// Run-length encode values
-			newstream := &oproto.ValueStream{Variable: stream.Variable}
-			<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
-			c <- newstream
-		}(v, stream)
-	}
+				// Run-length encode values
+				newstream := &oproto.ValueStream{Variable: stream.Variable}
+				<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
+				c <- newstream
+			}(v, stream)
+		}
+		wg.Wait()
+		close(c)
+	}()
 	ns := make(map[string]*oproto.ValueStream, 0)
-	for i := 0; i < len(streams); i++ {
-		stream := <-c
+	for stream := range c {
 		if stream.VariableName == "" {
 			stream.VariableName = variable.ProtoToString(stream.Variable)
 		}
 		ns[stream.VariableName] = stream
 	}
 	streams = ns
-	close(c)
 
 	var minTimestamp, maxTimestamp uint64
 	var outputValues int
@@ -283,7 +288,7 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 		// Add this stream to the index
 		block.BlockHeader.Index = append(block.BlockHeader.Index, &oproto.StoreFileHeaderIndex{
 			Variable:     stream.Variable,
-			Offset:       uint64(0),
+			Offset:       uint64(1), // This must be set non-zero so that the protobuf marshals it to non-empty
 			MinTimestamp: stream.Value[0].Timestamp,
 			MaxTimestamp: stream.Value[len(stream.Value)-1].Timestamp,
 			NumValues:    uint32(len(stream.Value)),
@@ -312,16 +317,19 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 		return fmt.Errorf("Can't write to %s: %s\n", newfilename, err)
 	}
 	newfile.Write(block.BlockHeader)
+	blockEnd := newfile.Tell()
 
 	// Write all the ValueStreams
 	indexPos := make(map[string]uint64)
 	var outValues uint32
 	for _, stream := range streams {
-		if stream.VariableName == "" {
-			stream.VariableName = variable.ProtoToString(stream.Variable)
+		varName := stream.VariableName
+		if varName == "" {
+			varName = variable.ProtoToString(stream.Variable)
 		}
+		stream.VariableName = ""
 
-		indexPos[stream.VariableName] = uint64(newfile.Tell())
+		indexPos[varName] = uint64(newfile.Tell())
 		newfile.Write(stream)
 		outValues += uint32(len(stream.Value))
 	}
@@ -331,10 +339,15 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 		index.Offset = indexPos[variable.ProtoToString(index.Variable)]
 	}
 
-	log.Printf("Flushing data to disk")
-	newfile.Sync()
-
 	newfile.WriteAt(0, block.BlockHeader)
+	if blockEnd < newfile.Tell() {
+		// Sanity check, just in case goprotobuf breaks something again
+		newfile.Close()
+		os.Remove(newfilename)
+		log.Fatalf("Error writing block file %s, header overwrote data", newfilename)
+	}
+
+	newfile.Sync()
 	newfile.Close()
 	log.Printf("Wrote %d streams / %d values to %s in %v\n", len(streams), outValues, newfilename, time.Since(startTime))
 
@@ -360,7 +373,7 @@ func (block *Block) Read(path string) (<-chan *oproto.ValueStream, error) {
 	}
 	switch header.Version {
 	case 2:
-		return file.ValueStreamReader(500), nil
+		return file.ValueStreamReader(5000), nil
 	default:
 		return nil, fmt.Errorf("Block %s has unknown version '%v'\n", block.Filename(), header.Version)
 	}

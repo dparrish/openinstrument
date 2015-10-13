@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 
 	. "gopkg.in/check.v1"
@@ -177,38 +178,43 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 	}
 }
 
-/*
 func (s *MySuite) TestValueStreamWriterMemoryLeak(c *C) {
 	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")
-	memstats := &runtime.MemStats{}
 
-	for i := 0; i < 5; i++ {
-		vs := &oproto.ValueStream{
-			Variable: &oproto.StreamVariable{Name: "/test/bar"},
-			Value:    []*oproto.Value{},
-		}
-		for i := 0; i < 600000; i++ {
-			vs.Value = append(vs.Value, &oproto.Value{Timestamp: uint64(openinstrument.NowMs()), DoubleValue: 1.1})
-		}
-		// Write a temporary file containing two value streams
-		file, err := Write(filename)
-		c.Assert(err, IsNil)
-		defer file.Close()
-		writer, done := file.ValueStreamWriter(10)
-
-		for j := 0; j < 100; j++ {
-			writer <- vs
-		}
-
-		close(writer)
-		<-done
-
-		runtime.ReadMemStats(memstats)
-		log.Printf("After iteration %d: %d Alloc, %d Sys, %d HeapAlloc, %d HeapSys", i, memstats.Alloc, memstats.Sys, memstats.HeapAlloc, memstats.HeapSys)
+	vs := &oproto.ValueStream{
+		Variable: &oproto.StreamVariable{Name: "/test/bar"},
+		Value:    []*oproto.Value{},
 	}
-	c.Fail()
+	for i := 0; i < 10; i++ {
+		vs.Value = append(vs.Value, &oproto.Value{Timestamp: uint64(openinstrument.NowMs()), DoubleValue: 1.1})
+	}
+	// Write a temporary file containing two value streams
+	file, err := Write(filename)
+	c.Assert(err, IsNil)
+	defer file.Close()
+	writer, done := file.ValueStreamWriter(10)
+
+	wroteStreams := 0
+	for j := 0; j < 1000; j++ {
+		writer <- vs
+		wroteStreams++
+	}
+
+	close(writer)
+	<-done
+
+	file, err = Read(filename)
+	c.Assert(err, IsNil)
+	defer file.Close()
+
+	reader := file.ValueStreamReader(10)
+	readStreams := 0
+	for range reader {
+		readStreams++
+	}
+
+	c.Assert(readStreams, Equals, wroteStreams)
 }
-*/
 
 func (s *MySuite) BenchmarkReader(c *C) {
 	filename := filepath.Join(c.MkDir(), "protofile_testvar.dat")

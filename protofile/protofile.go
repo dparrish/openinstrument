@@ -41,7 +41,9 @@ type ProtoFile struct {
 // Close closes a ProtoFile opened by Read() or Write().
 func (pf *ProtoFile) Close() error {
 	pf.pos = 0
-	return pf.file.Close()
+	err := pf.file.Close()
+	pf.file = nil
+	return err
 }
 
 func (pf *ProtoFile) Stat() (os.FileInfo, error) {

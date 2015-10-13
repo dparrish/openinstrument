@@ -26,8 +26,7 @@ func Write(filename string) (ReaderWriter, error) {
 }
 
 func (pf *ProtoFile) WriteAt(pos int64, message proto.Message) (int64, error) {
-	var err error
-	if pf.pos, err = pf.file.Seek(pos, os.SEEK_SET); err != nil {
+	if npos, err := pf.Seek(pos); err != nil || npos != pos {
 		return 0, err
 	}
 	return pf.Write(message)
@@ -52,7 +51,6 @@ func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 	}
 	bytes := int64(4 + 2 + len(data) + 2)
 	pf.pos += bytes
-	data = nil
 	return bytes, nil
 }
 
