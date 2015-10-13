@@ -38,20 +38,21 @@ func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("Marshaling error: %s", err)
 	}
-	var buf = []interface{}{
-		uint16(protoMagic),
-		uint32(len(data)),
-		data,
-		crc16.Crc16(data),
+	if binary.Write(pf.file, binary.LittleEndian, protoMagic) != nil {
+		return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
 	}
-	for _, v := range buf {
-		err = binary.Write(pf.file, binary.LittleEndian, v)
-		if err != nil {
-			return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
-		}
+	if binary.Write(pf.file, binary.LittleEndian, uint32(len(data))) != nil {
+		return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
+	}
+	if binary.Write(pf.file, binary.LittleEndian, data) != nil {
+		return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
+	}
+	if binary.Write(pf.file, binary.LittleEndian, crc16.Crc16(data)) != nil {
+		return 0, fmt.Errorf("Error writing entry to protofile: %s", err)
 	}
 	bytes := int64(4 + 2 + len(data) + 2)
 	pf.pos += bytes
+	data = nil
 	return bytes, nil
 }
 

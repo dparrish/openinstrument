@@ -39,8 +39,13 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 		return nil, fmt.Errorf("No variable specified")
 	}
 
+	addTimer := func(name string, response *oproto.ListResponse) *openinstrument.Timer {
+		response.Timer = append(response.Timer, &oproto.LogMessage{})
+		return openinstrument.NewTimer(name, response.Timer[len(response.Timer)-1])
+	}
+
 	// Retrieve all variables and store the names in a map for uniqueness
-	timer := ListResponseAddTimer("retrieve variables", response)
+	timer := addTimer("retrieve variables", response)
 	vars := make(map[string]*oproto.StreamVariable)
 	var unix uint64
 	if request.MaxAge == 0 {
@@ -59,7 +64,7 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 	timer.Stop()
 
 	// Build the response out of the map
-	timer = ListResponseAddTimer("construct response", response)
+	timer = addTimer("construct response", response)
 	response.Variable = make([]*oproto.StreamVariable, 0)
 	for varname := range vars {
 		response.Variable = append(response.Variable, variable.NewFromString(varname).AsProto())

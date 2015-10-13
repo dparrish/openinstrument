@@ -47,9 +47,8 @@ func Open(path string) *Datastore {
 		tick := time.Tick(1 * time.Second)
 		for !ds.shutdown {
 			<-tick
-			// Split any blocks that need it
-			ds.blocksLock.Lock()
-			for _, block := range ds.blocks {
+			for _, block := range ds.Blocks() {
+				// Split any blocks that need it
 				if block.shouldSplit() {
 					startTime := time.Now()
 					if _, _, err := ds.SplitBlock(block); err != nil {
@@ -57,17 +56,14 @@ func Open(path string) *Datastore {
 					}
 					log.Printf("Finished splitting of %s in %v", block, time.Since(startTime))
 				}
-			}
 
-			// Compact any blocks that need it
-			for _, block := range ds.blocks {
+				// Compact any blocks that need it
 				if block.shouldCompact() {
 					if err := ds.CompactBlock(block); err != nil {
 						log.Printf("Error compacting block: %s\n", err)
 					}
 				}
 			}
-			ds.blocksLock.Unlock()
 		}
 	}()
 	return ds
@@ -378,18 +374,17 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 	go func() { rightC <- block.Write(ds.Path, rightStreams); close(rightC) }()
 	leftError := <-leftC
 	rightError := <-rightC
+	locker.Unlock()
 	if leftError != nil {
-		locker.Unlock()
 		return nil, nil, fmt.Errorf("Error writing left block: %s", leftError)
 	}
 	if rightError != nil {
-		locker.Unlock()
 		return nil, nil, fmt.Errorf("Error writing right block: %s", rightError)
 	}
-	locker.Unlock()
-	ds.insertBlock(leftBlock)
 
 	log.Printf("Left contains %d streams, right contains %d", len(leftStreams), len(rightStreams))
+	ds.insertBlock(leftBlock)
+	log.Printf("Split complete")
 	return leftBlock, block, nil
 }
 
@@ -398,18 +393,19 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 func (ds *Datastore) findBlock(v *variable.Variable) *Block {
 	// Search for a block with end key greater than the current key
 	// TODO(dparrish): Binary search for block
+	findKey := v.String()
 	ds.blocksLock.RLock()
-	for _, key := range ds.blockKeys {
-		if key >= v.String() {
-			ds.blocksLock.RUnlock()
+	keys := ds.blockKeys
+	ds.blocksLock.RUnlock()
+	for _, key := range keys {
+		if key >= findKey {
 			return ds.blocks[key]
 		}
 	}
-	ds.blocksLock.RUnlock()
 	// Create a new block
-	block := newBlock(v.String(), "")
+	block := newBlock(findKey, "")
 	ds.insertBlock(block)
-	log.Printf("Creating new block for %s\n", v.String())
+	log.Printf("Creating new block for %s\n", findKey)
 	return block
 }
 
@@ -470,25 +466,21 @@ func (ds *Datastore) CompactBlock(block *Block) error {
 
 	streams := block.LogStreams
 	log.Printf("Block log contains %d streams", len(streams))
-	appendStream := func(stream *oproto.ValueStream) {
-		if stream.Variable == nil {
-			return
-		}
-		v := variable.ProtoToString(stream.Variable)
-		outstream, found := streams[v]
-		if found {
-			outstream.Value = append(outstream.Value, stream.Value...)
-		} else {
-			streams[v] = stream
-		}
-	}
 	st := time.Now()
 	reader, err := block.Read(ds.Path)
 	if err != nil {
 		log.Printf("Unable to read block: %s", err)
 	} else {
 		for stream := range reader {
-			appendStream(stream)
+			if stream.Variable != nil {
+				v := variable.ProtoToString(stream.Variable)
+				outstream, found := streams[v]
+				if found {
+					outstream.Value = append(outstream.Value, stream.Value...)
+				} else {
+					streams[v] = stream
+				}
+			}
 		}
 		log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
 	}

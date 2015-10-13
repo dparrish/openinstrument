@@ -63,11 +63,7 @@ func (pf *ProtoFile) ValueStreamReader(chanSize int) <-chan *oproto.ValueStream 
 
 func (pf *ProtoFile) Read(message proto.Message) (int64, error) {
 	for {
-		type header struct {
-			Magic  uint16
-			Length uint32
-		}
-		var h header
+		h := blockHeader{}
 		var bytesRead int64
 
 		err := binary.Read(pf.file, binary.LittleEndian, &h)

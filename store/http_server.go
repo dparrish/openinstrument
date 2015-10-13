@@ -162,11 +162,6 @@ func Add(w http.ResponseWriter, req *http.Request) {
 	returnResponse(w, req, &response)
 }
 
-func ListResponseAddTimer(name string, response *oproto.ListResponse) *openinstrument.Timer {
-	response.Timer = append(response.Timer, &oproto.LogMessage{})
-	return openinstrument.NewTimer(name, response.Timer[len(response.Timer)-1])
-}
-
 func List(w http.ResponseWriter, req *http.Request) {
 	var request oproto.ListRequest
 	var response oproto.ListResponse
@@ -175,6 +170,11 @@ func List(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Println(openinstrument.ProtoText(&request))
+
+	addTimer := func(name string, response *oproto.ListResponse) *openinstrument.Timer {
+		response.Timer = append(response.Timer, &oproto.LogMessage{})
+		return openinstrument.NewTimer(name, response.Timer[len(response.Timer)-1])
+	}
 
 	requestVariable := variable.NewFromProto(request.Prefix)
 	if len(requestVariable.Variable) == 0 {
@@ -186,7 +186,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Retrieve all variables and store the names in a map for uniqueness
-	timer := ListResponseAddTimer("retrieve variables", &response)
+	timer := addTimer("retrieve variables", &response)
 	vars := make(map[string]*oproto.StreamVariable)
 	minTimestamp := time.Now().Add(time.Duration(-request.MaxAge) * time.Millisecond)
 	unix := uint64(minTimestamp.Unix()) * 1000
@@ -200,7 +200,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 	timer.Stop()
 
 	// Build the response out of the map
-	timer = ListResponseAddTimer("construct response", &response)
+	timer = addTimer("construct response", &response)
 	response.Variable = make([]*oproto.StreamVariable, 0)
 	for varname := range vars {
 		response.Variable = append(response.Variable, variable.NewFromString(varname).AsProto())
@@ -338,7 +338,6 @@ func Query(w http.ResponseWriter, req *http.Request) {
 			if len(stream.Value) > 0 {
 				v := stream.Value[len(stream.Value)-1]
 				r.Values = append(r.Values, []interface{}{v.Timestamp, v.DoubleValue})
-				//r.Values = append(r.Values, v)
 			}
 		} else {
 			// All values over a specific time period

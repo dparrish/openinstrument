@@ -10,6 +10,11 @@ import (
 
 const protoMagic uint16 = 0xDEAD
 
+type blockHeader struct {
+	Magic  uint16
+	Length uint32
+}
+
 type ReaderWriter interface {
 	Close() error
 	Stat() (os.FileInfo, error)
