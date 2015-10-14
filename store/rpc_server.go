@@ -166,7 +166,7 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 			response := &oproto.AddResponse{Success: true}
 			c := s.ds.Writer()
 			for _, stream := range request.Stream {
-				c <- stream
+				c <- *stream
 			}
 			close(c)
 			server.Send(response)

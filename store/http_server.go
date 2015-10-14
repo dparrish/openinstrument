@@ -154,7 +154,7 @@ func Add(w http.ResponseWriter, req *http.Request) {
 
 	c := ds.Writer()
 	for _, stream := range request.Stream {
-		c <- stream
+		c <- *stream
 	}
 	close(c)
 

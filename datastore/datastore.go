@@ -193,8 +193,8 @@ func (ds *Datastore) insertBlock(block *Block) {
 // Any ValueStreams written to this channel will eventually be flushed to disk,
 // but they will be immediately available for use.
 // The writes to disk are not guaranteed until Flush() is called.
-func (ds *Datastore) Writer() chan *oproto.ValueStream {
-	c := make(chan *oproto.ValueStream, 1000)
+func (ds *Datastore) Writer() chan<- oproto.ValueStream {
+	c := make(chan oproto.ValueStream, 1000)
 	go func() {
 		for stream := range c {
 			// Write this stream
@@ -205,7 +205,8 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 			if block := ds.findBlock(stream.VariableName); block != nil {
 				locker := block.UnloggedWriteLocker()
 				locker.Lock()
-				block.NewStreams = append(block.NewStreams, stream)
+				newstream := stream
+				block.NewStreams = append(block.NewStreams, &newstream)
 				locker.Unlock()
 			}
 		}
@@ -218,7 +219,7 @@ func (ds *Datastore) Writer() chan *oproto.ValueStream {
 // If min/maxTimestamp are not nil, streams will only be returned if SOME values inside the stream match.
 // The supplied variable may be a search or a single.
 // The streams returned may be out of order with respect to variable names or timestamps.
-func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uint64) chan *oproto.ValueStream {
+func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uint64) <-chan *oproto.ValueStream {
 	varName := v.String()
 	log.Printf("Creating Reader for %s between %d and %d\n", varName, minTimestamp, maxTimestamp)
 	c := make(chan *oproto.ValueStream, 1000)
