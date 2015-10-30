@@ -315,8 +315,6 @@ type ValueStream struct {
 	// An optional set of mutations that have been applied to this stream.
 	// If the stream contains the raw data, this should be empty.
 	Mutation []*StreamMutation `protobuf:"bytes,5,rep,name=mutation" json:"mutation,omitempty"`
-	// Used internally to save cycles regenerating the name
-	VariableName string `protobuf:"bytes,6,opt,name=variable_name" json:"variable_name,omitempty"`
 }
 
 func (m *ValueStream) Reset()         { *m = ValueStream{} }

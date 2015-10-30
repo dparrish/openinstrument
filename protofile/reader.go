@@ -9,7 +9,6 @@ import (
 	"os"
 
 	oproto "github.com/dparrish/openinstrument/proto"
-	"github.com/dparrish/openinstrument/variable"
 	"github.com/golang/protobuf/proto"
 	"github.com/joaojeronimo/go-crc16"
 )
@@ -55,7 +54,6 @@ func (pf *ProtoFile) ValueStreamReader(chanSize int) <-chan *oproto.ValueStream 
 				log.Println(err)
 				break
 			}
-			value.VariableName = variable.ProtoToString(value.Variable)
 			c <- value
 		}
 		close(c)

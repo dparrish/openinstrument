@@ -148,16 +148,17 @@ func (ds *Datastore) readBlockLog(filename string, waitgroup *sync.WaitGroup) {
 	// Read all the streams from the log file
 	reader := file.ValueStreamReader(100)
 	for stream := range reader {
-		if stream.VariableName > block.EndKey {
-			block.EndKey = stream.VariableName
+		varName := variable.ProtoToString(stream.Variable)
+		if varName > block.EndKey {
+			block.EndKey = varName
 		}
 		locker := block.LogWriteLocker()
 		locker.Lock()
-		existingstream, found := block.LogStreams[stream.VariableName]
+		existingstream, found := block.LogStreams[varName]
 		if found {
 			existingstream.Value = append(existingstream.Value, stream.Value...)
 		} else {
-			block.LogStreams[stream.VariableName] = stream
+			block.LogStreams[varName] = stream
 		}
 		locker.Unlock()
 	}
@@ -197,11 +198,8 @@ func (ds *Datastore) Writer() chan<- *oproto.ValueStream {
 	go func() {
 		for stream := range c {
 			// Write this stream
-			if stream.VariableName == "" {
-				stream.VariableName = variable.ProtoToString(stream.Variable)
-			}
-			//log.Printf("Writing stream for %s\n", stream.VariableName)
-			if block := ds.findBlock(stream.VariableName); block != nil {
+			varName := variable.ProtoToString(stream.Variable)
+			if block := ds.findBlock(varName); block != nil {
 				locker := block.UnloggedWriteLocker()
 				locker.Lock()
 				block.NewStreams = append(block.NewStreams, stream)
@@ -313,11 +311,12 @@ func (ds *Datastore) Flush() error {
 					log.Println(err)
 					return
 				}
-				existingstream, found := block.LogStreams[stream.VariableName]
+				varName := variable.ProtoToString(stream.Variable)
+				existingstream, found := block.LogStreams[varName]
 				if found {
 					existingstream.Value = append(existingstream.Value, stream.Value...)
 				} else {
-					block.LogStreams[stream.VariableName] = stream
+					block.LogStreams[varName] = stream
 				}
 			}
 			block.NewStreams = make([]*oproto.ValueStream, 0)
@@ -370,13 +369,11 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 	locker.Lock()
 
 	for stream := range streams {
-		if stream.VariableName == "" {
-			stream.VariableName = variable.ProtoToString(stream.Variable)
-		}
-		if stream.VariableName <= leftBlock.EndKey {
-			leftStreams[stream.VariableName] = stream
+		varName := variable.ProtoToString(stream.Variable)
+		if varName <= leftBlock.EndKey {
+			leftStreams[varName] = stream
 		} else {
-			rightStreams[stream.VariableName] = stream
+			rightStreams[varName] = stream
 		}
 	}
 

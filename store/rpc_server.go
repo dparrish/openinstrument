@@ -59,11 +59,7 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 		if request.MaxVariables > 0 && len(vars) >= int(request.MaxVariables) {
 			continue
 		}
-		varName := stream.VariableName
-		if varName == "" {
-			varName = variable.ProtoToString(stream.Variable)
-		}
-		vars[varName] = stream.Variable
+		vars[variable.ProtoToString(stream.Variable)] = stream.Variable
 	}
 	timer.Stop()
 

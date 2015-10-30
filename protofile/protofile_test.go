@@ -159,14 +159,12 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 		reader := file.ValueStreamReader(500)
 		vs := <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/bar")
-		c.Check(vs.VariableName, Equals, "/test/bar{test=bar}")
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
 		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
 		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
 
 		vs = <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/foo")
-		c.Check(vs.VariableName, Equals, "/test/foo")
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
 		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
 		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)

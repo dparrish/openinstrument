@@ -260,11 +260,8 @@ func (block *Block) RunLengthEncodeStreams(streams map[string]*oproto.ValueStrea
 
 			// Run-length encode values
 			stream = rle.Encode(stream)
-			if stream.VariableName == "" {
-				stream.VariableName = variable.ProtoToString(stream.Variable)
-			}
 			sl.Lock()
-			newStreams[stream.VariableName] = stream
+			newStreams[variable.ProtoToString(stream.Variable)] = stream
 			outputValues += len(stream.Value)
 			sl.Unlock()
 		}(stream)
@@ -322,13 +319,7 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	indexPos := make(map[string]uint64)
 	var outValues uint32
 	for _, stream := range streams {
-		varName := stream.VariableName
-		if varName == "" {
-			varName = variable.ProtoToString(stream.Variable)
-		}
-		stream.VariableName = ""
-
-		indexPos[varName] = uint64(newfile.Tell())
+		indexPos[variable.ProtoToString(stream.Variable)] = uint64(newfile.Tell())
 		newfile.Write(stream)
 		outValues += uint32(len(stream.Value))
 	}
@@ -420,14 +411,12 @@ func (block *Block) Compact() error {
 				log.Printf("Skipping reading stream that contains no variable")
 				continue
 			}
-			if stream.VariableName == "" {
-				stream.VariableName = variable.ProtoToString(stream.Variable)
-			}
-			outstream, found := streams[stream.VariableName]
+			varName := variable.ProtoToString(stream.Variable)
+			outstream, found := streams[varName]
 			if found {
 				outstream.Value = append(outstream.Value, stream.Value...)
 			} else {
-				streams[stream.VariableName] = stream
+				streams[varName] = stream
 			}
 		}
 		log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
