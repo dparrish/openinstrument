@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 
 	"github.com/dparrish/openinstrument/datastore"
 	"github.com/dparrish/openinstrument/store_config"
@@ -20,7 +19,6 @@ var (
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Printf("Current PID: %d", os.Getpid())
 	flag.Parse()

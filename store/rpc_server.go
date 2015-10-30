@@ -166,7 +166,7 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 			response := &oproto.AddResponse{Success: true}
 			c := s.ds.Writer()
 			for _, stream := range request.Stream {
-				c <- *stream
+				c <- stream
 			}
 			close(c)
 			server.Send(response)
@@ -218,7 +218,7 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 	if err != nil {
 		return nil, err
 	}
-	if err = s.ds.CompactBlock(block); err != nil {
+	if err = block.Compact(); err != nil {
 		return nil, err
 	}
 	return &oproto.CompactBlockResponse{Block: block.ToProto()}, nil

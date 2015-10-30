@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"text/template"
 	"time"
@@ -154,7 +155,7 @@ func Add(w http.ResponseWriter, req *http.Request) {
 
 	c := ds.Writer()
 	for _, stream := range request.Stream {
-		c <- *stream
+		c <- stream
 	}
 	close(c)
 
@@ -360,6 +361,32 @@ func Query(w http.ResponseWriter, req *http.Request) {
 	w.Write(b)
 }
 
+func PprofAlloc(w http.ResponseWriter, req *http.Request) {
+	url := fmt.Sprintf("http://%s:%d/debug/pprof/heap", *address, *port)
+	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", "-alloc_space", url).Output()
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("URL: %s<br>\nError: %s", url, err)))
+		return
+	}
+	w.Header().Add("Content-Type:", "image/svg")
+	w.WriteHeader(200)
+	w.Write(out)
+}
+
+func PprofInuse(w http.ResponseWriter, req *http.Request) {
+	url := fmt.Sprintf("http://%s:%d/debug/pprof/heap", *address, *port)
+	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("URL: %s<br>\nError: %s", url, err)))
+		return
+	}
+	w.Header().Add("Content-Type:", "image/svg")
+	w.WriteHeader(200)
+	w.Write(out)
+}
+
 func serveHTTP() {
 	sock, e := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
 	if e != nil {
@@ -375,5 +402,7 @@ func serveHTTP() {
 	http.Handle("/status", http.HandlerFunc(StoreStatus))
 	http.Handle("/inspect", http.HandlerFunc(InspectVariable))
 	http.Handle("/query", http.HandlerFunc(Query))
+	http.Handle("/pprof/alloc", http.HandlerFunc(PprofAlloc))
+	http.Handle("/pprof/inuse", http.HandlerFunc(PprofInuse))
 	http.Serve(sock, nil)
 }

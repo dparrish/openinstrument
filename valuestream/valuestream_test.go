@@ -36,20 +36,3 @@ func (s *MySuite) TestToChan(c *C) {
 		c.Check(v.DoubleValue, Equals, float64(i))
 	}
 }
-
-func (s *MySuite) TestFromChan(c *C) {
-	input := make(chan *oproto.Value)
-	output := &oproto.ValueStream{
-		Value: make([]*oproto.Value, 0),
-	}
-	done := ToStream(input, output)
-	for i := 0; i < 10; i++ {
-		input <- &oproto.Value{DoubleValue: float64(i)}
-	}
-	close(input)
-	<-done
-	c.Assert(len(output.Value), Equals, 10)
-	for i := 0; i < 10; i++ {
-		c.Check(output.Value[i].DoubleValue, Equals, float64(i))
-	}
-}

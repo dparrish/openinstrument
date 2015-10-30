@@ -13,7 +13,6 @@ import (
 	"github.com/dparrish/openinstrument/protofile"
 	"github.com/dparrish/openinstrument/rle"
 	"github.com/dparrish/openinstrument/value"
-	"github.com/dparrish/openinstrument/valuestream"
 	"github.com/dparrish/openinstrument/variable"
 	"github.com/nu7hatch/gouuid"
 )
@@ -42,9 +41,11 @@ type Block struct {
 	compactStartTime time.Time
 	compactEndTime   time.Time
 	FlagsLock        sync.RWMutex
+
+	dsPath string
 }
 
-func newBlock(endKey, id string) *Block {
+func newBlock(endKey, id, dsPath string) *Block {
 	if id == "" {
 		u, err := uuid.NewV4()
 		if err != nil {
@@ -62,6 +63,7 @@ func newBlock(endKey, id string) *Block {
 			Version: uint32(2),
 			Index:   make([]*oproto.StoreFileHeaderIndex, 0),
 		},
+		dsPath: dsPath,
 	}
 }
 
@@ -88,11 +90,11 @@ func (block *Block) UnloggedWriteLocker() sync.Locker {
 }
 
 func (block *Block) logFilename() string {
-	return fmt.Sprintf("block.%s.log", block.ID)
+	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s.log", block.ID))
 }
 
 func (block *Block) Filename() string {
-	return fmt.Sprintf("block.%s", block.ID)
+	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s", block.ID))
 }
 
 func (block *Block) IsCompacting() bool {
@@ -241,50 +243,54 @@ func (block *Block) shouldSplit() bool {
 	return false
 }
 
+func (block *Block) RunLengthEncodeStreams(streams map[string]*oproto.ValueStream) map[string]*oproto.ValueStream {
+	// Run-length encode all streams in parallel
+	st := time.Now()
+
+	var sl sync.Mutex
+	var outputValues int
+	wg := &sync.WaitGroup{}
+	newStreams := make(map[string]*oproto.ValueStream, 0)
+	for _, stream := range streams {
+		wg.Add(1)
+		go func(stream *oproto.ValueStream) {
+			defer wg.Done()
+			// Sort values by timestamp
+			value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
+
+			// Run-length encode values
+			stream = rle.Encode(stream)
+			if stream.VariableName == "" {
+				stream.VariableName = variable.ProtoToString(stream.Variable)
+			}
+			sl.Lock()
+			newStreams[stream.VariableName] = stream
+			outputValues += len(stream.Value)
+			sl.Unlock()
+		}(stream)
+	}
+	wg.Wait()
+
+	log.Printf("Run-length encoded %d streams to %d in %s", len(newStreams), outputValues, time.Since(st))
+
+	return newStreams
+}
+
 // Write writes a map of ValueStreams to a single block file on disk.
 // The values inside each ValueStream will be sorted and run-length-encoded before writing.
-func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) error {
+func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	// Build the header with a 0-index for each variable
 	startTime := time.Now()
-	var endKey string
 
-	st := time.Now()
-	// Run-length encode all streams in parallel
-	c := make(chan *oproto.ValueStream, len(streams))
-	go func() {
-		wg := new(sync.WaitGroup)
-		for v, stream := range streams {
-			if v > endKey {
-				endKey = v
-			}
-			wg.Add(1)
-			go func(v string, stream *oproto.ValueStream) {
-				defer wg.Done()
-				// Sort values by timestamp
-				value.By(func(a, b *oproto.Value) bool { return a.Timestamp < b.Timestamp }).Sort(stream.Value)
-
-				// Run-length encode values
-				newstream := &oproto.ValueStream{Variable: stream.Variable}
-				<-valuestream.ToStream(rle.Encode(valuestream.ToChan(stream)), newstream)
-				c <- newstream
-			}(v, stream)
+	block.BlockHeader.Index = []*oproto.StoreFileHeaderIndex{}
+	block.BlockHeader.EndKey = ""
+	block.BlockHeader.StartTimestamp = 0
+	block.BlockHeader.EndTimestamp = 0
+	streams = block.RunLengthEncodeStreams(streams)
+	for v, stream := range streams {
+		if v > block.BlockHeader.EndKey {
+			block.BlockHeader.EndKey = v
 		}
-		wg.Wait()
-		close(c)
-	}()
-	ns := make(map[string]*oproto.ValueStream, 0)
-	for stream := range c {
-		if stream.VariableName == "" {
-			stream.VariableName = variable.ProtoToString(stream.Variable)
-		}
-		ns[stream.VariableName] = stream
-	}
-	streams = ns
-
-	var minTimestamp, maxTimestamp uint64
-	var outputValues int
-	block.BlockHeader.Index = make([]*oproto.StoreFileHeaderIndex, 0)
-	for _, stream := range streams {
 		// Add this stream to the index
 		block.BlockHeader.Index = append(block.BlockHeader.Index, &oproto.StoreFileHeaderIndex{
 			Variable:     stream.Variable,
@@ -294,23 +300,16 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 			NumValues:    uint32(len(stream.Value)),
 		})
 
-		if minTimestamp == 0 || stream.Value[0].Timestamp < minTimestamp {
-			minTimestamp = stream.Value[0].Timestamp
+		if block.BlockHeader.StartTimestamp == 0 || stream.Value[0].Timestamp < block.BlockHeader.StartTimestamp {
+			block.BlockHeader.StartTimestamp = stream.Value[0].Timestamp
 		}
-		if stream.Value[len(stream.Value)-1].Timestamp > maxTimestamp {
-			maxTimestamp = stream.Value[len(stream.Value)-1].Timestamp
+		if stream.Value[len(stream.Value)-1].Timestamp > block.BlockHeader.EndTimestamp {
+			block.BlockHeader.EndTimestamp = stream.Value[len(stream.Value)-1].Timestamp
 		}
-		outputValues += len(stream.Value)
 	}
 
-	block.BlockHeader.StartTimestamp = minTimestamp
-	block.BlockHeader.EndTimestamp = maxTimestamp
-	block.BlockHeader.EndKey = endKey
-
-	log.Printf("Run-length encoded %d streams to %d in %s", len(streams), outputValues, time.Since(st))
-
 	// Start writing to the new block file
-	newfilename := filepath.Join(path, fmt.Sprintf("%s.new.%d", block.Filename(), os.Getpid()))
+	newfilename := fmt.Sprintf("%s.new.%d", block.Filename(), os.Getpid())
 	newfile, err := protofile.Write(newfilename)
 	if err != nil {
 		newfile.Close()
@@ -352,15 +351,15 @@ func (block *Block) Write(path string, streams map[string]*oproto.ValueStream) e
 	log.Printf("Wrote %d streams / %d values to %s in %v\n", len(streams), outValues, newfilename, time.Since(startTime))
 
 	// Rename the temporary file into place
-	if err := os.Rename(newfilename, filepath.Join(path, block.Filename())); err != nil {
+	if err := os.Rename(newfilename, block.Filename()); err != nil {
 		return fmt.Errorf("Error renaming: %s", err)
 	}
 
 	return nil
 }
 
-func (block *Block) Read(path string) (<-chan *oproto.ValueStream, error) {
-	file, err := protofile.Read(filepath.Join(path, block.Filename()))
+func (block *Block) Read() (<-chan *oproto.ValueStream, error) {
+	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		return nil, fmt.Errorf("Can't read old block file %s: %s\n", block.Filename(), err)
 	}
@@ -379,27 +378,76 @@ func (block *Block) Read(path string) (<-chan *oproto.ValueStream, error) {
 	}
 }
 
-func (block *Block) GetStreams(index *oproto.StoreFileHeaderIndex) <-chan *oproto.ValueStream {
-	c := make(chan *oproto.ValueStream)
-	go func() {
-		file, err := protofile.Read(filepath.Join(dsPath, block.Filename()))
-		if err != nil {
-			if !os.IsNotExist(err) {
-				log.Printf("Can't read block file %s: %s\n", block, err)
+func (block *Block) GetStreamForVariable(index *oproto.StoreFileHeaderIndex) *oproto.ValueStream {
+	file, err := protofile.Read(block.Filename())
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("Can't read block file %s: %s\n", block, err)
+		}
+		return nil
+	}
+	defer file.Close()
+	stream := &oproto.ValueStream{}
+	if n, err := file.ReadAt(int64(index.Offset), stream); n < 1 || err != nil {
+		log.Printf("Couldn't read ValueStream at %s:%d: %s", block, index.Offset, err)
+		return nil
+	}
+	return stream
+}
+
+func (block *Block) Compact() error {
+	st := time.Now()
+	log.Printf("Compacting block %s\n", block)
+	startTime := time.Now()
+
+	block.FlagsLock.Lock()
+	defer block.FlagsLock.Unlock()
+	block.isCompacting = true
+	block.compactStartTime = time.Now()
+
+	locker := block.LogWriteLocker()
+	locker.Lock()
+	defer locker.Unlock()
+
+	streams := block.LogStreams
+	log.Printf("Block log contains %d streams", len(streams))
+	reader, err := block.Read()
+	if err != nil {
+		log.Printf("Unable to read block: %s", err)
+	} else {
+		for stream := range reader {
+			if stream.Variable == nil {
+				log.Printf("Skipping reading stream that contains no variable")
+				continue
 			}
-		} else {
-			stream := new(oproto.ValueStream)
-			n, err := file.ReadAt(int64(index.Offset), stream)
-			if n < 1 && err != nil {
-				log.Printf("Couldn't read ValueStream at %s:%d: %s", block, index.Offset, err)
+			if stream.VariableName == "" {
+				stream.VariableName = variable.ProtoToString(stream.Variable)
+			}
+			outstream, found := streams[stream.VariableName]
+			if found {
+				outstream.Value = append(outstream.Value, stream.Value...)
 			} else {
-				c <- stream
+				streams[stream.VariableName] = stream
 			}
 		}
-		file.Close()
-		close(c)
-	}()
-	return c
+		log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
+	}
+
+	st = time.Now()
+	if err = block.Write(streams); err != nil {
+		log.Printf("Error writing: %s", err)
+		return err
+	}
+
+	// Delete the log file
+	os.Remove(block.logFilename())
+	log.Printf("Deleted log file %s", block.logFilename())
+	block.LogStreams = make(map[string]*oproto.ValueStream)
+
+	block.compactEndTime = time.Now()
+	block.isCompacting = false
+	log.Printf("Finished compaction of %s in %v", block, time.Since(startTime))
+	return nil
 }
 
 // Sorter for oproto.Block
