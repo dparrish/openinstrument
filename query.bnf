@@ -1,0 +1,57 @@
+/* Lexical elements */
+
+_letter : 'a'-'z' | 'A'-'Z' ;
+_digit : '0'-'9';
+_lineComment : '/' '/' {.} '\n' ;
+_blockComment : '/' '*' {. | '*'} '*' '/' ;
+
+int64 : '1'-'9' {_digit};
+varname  : '/' (_letter | _digit) {_letter | _digit | '/' | '_' | '-'};
+varlabel : (_letter | _digit | '/') {_letter | _digit | '/' | '_' | '-'};
+
+!whitespace : ' ' | '\t' | '\n' | '\r';
+!comment : _lineComment | _blockComment;
+
+/* Syntax Part */
+
+<< import "github.com/dparrish/openinstrument/query/ast" >>
+
+Query : Variable << ast.NewQuery($0) >>
+      | Mutation << ast.NewQuery($0) >>
+			| Aggregation << ast.NewQuery($0) >> ;
+
+Aggregation :
+							// sum (/test/foo)
+              AggregationType "(" VariableList ")" << ast.NewAggregation($0, nil, $2) >>
+							// sum (rate(10m, /test/foo))
+            | AggregationType "(" Mutation ")" << ast.NewAggregation($0, nil, $2) >>
+						  // sum by (foo) (/test/foo{foo=bar})
+            | AggregationType "by" "(" LabelList ")" "(" VariableList ")" << ast.NewAggregation($0, $3, $6) >>
+						  // sum by (foo) (rate(10m, /test/foo{foo=bar}))
+            | AggregationType "by" "(" LabelList ")" "(" Mutation ")" << ast.NewAggregation($0, $3, $6) >>
+						;
+
+Mutation : MutationType "(" Duration "," VariableList ")" << ast.NewMutation($0, $2, $4) >>;
+
+LabelList : varlabel << ast.NewLabelList($0) >>
+          | LabelList "," varlabel << ast.AppendStringToList($0, $2) >> ;
+
+Percentile : "percentile" "(" Int64 ")" << ast.NewPercentile($2) >>;
+AggregationType : "sum" | "mean" | "median" | "min" | "max" | "stddev" | Percentile;
+MutationType:  "rate" | "rate_signed" | "delta" | "latest";
+
+Variable  : varname << ast.NewVariable($0, nil) >>
+          | varname "{}" << ast.NewVariable($0, nil) >>
+          | varname "{" KeyValues "}" << ast.NewVariable($0, $2) >> ;
+
+KeyValues : KeyValue << ast.NewKeyValueList($0) >>
+          | KeyValues "," KeyValue << ast.AppendKeyValueList($0, $2) >> ;
+
+KeyValue  : varlabel "=" varlabel << ast.NewKeyValue($0, $2) >>;
+
+VariableList : Variable << ast.NewVariableList($0) >>
+						 | VariableList "," Variable << ast.AddVariableToVariableList($0, $2) >>;
+
+Duration: varlabel << ast.NewDuration($0) >>;
+
+Int64: int64 << ast.NewInt64($0) >>;

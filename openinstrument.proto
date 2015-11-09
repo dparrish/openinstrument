@@ -28,7 +28,7 @@ message StreamMutation {
     // Do not modify the data at all
     NONE = 0;
     // Average out values between each sampling point
-    AVERAGE = 1;
+    MEAN = 1;
     // Get the maximum value between each sampling point
     MAX = 2;
     // Get the minimum value between each sampling point
@@ -48,6 +48,8 @@ message StreamMutation {
   }
   SampleType sample_type = 1;
 
+  repeated StreamVariable variable = 4;
+
   // Stretch or compress the stream so that there is a value every <sample_frequency> ms.
   // Extra values between each sample will be aggregated according to <sample_type>.
   // Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
@@ -61,8 +63,8 @@ message StreamAggregation {
   enum AggregateType {
     // Do not aggregate between streams
     NONE = 0;
-    // Get an average of all values at a common time across streams
-    AVERAGE = 1;
+    // Get the mean of all values at a common time across streams
+    MEAN = 1;
     // Get the maximum of all values at a common time across streams
     MAX = 2;
     // Get the minimum of all values at a common time across streams
@@ -84,6 +86,15 @@ message StreamAggregation {
 
   // Points will be aggregated if they are less than sample_interval ms apart. Default is 30 seconds.
   uint32 sample_interval = 3;
+
+	// Optional percentile
+	uint32 percentile = 4;
+
+	// Variables to aggregate
+	repeated StreamVariable variable = 5;
+
+	// StreamMutations to aggregate
+	repeated StreamMutation mutation = 6;
 }
 
 message Value {

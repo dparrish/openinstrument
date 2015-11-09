@@ -132,15 +132,7 @@ func (sc *StoreClient) List(request *oproto.ListRequest) ([]*oproto.ListResponse
 	count := 0
 	for _, server := range sc.servers {
 		switch server.State {
-		case oproto.StoreServerStatus_UNKNOWN:
-			continue
-		case oproto.StoreServerStatus_LOAD:
-			continue
-		case oproto.StoreServerStatus_DRAIN:
-			continue
-		case oproto.StoreServerStatus_READONLY:
-			continue
-		case oproto.StoreServerStatus_SHUTDOWN:
+		case oproto.StoreServerStatus_UNKNOWN, oproto.StoreServerStatus_LOAD, oproto.StoreServerStatus_DRAIN, oproto.StoreServerStatus_READONLY, oproto.StoreServerStatus_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
@@ -192,15 +184,7 @@ func (sc *StoreClient) Get(request *oproto.GetRequest) ([]*oproto.GetResponse, e
 	count := 0
 	for _, server := range sc.servers {
 		switch server.State {
-		case oproto.StoreServerStatus_UNKNOWN:
-			continue
-		case oproto.StoreServerStatus_LOAD:
-			continue
-		case oproto.StoreServerStatus_DRAIN:
-			continue
-		case oproto.StoreServerStatus_READONLY:
-			continue
-		case oproto.StoreServerStatus_SHUTDOWN:
+		case oproto.StoreServerStatus_UNKNOWN, oproto.StoreServerStatus_LOAD, oproto.StoreServerStatus_DRAIN, oproto.StoreServerStatus_READONLY, oproto.StoreServerStatus_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
@@ -238,15 +222,7 @@ func (sc *StoreClient) GetConfig() *oproto.StoreConfig {
 	count := 0
 	for _, server := range sc.servers {
 		switch server.State {
-		case oproto.StoreServerStatus_UNKNOWN:
-			continue
-		case oproto.StoreServerStatus_LOAD:
-			continue
-		case oproto.StoreServerStatus_DRAIN:
-			continue
-		case oproto.StoreServerStatus_READONLY:
-			continue
-		case oproto.StoreServerStatus_SHUTDOWN:
+		case oproto.StoreServerStatus_UNKNOWN, oproto.StoreServerStatus_LOAD, oproto.StoreServerStatus_DRAIN, oproto.StoreServerStatus_READONLY, oproto.StoreServerStatus_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)

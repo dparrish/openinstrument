@@ -4,9 +4,21 @@ import (
 	"time"
 
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/query/lexer"
+	"github.com/dparrish/openinstrument/query/parser"
 	"github.com/dparrish/openinstrument/variable"
 	"github.com/golang/protobuf/proto"
 )
+
+func Parse(q string) (*oproto.Query, error) {
+	p := parser.NewParser()
+	l := lexer.NewLexer([]byte(q))
+	v, err := p.Parse(l)
+	if err == nil {
+		return v.(*oproto.Query), err
+	}
+	return nil, err
+}
 
 type Query struct {
 	q *oproto.Query

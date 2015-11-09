@@ -84,7 +84,7 @@ const (
 	// Do not modify the data at all
 	StreamMutation_NONE StreamMutation_SampleType = 0
 	// Average out values between each sampling point
-	StreamMutation_AVERAGE StreamMutation_SampleType = 1
+	StreamMutation_MEAN StreamMutation_SampleType = 1
 	// Get the maximum value between each sampling point
 	StreamMutation_MAX StreamMutation_SampleType = 2
 	// Get the minimum value between each sampling point
@@ -105,7 +105,7 @@ const (
 
 var StreamMutation_SampleType_name = map[int32]string{
 	0: "NONE",
-	1: "AVERAGE",
+	1: "MEAN",
 	2: "MAX",
 	3: "MIN",
 	4: "RATE",
@@ -117,7 +117,7 @@ var StreamMutation_SampleType_name = map[int32]string{
 }
 var StreamMutation_SampleType_value = map[string]int32{
 	"NONE":        0,
-	"AVERAGE":     1,
+	"MEAN":        1,
 	"MAX":         2,
 	"MIN":         3,
 	"RATE":        4,
@@ -137,8 +137,8 @@ type StreamAggregation_AggregateType int32
 const (
 	// Do not aggregate between streams
 	StreamAggregation_NONE StreamAggregation_AggregateType = 0
-	// Get an average of all values at a common time across streams
-	StreamAggregation_AVERAGE StreamAggregation_AggregateType = 1
+	// Get the mean of all values at a common time across streams
+	StreamAggregation_MEAN StreamAggregation_AggregateType = 1
 	// Get the maximum of all values at a common time across streams
 	StreamAggregation_MAX StreamAggregation_AggregateType = 2
 	// Get the minimum of all values at a common time across streams
@@ -155,7 +155,7 @@ const (
 
 var StreamAggregation_AggregateType_name = map[int32]string{
 	0: "NONE",
-	1: "AVERAGE",
+	1: "MEAN",
 	2: "MAX",
 	3: "MIN",
 	4: "MEDIAN",
@@ -165,7 +165,7 @@ var StreamAggregation_AggregateType_name = map[int32]string{
 }
 var StreamAggregation_AggregateType_value = map[string]int32{
 	"NONE":       0,
-	"AVERAGE":    1,
+	"MEAN":       1,
 	"MAX":        2,
 	"MIN":        3,
 	"MEDIAN":     4,
@@ -270,6 +270,7 @@ func (m *StreamVariable) GetLabel() []*Label {
 
 type StreamMutation struct {
 	SampleType StreamMutation_SampleType `protobuf:"varint,1,opt,name=sample_type,enum=openinstrument.proto.StreamMutation_SampleType" json:"sample_type,omitempty"`
+	Variable   []*StreamVariable         `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
 	// Stretch or compress the stream so that there is a value every <sample_frequency> ms.
 	// Extra values between each sample will be aggregated according to <sample_type>.
 	// Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
@@ -283,6 +284,13 @@ func (m *StreamMutation) Reset()         { *m = StreamMutation{} }
 func (m *StreamMutation) String() string { return proto.CompactTextString(m) }
 func (*StreamMutation) ProtoMessage()    {}
 
+func (m *StreamMutation) GetVariable() []*StreamVariable {
+	if m != nil {
+		return m.Variable
+	}
+	return nil
+}
+
 type StreamAggregation struct {
 	Type StreamAggregation_AggregateType `protobuf:"varint,1,opt,name=type,enum=openinstrument.proto.StreamAggregation_AggregateType" json:"type,omitempty"`
 	// Labels to aggregate by on the input streams. If no labels are specified, aggregation will be done on the variable
@@ -290,11 +298,31 @@ type StreamAggregation struct {
 	Label []string `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
 	// Points will be aggregated if they are less than sample_interval ms apart. Default is 30 seconds.
 	SampleInterval uint32 `protobuf:"varint,3,opt,name=sample_interval" json:"sample_interval,omitempty"`
+	// Optional percentile
+	Percentile uint32 `protobuf:"varint,4,opt,name=percentile" json:"percentile,omitempty"`
+	// Variables to aggregate
+	Variable []*StreamVariable `protobuf:"bytes,5,rep,name=variable" json:"variable,omitempty"`
+	// StreamMutations to aggregate
+	Mutation []*StreamMutation `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
 }
 
 func (m *StreamAggregation) Reset()         { *m = StreamAggregation{} }
 func (m *StreamAggregation) String() string { return proto.CompactTextString(m) }
 func (*StreamAggregation) ProtoMessage()    {}
+
+func (m *StreamAggregation) GetVariable() []*StreamVariable {
+	if m != nil {
+		return m.Variable
+	}
+	return nil
+}
+
+func (m *StreamAggregation) GetMutation() []*StreamMutation {
+	if m != nil {
+		return m.Mutation
+	}
+	return nil
+}
 
 type Value struct {
 	// Milliseconds since epoch
