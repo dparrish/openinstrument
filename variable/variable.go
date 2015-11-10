@@ -6,15 +6,19 @@ import (
 	"log"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 )
 
 // Variable represents a variable name with all labels.
 type Variable struct {
-	Variable string
-	Labels   map[string]string
+	Variable     string
+	Labels       map[string]string
+	MinTimestamp int64
+	MaxTimestamp int64
 }
 
 func valueNeedsQuotes(str string) bool {
@@ -58,6 +62,13 @@ func (v *Variable) String() string {
 		}
 		str += "}"
 	}
+	if v.MinTimestamp != 0 || v.MaxTimestamp != 0 {
+		str += fmt.Sprintf("[%d", v.MinTimestamp)
+		if v.MaxTimestamp != 0 {
+			str += fmt.Sprintf(":%d", v.MaxTimestamp)
+		}
+		str += "]"
+	}
 	return str
 }
 
@@ -73,6 +84,8 @@ func (v *Variable) ToProto(p *oproto.StreamVariable) {
 	p.Reset()
 	p.Name = v.Variable
 	p.Label = make([]*oproto.Label, len(v.Labels))
+	p.MinTimestamp = v.MinTimestamp
+	p.MaxTimestamp = v.MaxTimestamp
 	var i int
 	for key, value := range v.Labels {
 		p.Label[i] = &oproto.Label{Label: key, Value: value}
@@ -82,7 +95,7 @@ func (v *Variable) ToProto(p *oproto.StreamVariable) {
 
 // ParseFromString extracts the variable name and all labels from a string.
 func (v *Variable) ParseFromString(textvar string) error {
-	re, err := regexp.Compile("^(.+?)({(.*)})?$")
+	re, err := regexp.Compile("^(.+?)({(.*)})?(?:\\[(-?\\d+):?(-?\\d+)?\\])?$")
 	if err != nil {
 		log.Panic("Invalid regexp")
 	}
@@ -103,12 +116,31 @@ func (v *Variable) ParseFromString(textvar string) error {
 			v.Labels[strings.TrimSpace(substrings[0])] = strings.TrimSpace(substrings[1])
 		}
 	}
+	if matches[4] != "" {
+		ts, err := strconv.Atoi(matches[4])
+		if err != nil {
+			return fmt.Errorf("Invalid Min Timestamp")
+		}
+		v.MinTimestamp = int64(ts)
+	}
+	if matches[5] != "" {
+		ts, err := strconv.Atoi(matches[5])
+		if err != nil {
+			return fmt.Errorf("Invalid Max Timestamp")
+		}
+		v.MaxTimestamp = int64(ts)
+	}
+	if v.MaxTimestamp != 0 && v.MaxTimestamp < v.MinTimestamp {
+		return fmt.Errorf("Max timstamp is before min timestamp")
+	}
 	return nil
 }
 
 // ParseFromProto extracts the details from a protobuf.
 func (v *Variable) ParseFromProto(p *oproto.StreamVariable) error {
 	v.Variable = p.Name
+	v.MinTimestamp = p.MinTimestamp
+	v.MaxTimestamp = p.MaxTimestamp
 	// Copy labels
 	v.Labels = make(map[string]string, len(p.Label))
 	for _, label := range p.Label {
@@ -156,6 +188,26 @@ func (v *Variable) Match(match *Variable) bool {
 				return false
 			}
 		}
+	}
+	return true
+}
+
+func (v *Variable) TimestampInsideRange(timestamp uint64) bool {
+	minTimestamp := v.MinTimestamp
+	if minTimestamp < 0 {
+		minTimestamp = int64(openinstrument.NowMs()) + minTimestamp
+	}
+	maxTimestamp := v.MaxTimestamp
+	if maxTimestamp < 0 {
+		maxTimestamp = int64(openinstrument.NowMs()) + maxTimestamp
+	}
+	if maxTimestamp != 0 && int64(timestamp) > maxTimestamp {
+		// Too new
+		return false
+	}
+	if int64(timestamp) < minTimestamp {
+		// Too old
+		return false
 	}
 	return true
 }

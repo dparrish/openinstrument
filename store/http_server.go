@@ -89,7 +89,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Println(openinstrument.ProtoText(&request))
-	streamChan := ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp)
+	streamChan := ds.Reader(requestVariable)
 	streams := make([]*oproto.ValueStream, 0)
 	for stream := range streamChan {
 		streams = append(streams, stream)
@@ -106,7 +106,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
 		if request.Mutation != nil && len(request.Mutation) > 0 {
 			for _, mut := range request.Mutation {
 				switch mut.SampleType {
-				case oproto.StreamMutation_AVERAGE:
+				case oproto.StreamMutation_MEAN:
 					output = mutations.Mean(uint64(mut.SampleFrequency), output)
 				case oproto.StreamMutation_MIN:
 					output = mutations.Min(uint64(mut.SampleFrequency), output)
@@ -124,16 +124,10 @@ func Get(w http.ResponseWriter, req *http.Request) {
 		newstream.Variable = variable.NewFromProto(streams[0].Variable).AsProto()
 		var valueCount uint32
 		for value := range output {
-			if request.MinTimestamp != 0 && value.Timestamp < request.MinTimestamp {
-				// Too old
-				continue
+			if requestVariable.TimestampInsideRange(value.Timestamp) {
+				newstream.Value = append(newstream.Value, value)
+				valueCount++
 			}
-			if request.MaxTimestamp != 0 && value.Timestamp > request.MaxTimestamp {
-				// Too new
-				continue
-			}
-			newstream.Value = append(newstream.Value, value)
-			valueCount++
 		}
 
 		if request.MaxValues != 0 && valueCount >= request.MaxValues {
@@ -189,9 +183,10 @@ func List(w http.ResponseWriter, req *http.Request) {
 	// Retrieve all variables and store the names in a map for uniqueness
 	timer := addTimer("retrieve variables", &response)
 	vars := make(map[string]*oproto.StreamVariable)
-	minTimestamp := time.Now().Add(time.Duration(-request.MaxAge) * time.Millisecond)
-	unix := uint64(minTimestamp.Unix()) * 1000
-	streamChan := ds.Reader(requestVariable, unix, 0)
+	if requestVariable.MinTimestamp == 0 {
+		requestVariable.MinTimestamp = -int64(request.MaxAge)
+	}
+	streamChan := ds.Reader(requestVariable)
 	for stream := range streamChan {
 		vars[variable.ProtoToString(stream.Variable)] = stream.Variable
 		if request.MaxVariables > 0 && len(vars) == int(request.MaxVariables) {
@@ -274,7 +269,7 @@ func InspectVariable(w http.ResponseWriter, req *http.Request) {
 	}
 
 	v := variable.NewFromString(p.Query)
-	c := ds.Reader(v, 0, 0)
+	c := ds.Reader(v)
 	for stream := range c {
 		lt := stream.Value[len(stream.Value)-1].EndTimestamp
 		if lt == 0 {
@@ -301,9 +296,8 @@ func Query(w http.ResponseWriter, req *http.Request) {
 		Values   [][]interface{} `json:"values"`
 	}
 
-	var minTimestamp uint64
-	var maxTimestamp uint64
 	var duration *time.Duration
+	requestVariable := variable.NewFromString(query)
 	if req.FormValue("d") != "" {
 		d, err := time.ParseDuration(req.FormValue("d"))
 		if err != nil {
@@ -312,8 +306,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		duration = &d
-		t := uint64(time.Now().UnixNano()-d.Nanoseconds()) / 1000000
-		minTimestamp = t
+		requestVariable.MinTimestamp = int64(time.Now().UnixNano()-d.Nanoseconds()) / 1000000
 	}
 
 	if query == "" {
@@ -324,7 +317,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 
 	results := make([]Result, 0)
 
-	for stream := range ds.Reader(variable.NewFromString(query), minTimestamp, maxTimestamp) {
+	for stream := range ds.Reader(requestVariable) {
 		r := Result{
 			Variable: variable.ProtoToString(stream.Variable),
 		}
@@ -343,7 +336,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 		} else {
 			// All values over a specific time period
 			for _, v := range stream.Value {
-				if minTimestamp == 0 || minTimestamp > v.Timestamp {
+				if requestVariable.MinTimestamp == 0 || requestVariable.MinTimestamp > int64(v.Timestamp) {
 					r.Values = append(r.Values, []interface{}{v.Timestamp, v.DoubleValue})
 				}
 			}

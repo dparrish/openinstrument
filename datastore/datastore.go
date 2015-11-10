@@ -215,9 +215,9 @@ func (ds *Datastore) Writer() chan<- *oproto.ValueStream {
 // If min/maxTimestamp are not nil, streams will only be returned if SOME values inside the stream match.
 // The supplied variable may be a search or a single.
 // The streams returned may be out of order with respect to variable names or timestamps.
-func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uint64) <-chan *oproto.ValueStream {
+func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 	varName := v.String()
-	log.Printf("Creating Reader for %s between %d and %d\n", varName, minTimestamp, maxTimestamp)
+	log.Printf("Creating Reader for %s between %d and %d\n", varName, v.MinTimestamp, v.MaxTimestamp)
 	c := make(chan *oproto.ValueStream, 1000)
 	go func() {
 		maybeReturnStreams := func(block *Block, stream *oproto.ValueStream) {
@@ -228,10 +228,10 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uin
 			if len(stream.Value) == 0 {
 				return
 			}
-			if stream.Value[len(stream.Value)-1].Timestamp < minTimestamp {
+			if int64(stream.Value[len(stream.Value)-1].Timestamp) < v.MinTimestamp {
 				return
 			}
-			if maxTimestamp != 0 && stream.Value[0].Timestamp > maxTimestamp {
+			if v.MaxTimestamp != 0 && int64(stream.Value[0].Timestamp) > v.MaxTimestamp {
 				return
 			}
 			c <- stream
@@ -264,10 +264,10 @@ func (ds *Datastore) Reader(v *variable.Variable, minTimestamp, maxTimestamp uin
 					if index.NumValues == 0 {
 						continue
 					}
-					if index.MaxTimestamp < minTimestamp {
+					if int64(index.MaxTimestamp) < v.MinTimestamp {
 						continue
 					}
-					if maxTimestamp != 0 && index.MinTimestamp > maxTimestamp {
+					if v.MaxTimestamp != 0 && int64(index.MinTimestamp) > v.MaxTimestamp {
 						continue
 					}
 					c <- block.GetStreamForVariable(index)

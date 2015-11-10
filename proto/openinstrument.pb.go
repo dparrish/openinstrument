@@ -255,6 +255,9 @@ type StreamVariable struct {
 	Name  string                   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	Label []*Label                 `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
 	Type  StreamVariable_ValueType `protobuf:"varint,3,opt,name=type,enum=openinstrument.proto.StreamVariable_ValueType" json:"type,omitempty"`
+	// Milliseconds since epoch, or if negative, milliseconds before now.
+	MinTimestamp int64 `protobuf:"varint,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
+	MaxTimestamp int64 `protobuf:"varint,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
 }
 
 func (m *StreamVariable) Reset()         { *m = StreamVariable{} }
@@ -416,9 +419,6 @@ func (m *Query) GetAggregation() []*StreamAggregation {
 
 type GetRequest struct {
 	Variable *StreamVariable `protobuf:"bytes,9,opt,name=variable" json:"variable,omitempty"`
-	// Milliseconds since epoch
-	MinTimestamp uint64 `protobuf:"varint,2,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
-	MaxTimestamp uint64 `protobuf:"varint,3,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
 	// If mutations or aggregations are supplied, the GetResponse will have a separate stream for each change requested.
 	Mutation    []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
 	Aggregation []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`

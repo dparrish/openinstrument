@@ -3,6 +3,7 @@ package variable
 import (
 	"testing"
 
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	. "gopkg.in/check.v1"
 )
@@ -58,4 +59,51 @@ func (s *MySuite) TestInvalidVariable(c *C) {
 	c.Check(NewFromProto(&oproto.StreamVariable{}).String(), Equals, "")
 	v := &oproto.StreamVariable{Label: []*oproto.Label{{Label: "foo", Value: "bar"}}}
 	c.Check(NewFromProto(v).String(), Equals, "{foo=bar}")
+}
+
+func (s *MySuite) TestStringWithRange(c *C) {
+	// Specify start and end
+	v := NewFromString("/test[1200:1500]")
+	c.Check(v.MinTimestamp, Equals, int64(1200))
+	c.Check(v.MaxTimestamp, Equals, int64(1500))
+	c.Check(v.String(), Equals, "/test[1200:1500]")
+
+	// Only specify start
+	v = NewFromString("/test[1200]")
+	c.Check(v.MinTimestamp, Equals, int64(1200))
+	c.Check(v.String(), Equals, "/test[1200]")
+
+	// Relative timstamps
+	v = NewFromString("/test[-1500:-1200]")
+	c.Check(v.MinTimestamp, Equals, int64(-1500))
+	c.Check(v.MaxTimestamp, Equals, int64(-1200))
+	c.Check(v.String(), Equals, "/test[-1500:-1200]")
+
+	// Relative start only
+	v = NewFromString("/test[-1200]")
+	c.Check(v.MinTimestamp, Equals, int64(-1200))
+	c.Check(v.String(), Equals, "/test[-1200]")
+
+	// Invalid timestamp order
+	v = NewFromString("/test[-1200:-1500]")
+	c.Check(v, IsNil)
+}
+
+func (s *MySuite) TestVariableInsideRange(c *C) {
+	v := NewFromString("/test")
+	v.MinTimestamp = 500
+	v.MaxTimestamp = 1000
+	c.Check(v.TimestampInsideRange(400), Equals, false)
+	c.Check(v.TimestampInsideRange(600), Equals, true)
+	c.Check(v.TimestampInsideRange(1001), Equals, false)
+}
+
+func (s *MySuite) TestVariableInsideRelativeRange(c *C) {
+	v := NewFromString("/test")
+	// From 40 to 50 seconds ago
+	v.MinTimestamp = -50000
+	v.MaxTimestamp = -40000
+	c.Check(v.TimestampInsideRange(openinstrument.NowMs()-60000), Equals, false)
+	c.Check(v.TimestampInsideRange(openinstrument.NowMs()-45000), Equals, true)
+	c.Check(v.TimestampInsideRange(openinstrument.NowMs()-20000), Equals, false)
 }

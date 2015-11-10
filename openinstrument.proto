@@ -21,6 +21,10 @@ message StreamVariable {
   string name = 1;
   repeated Label label = 2;
   ValueType type = 3;
+
+  // Milliseconds since epoch, or if negative, milliseconds before now.
+	int64 min_timestamp = 4;
+	int64 max_timestamp = 5;
 }
 
 message StreamMutation {
@@ -132,10 +136,6 @@ message Query {
 
 message GetRequest {
   StreamVariable variable = 9;
-
-  // Milliseconds since epoch
-  uint64 min_timestamp = 2;
-  uint64 max_timestamp = 3;
 
   // If mutations or aggregations are supplied, the GetResponse will have a separate stream for each change requested.
   repeated StreamMutation mutation = 6;

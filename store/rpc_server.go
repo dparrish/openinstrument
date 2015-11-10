@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"sync"
-	"time"
 
 	"google.golang.org/grpc"
 
@@ -47,15 +46,13 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 	// Retrieve all variables and store the names in a map for uniqueness
 	timer := addTimer("retrieve variables", response)
 	vars := make(map[string]*oproto.StreamVariable)
-	var unix uint64
 	if request.MaxAge == 0 {
-		minTimestamp := time.Now().Add(time.Duration(-86400000) * time.Millisecond)
-		unix = uint64(minTimestamp.Unix()) * 1000
+		// Get the last day
+		requestVariable.MinTimestamp = -86400000
 	} else {
-		minTimestamp := time.Now().Add(time.Duration(-request.MaxAge) * time.Millisecond)
-		unix = uint64(minTimestamp.Unix()) * 1000
+		requestVariable.MinTimestamp = -int64(request.MaxAge)
 	}
-	for stream := range s.ds.Reader(requestVariable, unix, 0) {
+	for stream := range s.ds.Reader(requestVariable) {
 		if request.MaxVariables > 0 && len(vars) >= int(request.MaxVariables) {
 			continue
 		}
@@ -83,12 +80,8 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 	if len(requestVariable.String()) == 0 {
 		return fmt.Errorf("No variable specified")
 	}
-	if request.MaxTimestamp == 0 {
-		request.MaxTimestamp = openinstrument.NowMs()
-	}
-	//log.Println(openinstrument.ProtoText(request))
 	var streams []*oproto.ValueStream
-	for stream := range s.ds.Reader(requestVariable, request.MinTimestamp, request.MaxTimestamp) {
+	for stream := range s.ds.Reader(requestVariable) {
 		streams = append(streams, stream)
 	}
 	mergeBy := ""
@@ -104,7 +97,7 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 			if request.Mutation != nil && len(request.Mutation) > 0 {
 				for _, mut := range request.Mutation {
 					switch mut.SampleType {
-					case oproto.StreamMutation_AVERAGE:
+					case oproto.StreamMutation_MEAN:
 						output = mutations.Mean(uint64(mut.SampleFrequency), output)
 					case oproto.StreamMutation_MIN:
 						output = mutations.Min(uint64(mut.SampleFrequency), output)
@@ -125,15 +118,9 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 					newstream.Value = newstream.Value[1:]
 				}
 
-				if request.MinTimestamp != 0 && value.Timestamp < request.MinTimestamp {
-					// Too old
-					continue
+				if requestVariable.TimestampInsideRange(value.Timestamp) {
+					newstream.Value = append(newstream.Value, value)
 				}
-				if request.MaxTimestamp != 0 && value.Timestamp > request.MaxTimestamp {
-					// Too new
-					continue
-				}
-				newstream.Value = append(newstream.Value, value)
 			}
 
 			server.Send(&oproto.GetResponse{

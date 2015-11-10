@@ -48,14 +48,14 @@ func main() {
 	defer conn.Close()
 
 	// Build the request
+	request := &oproto.GetRequest{
+		Variable: variable.NewFromString(flag.Arg(0)).AsProto(),
+	}
 	dur, err := time.ParseDuration(*duration)
 	if err != nil {
 		log.Fatal("Invalid --duration:", err)
 	}
-	request := &oproto.GetRequest{
-		Variable:     variable.NewFromString(flag.Arg(0)).AsProto(),
-		MinTimestamp: uint64(time.Now().Add(-dur).UnixNano() / 1000000),
-	}
+	request.Variable.MinTimestamp = -dur.Nanoseconds() / 1000000
 	if *maxVariables > 0 {
 		request.MaxVariables = uint32(*maxVariables)
 	}
@@ -89,7 +89,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("Invalid argument to %s: %s", parts[0], err)
 			}
-			i := oproto.StreamMutation_AVERAGE
+			i := oproto.StreamMutation_MEAN
 			request.Mutation = append(request.Mutation, &oproto.StreamMutation{
 				SampleType:      i,
 				SampleFrequency: uint32(dur.Nanoseconds() / 1000000),

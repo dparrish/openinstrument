@@ -164,16 +164,16 @@ func (sc *StoreClient) List(request *oproto.ListRequest) ([]*oproto.ListResponse
 	return response, nil
 }
 
-func (sc *StoreClient) SimpleGet(varName string, minTimestamp, maxTimestamp uint64) ([]*oproto.GetResponse, error) {
+func (sc *StoreClient) SimpleGet(varName string, minTimestamp, maxTimestamp int64) ([]*oproto.GetResponse, error) {
 	reqvar := variable.NewFromString(varName)
 	request := &oproto.GetRequest{
 		Variable: reqvar.AsProto(),
 	}
 	if minTimestamp > 0 {
-		request.MinTimestamp = minTimestamp
+		request.Variable.MinTimestamp = minTimestamp
 	}
 	if maxTimestamp > 0 {
-		request.MaxTimestamp = maxTimestamp
+		request.Variable.MaxTimestamp = maxTimestamp
 	}
 	return sc.Get(request)
 }

@@ -250,30 +250,60 @@ var productionsTable = ProdTab {
 		},
 	},
 	ProdTabEntry{
-		String: `Variable : varname	<< ast.NewVariable(X[0], nil) >>`,
+		String: `Variable : VarName	<<  >>`,
 		Id: "Variable",
 		NTType: 8,
 		Index: 23,
+		NumSymbols: 1,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return X[0], nil
+		},
+	},
+	ProdTabEntry{
+		String: `Variable : VarName "[" int64 ":" int64 "]"	<< ast.AddRangeToVariable(X[0], X[2], X[4]) >>`,
+		Id: "Variable",
+		NTType: 8,
+		Index: 24,
+		NumSymbols: 6,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.AddRangeToVariable(X[0], X[2], X[4])
+		},
+	},
+	ProdTabEntry{
+		String: `Variable : VarName "[" int64 "]"	<< ast.AddRangeToVariable(X[0], X[2], nil) >>`,
+		Id: "Variable",
+		NTType: 8,
+		Index: 25,
+		NumSymbols: 4,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.AddRangeToVariable(X[0], X[2], nil)
+		},
+	},
+	ProdTabEntry{
+		String: `VarName : varname	<< ast.NewVariable(X[0], nil) >>`,
+		Id: "VarName",
+		NTType: 9,
+		Index: 26,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewVariable(X[0], nil)
 		},
 	},
 	ProdTabEntry{
-		String: `Variable : varname "{}"	<< ast.NewVariable(X[0], nil) >>`,
-		Id: "Variable",
-		NTType: 8,
-		Index: 24,
+		String: `VarName : varname "{}"	<< ast.NewVariable(X[0], nil) >>`,
+		Id: "VarName",
+		NTType: 9,
+		Index: 27,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewVariable(X[0], nil)
 		},
 	},
 	ProdTabEntry{
-		String: `Variable : varname "{" KeyValues "}"	<< ast.NewVariable(X[0], X[2]) >>`,
-		Id: "Variable",
-		NTType: 8,
-		Index: 25,
+		String: `VarName : varname "{" KeyValues "}"	<< ast.NewVariable(X[0], X[2]) >>`,
+		Id: "VarName",
+		NTType: 9,
+		Index: 28,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewVariable(X[0], X[2])
@@ -282,8 +312,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `KeyValues : KeyValue	<< ast.NewKeyValueList(X[0]) >>`,
 		Id: "KeyValues",
-		NTType: 9,
-		Index: 26,
+		NTType: 10,
+		Index: 29,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewKeyValueList(X[0])
@@ -292,8 +322,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `KeyValues : KeyValues "," KeyValue	<< ast.AppendKeyValueList(X[0], X[2]) >>`,
 		Id: "KeyValues",
-		NTType: 9,
-		Index: 27,
+		NTType: 10,
+		Index: 30,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AppendKeyValueList(X[0], X[2])
@@ -302,8 +332,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `KeyValue : varlabel "=" varlabel	<< ast.NewKeyValue(X[0], X[2]) >>`,
 		Id: "KeyValue",
-		NTType: 10,
-		Index: 28,
+		NTType: 11,
+		Index: 31,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewKeyValue(X[0], X[2])
@@ -312,8 +342,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `VariableList : Variable	<< ast.NewVariableList(X[0]) >>`,
 		Id: "VariableList",
-		NTType: 11,
-		Index: 29,
+		NTType: 12,
+		Index: 32,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewVariableList(X[0])
@@ -322,8 +352,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `VariableList : VariableList "," Variable	<< ast.AddVariableToVariableList(X[0], X[2]) >>`,
 		Id: "VariableList",
-		NTType: 11,
-		Index: 30,
+		NTType: 12,
+		Index: 33,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AddVariableToVariableList(X[0], X[2])
@@ -332,8 +362,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `Duration : varlabel	<< ast.NewDuration(X[0]) >>`,
 		Id: "Duration",
-		NTType: 12,
-		Index: 31,
+		NTType: 13,
+		Index: 34,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewDuration(X[0])
@@ -342,8 +372,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `Int64 : int64	<< ast.NewInt64(X[0]) >>`,
 		Id: "Int64",
-		NTType: 13,
-		Index: 32,
+		NTType: 14,
+		Index: 35,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewInt64(X[0])

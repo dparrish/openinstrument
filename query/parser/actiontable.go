@@ -31,12 +31,15 @@ var actionTab = actionTable{
 			shift(16),		/* rate_signed */
 			shift(17),		/* delta */
 			shift(18),		/* latest */
-			shift(19),		/* varname */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(20),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -62,12 +65,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -93,12 +99,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -124,12 +133,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -155,12 +167,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -170,9 +185,9 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(20),		/* ( */
+			shift(21),		/* ( */
 			nil,		/* ) */
-			shift(21),		/* by */
+			shift(22),		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
 			nil,		/* percentile */
@@ -186,12 +201,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -201,7 +219,7 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(22),		/* ( */
+			shift(23),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
@@ -217,12 +235,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -248,12 +269,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -263,7 +287,7 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(23),		/* ( */
+			shift(24),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
@@ -279,12 +303,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -310,12 +337,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -341,12 +371,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -372,12 +405,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -403,12 +439,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -434,12 +473,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -465,12 +507,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -496,12 +541,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -527,12 +575,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -558,12 +609,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -589,12 +643,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -620,17 +677,54 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			shift(25),		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
-			shift(24),		/* {} */
-			shift(25),		/* { */
+			nil,		/* {} */
+			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
 	actionRow{ // S20
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			reduce(26),		/* $, reduce: VarName */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			reduce(26),		/* [, reduce: VarName */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			shift(26),		/* {} */
+			shift(27),		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S21
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -651,43 +745,15 @@ var actionTab = actionTable{
 			shift(16),		/* rate_signed */
 			shift(17),		/* delta */
 			shift(18),		/* latest */
-			shift(30),		/* varname */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(33),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S21
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			shift(31),		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -697,11 +763,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			nil,		/* ( */
+			shift(34),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(33),		/* varlabel */
+			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
@@ -713,79 +779,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
 	actionRow{ // S23
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			shift(35),		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S24
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			reduce(24),		/* $, reduce: Variable */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S25
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -806,115 +813,25 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S26
+	actionRow{ // S24
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(29),		/* ), reduce: VariableList */
-			nil,		/* by */
-			reduce(29),		/* ,, reduce: VariableList */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S27
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			shift(39),		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S28
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			shift(40),		/* ) */
-			nil,		/* by */
-			shift(41),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S29
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			shift(42),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
@@ -930,17 +847,258 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			shift(38),		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S25
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			shift(39),		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S26
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			reduce(27),		/* $, reduce: VarName */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			reduce(27),		/* [, reduce: VarName */
 			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S27
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			shift(40),		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S28
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(32),		/* ), reduce: VariableList */
+			nil,		/* by */
+			reduce(32),		/* ,, reduce: VariableList */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S29
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(43),		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
 			
 		},
 
 	},
 	actionRow{ // S30
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(44),		/* ) */
+			nil,		/* by */
+			shift(45),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S31
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			shift(46),		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S32
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -961,74 +1119,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* varname */
-			shift(43),		/* {} */
-			shift(44),		/* { */
-			nil,		/* } */
-			nil,		/* = */
+			shift(47),		/* [ */
 			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S31
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			shift(46),		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S32
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			shift(47),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1039,9 +1138,9 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(26),		/* ), reduce: VarName */
 			nil,		/* by */
-			reduce(31),		/* ,, reduce: Duration */
+			reduce(26),		/* ,, reduce: VarName */
 			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
@@ -1054,12 +1153,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			reduce(26),		/* [, reduce: VarName */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
+			shift(48),		/* {} */
+			shift(49),		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1070,10 +1172,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(48),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			nil,		/* varlabel */
+			shift(51),		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
@@ -1085,12 +1187,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1101,9 +1206,9 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(32),		/* ), reduce: Int64 */
+			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			shift(52),		/* , */
 			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
@@ -1116,12 +1221,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1134,6 +1242,40 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
+			reduce(34),		/* ,, reduce: Duration */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S37
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(53),		/* ) */
+			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
 			nil,		/* percentile */
@@ -1147,43 +1289,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
-			shift(49),		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S37
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			shift(50),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			shift(51),		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1194,9 +1308,9 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(35),		/* ), reduce: Int64 */
 			nil,		/* by */
-			reduce(26),		/* ,, reduce: KeyValues */
+			nil,		/* , */
 			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
@@ -1209,17 +1323,156 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			reduce(26),		/* }, reduce: KeyValues */
+			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
 	actionRow{ // S39
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			shift(54),		/* : */
+			shift(55),		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S40
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			shift(56),		/* = */
+			
+		},
+
+	},
+	actionRow{ // S41
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			shift(57),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			shift(58),		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S42
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			reduce(29),		/* ,, reduce: KeyValues */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			reduce(29),		/* }, reduce: KeyValues */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S43
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1240,17 +1493,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S40
+	actionRow{ // S44
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1271,17 +1527,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S41
+	actionRow{ // S45
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1302,79 +1561,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
-			shift(30),		/* varname */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(33),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S42
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			shift(33),		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S43
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			reduce(24),		/* ), reduce: Variable */
-			nil,		/* by */
-			reduce(24),		/* ,, reduce: Variable */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S44
+	actionRow{ // S46
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1395,74 +1595,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S45
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			shift(55),		/* ) */
-			nil,		/* by */
-			shift(56),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S46
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			reduce(9),		/* ), reduce: LabelList */
-			nil,		/* by */
-			reduce(9),		/* ,, reduce: LabelList */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1488,17 +1629,190 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
-			shift(30),		/* varname */
+			nil,		/* [ */
+			shift(61),		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
 	actionRow{ // S48
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(27),		/* ), reduce: VarName */
+			nil,		/* by */
+			reduce(27),		/* ,, reduce: VarName */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			reduce(27),		/* [, reduce: VarName */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S49
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			shift(40),		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S50
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(63),		/* ) */
+			nil,		/* by */
+			shift(64),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S51
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(9),		/* ), reduce: LabelList */
+			nil,		/* by */
+			reduce(9),		/* ,, reduce: LabelList */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S52
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(33),		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S53
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1519,17 +1833,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S49
+	actionRow{ // S54
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1538,7 +1855,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(58),		/* varlabel */
+			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
@@ -1550,48 +1867,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			shift(66),		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S50
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			shift(36),		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S51
+	actionRow{ // S55
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1612,136 +1901,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S52
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			reduce(30),		/* ), reduce: VariableList */
-			nil,		/* by */
-			reduce(30),		/* ,, reduce: VariableList */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S53
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			shift(60),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S54
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			shift(50),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			shift(61),		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S55
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			shift(62),		/* ( */
-			nil,		/* ) */
-			nil,		/* by */
-			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1755,7 +1923,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(63),		/* varlabel */
+			shift(67),		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
@@ -1767,12 +1935,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1783,10 +1954,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(64),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			shift(41),		/* , */
-			nil,		/* varlabel */
+			nil,		/* , */
+			shift(40),		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
@@ -1798,12 +1969,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1812,11 +1986,11 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(28),		/* $, reduce: VarName */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			reduce(28),		/* ,, reduce: KeyValue */
+			nil,		/* , */
 			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
@@ -1829,12 +2003,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			reduce(28),		/* [, reduce: VarName */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			reduce(28),		/* }, reduce: KeyValue */
+			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
@@ -1845,9 +2022,9 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(33),		/* ), reduce: VariableList */
 			nil,		/* by */
-			reduce(27),		/* ,, reduce: KeyValues */
+			reduce(33),		/* ,, reduce: VariableList */
 			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
@@ -1860,17 +2037,54 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			reduce(27),		/* }, reduce: KeyValues */
+			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
 	actionRow{ // S60
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			shift(69),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S61
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1891,17 +2105,326 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
-			shift(30),		/* varname */
+			nil,		/* [ */
+			nil,		/* int64 */
+			shift(70),		/* : */
+			shift(71),		/* ] */
+			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S61
+	actionRow{ // S62
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			shift(57),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			shift(72),		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S63
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			shift(73),		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S64
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			shift(74),		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S65
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(75),		/* ) */
+			nil,		/* by */
+			shift(45),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S66
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			shift(76),		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S67
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			reduce(31),		/* ,, reduce: KeyValue */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			reduce(31),		/* }, reduce: KeyValue */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S68
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			reduce(30),		/* ,, reduce: KeyValues */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			reduce(30),		/* }, reduce: KeyValues */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S69
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(33),		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S70
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			shift(78),		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S71
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1922,17 +2445,54 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S62
+	actionRow{ // S72
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(28),		/* ), reduce: VarName */
+			nil,		/* by */
+			reduce(28),		/* ,, reduce: VarName */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			reduce(28),		/* [, reduce: VarName */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S73
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1953,17 +2513,20 @@ var actionTab = actionTable{
 			shift(16),		/* rate_signed */
 			shift(17),		/* delta */
 			shift(18),		/* latest */
-			shift(30),		/* varname */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(33),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S63
+	actionRow{ // S74
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -1984,17 +2547,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S64
+	actionRow{ // S75
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -2015,54 +2581,26 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S65
+	actionRow{ // S76
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(24),		/* $, reduce: Variable */
 			nil,		/* ( */
-			shift(68),		/* ) */
-			nil,		/* by */
-			shift(41),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
-			nil,		/* } */
-			nil,		/* = */
-			nil,		/* int64 */
-			
-		},
-
-	},
-	actionRow{ // S66
-				canRecover: false,
-		actions: [numSymbols]action{
-			nil,		/* INVALID */
-			nil,		/* $ */
-			nil,		/* ( */
-			shift(69),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
@@ -2077,25 +2615,28 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S67
+	actionRow{ // S77
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(70),		/* ) */
+			shift(81),		/* ) */
 			nil,		/* by */
-			shift(41),		/* , */
+			shift(45),		/* , */
 			nil,		/* varlabel */
 			nil,		/* percentile */
 			nil,		/* sum */
@@ -2108,17 +2649,122 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S68
+	actionRow{ // S78
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			shift(82),		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S79
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(83),		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S80
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(84),		/* ) */
+			nil,		/* by */
+			shift(45),		/* , */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S81
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -2139,17 +2785,54 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S69
+	actionRow{ // S82
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(24),		/* ), reduce: Variable */
+			nil,		/* by */
+			reduce(24),		/* ,, reduce: Variable */
+			nil,		/* varlabel */
+			nil,		/* percentile */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* delta */
+			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S83
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -2170,17 +2853,20 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 
 	},
-	actionRow{ // S70
+	actionRow{ // S84
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
@@ -2201,12 +2887,15 @@ var actionTab = actionTable{
 			nil,		/* rate_signed */
 			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
-			nil,		/* int64 */
 			
 		},
 

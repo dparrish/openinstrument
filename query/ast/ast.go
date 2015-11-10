@@ -177,3 +177,22 @@ func NewAggregation(aggType, by, vars interface{}) (*oproto.StreamAggregation, e
 
 	return agg, nil
 }
+
+func AddRangeToVariable(v, from, to interface{}) (*oproto.StreamVariable, error) {
+	variable := v.(*oproto.StreamVariable)
+	if from != nil {
+		value, err := strconv.Atoi(string(from.(*token.Token).Lit))
+		if err != nil {
+			return nil, err
+		}
+		variable.MinTimestamp = int64(value)
+	}
+	if to != nil {
+		value, err := strconv.Atoi(string(to.(*token.Token).Lit))
+		if err != nil {
+			return nil, err
+		}
+		variable.MaxTimestamp = int64(value)
+	}
+	return variable, nil
+}
