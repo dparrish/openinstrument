@@ -76,18 +76,13 @@ func findFirstMatchingPolicy(value *oproto.Value, policies []*oproto.RetentionPo
 	}
 	valueEndAge := now - value.EndTimestamp
 	for _, item := range policies {
-		// Look for policies that match the variable age
-		if item.MinAge != 0 {
-			if valueStartAge < item.MinAge || valueEndAge < item.MinAge {
-				continue
+		for _, i := range item.Variable {
+			// Look for policies that match the variable age
+			v := variable.NewFromProto(i)
+			if v.TimestampInsideRange(valueStartAge) || v.TimestampInsideRange(valueEndAge) {
+				return item
 			}
 		}
-		if item.MaxAge != 0 {
-			if valueStartAge > item.MaxAge || valueEndAge > item.MaxAge {
-				continue
-			}
-		}
-		return item
 	}
 	return nil
 }

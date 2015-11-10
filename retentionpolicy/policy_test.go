@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 
@@ -48,48 +49,48 @@ func (s *MySuite) TestDefaultDropPolicy(c *C) {
 }
 
 func (s *MySuite) TestAgeKeepPolicy(c *C) {
+	return
 	// TODO(dparrish): Re-enable this when it works
-	/*
-		policyTxt := `
+	policyTxt := `
 			interval: 1
 			policy {
 				comment: "Throw everything away"
-				variable { name: "/test/foo*" }
-				min_age: 75
-				max_age: 91
+				variable {
+					name: "/test/foo*"
+					min_timestamp: -91
+					max_timestamp: -75
+				}
 				policy: KEEP
 			}
 			# Implicit DROP
 		`
-		policyProto := &oproto.RetentionPolicy{}
-		c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-		policy := New(policyProto)
+	policyProto := &oproto.RetentionPolicy{}
+	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
+	policy := New(policyProto)
 
-		input := make(chan *oproto.Value)
-		output := policy.Apply(variable.NewFromString("/test/foo/bar"), input)
-		c.Assert(output, NotNil)
+	input := make(chan *oproto.Value)
+	output := policy.Apply(variable.NewFromString("/test/foo/bar"), input)
+	c.Assert(output, NotNil)
 
-		now := openinstrument.NowMs()
-		for i := 1; i <= 10; i++ {
-			input <- &oproto.Value{
-				Timestamp:    now - uint64(98-3*i),
-				EndTimestamp: now - uint64(100-3*i),
-				DoubleValue:  1.1,
-			}
+	now := openinstrument.NowMs()
+	for i := 1; i <= 10; i++ {
+		input <- &oproto.Value{
+			Timestamp:    now - uint64(98-3*i),
+			EndTimestamp: now - uint64(100-3*i),
+			DoubleValue:  1.1,
 		}
-		close(input)
+	}
+	close(input)
 
-		count := 0
-		for value := range output {
-			age := now - value.Timestamp
-			if age < 75 || age > 91 {
-				log.Printf("Got value outside expected age (%d)", age)
-				c.Fail()
-				continue
-			}
-			count++
+	count := 0
+	for value := range output {
+		age := now - value.Timestamp
+		if age < 75 || age > 91 {
+			log.Printf("Got value outside expected age (%d)", age)
+			c.Fail()
+			continue
 		}
-		c.Check(count, Equals, 5)
-		//c.Fail()
-	*/
+		count++
+	}
+	c.Check(count, Equals, 5)
 }

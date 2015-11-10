@@ -51,7 +51,7 @@ func main() {
 	}
 	if *maxAge != "" {
 		d, _ := time.ParseDuration(*maxAge)
-		request.MaxAge = uint64(d.Seconds() * 1000)
+		request.Prefix.MinTimestamp = -d.Nanoseconds() / 1000000
 	}
 
 	conn, err := grpc.Dial(*connectAddress, grpc.WithInsecure())

@@ -365,14 +365,11 @@ func (m *ValueStream) GetMutation() []*StreamMutation {
 
 type Query struct {
 	// At least one of these must be set for each subquery
-	Subquery []*Query          `protobuf:"bytes,1,rep,name=subquery" json:"subquery,omitempty"`
-	Variable []*StreamVariable `protobuf:"bytes,2,rep,name=variable" json:"variable,omitempty"`
-	Constant []float64         `protobuf:"fixed64,3,rep,name=constant" json:"constant,omitempty"`
-	// Milliseconds since epoch
-	MinTimestamp uint64               `protobuf:"varint,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
-	MaxTimestamp uint64               `protobuf:"varint,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
-	Mutation     []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
-	Aggregation  []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
+	Subquery    []*Query             `protobuf:"bytes,1,rep,name=subquery" json:"subquery,omitempty"`
+	Variable    []*StreamVariable    `protobuf:"bytes,2,rep,name=variable" json:"variable,omitempty"`
+	Constant    []float64            `protobuf:"fixed64,3,rep,name=constant" json:"constant,omitempty"`
+	Mutation    []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
+	Aggregation []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
 }
 
 func (m *Query) Reset()         { *m = Query{} }
@@ -512,9 +509,6 @@ type ListRequest struct {
 	Prefix *StreamVariable `protobuf:"bytes,3,opt,name=prefix" json:"prefix,omitempty"`
 	// Limit to how many variables can be returned in a standard ListRequest. This can be overridden if required.
 	MaxVariables uint32 `protobuf:"varint,2,opt,name=max_variables" json:"max_variables,omitempty"`
-	// Maximum age of variable.
-	// This controls how far back the search will go for variables that were used in the past but not currently.
-	MaxAge uint64 `protobuf:"varint,4,opt,name=max_age" json:"max_age,omitempty"`
 }
 
 func (m *ListRequest) Reset()         { *m = ListRequest{} }
@@ -606,8 +600,6 @@ type RetentionPolicyItem struct {
 	Comment  []string                   `protobuf:"bytes,2,rep,name=comment" json:"comment,omitempty"`
 	Policy   RetentionPolicyItem_Target `protobuf:"varint,3,opt,name=policy,enum=openinstrument.proto.RetentionPolicyItem_Target" json:"policy,omitempty"`
 	Mutation []*StreamMutation          `protobuf:"bytes,4,rep,name=mutation" json:"mutation,omitempty"`
-	MinAge   uint64                     `protobuf:"varint,5,opt,name=min_age" json:"min_age,omitempty"`
-	MaxAge   uint64                     `protobuf:"varint,6,opt,name=max_age" json:"max_age,omitempty"`
 }
 
 func (m *RetentionPolicyItem) Reset()         { *m = RetentionPolicyItem{} }

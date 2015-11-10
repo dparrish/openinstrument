@@ -184,7 +184,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 	timer := addTimer("retrieve variables", &response)
 	vars := make(map[string]*oproto.StreamVariable)
 	if requestVariable.MinTimestamp == 0 {
-		requestVariable.MinTimestamp = -int64(request.MaxAge)
+		requestVariable.MinTimestamp = -int64(86400000)
 	}
 	streamChan := ds.Reader(requestVariable)
 	for stream := range streamChan {

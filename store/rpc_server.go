@@ -46,17 +46,14 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 	// Retrieve all variables and store the names in a map for uniqueness
 	timer := addTimer("retrieve variables", response)
 	vars := make(map[string]*oproto.StreamVariable)
-	if request.MaxAge == 0 {
+	if requestVariable.MinTimestamp == 0 {
 		// Get the last day
 		requestVariable.MinTimestamp = -86400000
-	} else {
-		requestVariable.MinTimestamp = -int64(request.MaxAge)
 	}
 	for stream := range s.ds.Reader(requestVariable) {
-		if request.MaxVariables > 0 && len(vars) >= int(request.MaxVariables) {
-			continue
+		if request.MaxVariables == 0 || len(vars) < int(request.MaxVariables) {
+			vars[variable.ProtoToString(stream.Variable)] = stream.Variable
 		}
-		vars[variable.ProtoToString(stream.Variable)] = stream.Variable
 	}
 	timer.Stop()
 

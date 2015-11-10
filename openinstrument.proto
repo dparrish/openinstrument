@@ -121,10 +121,6 @@ message Query {
   repeated StreamVariable variable = 2;
   repeated double constant = 3;
 
-  // Milliseconds since epoch
-  uint64 min_timestamp = 4;
-  uint64 max_timestamp = 5;
-
   repeated StreamMutation mutation = 6;
   repeated StreamAggregation aggregation = 7;
 }
@@ -176,10 +172,6 @@ message ListRequest {
 
   // Limit to how many variables can be returned in a standard ListRequest. This can be overridden if required.
   uint32 max_variables = 2;
-
-  // Maximum age of variable.
-  // This controls how far back the search will go for variables that were used in the past but not currently.
-  uint64 max_age = 4;
 }
 
 message ListResponse {
@@ -220,8 +212,6 @@ message RetentionPolicyItem {
   Target policy = 3;
 
   repeated StreamMutation mutation = 4;
-  uint64 min_age = 5;
-  uint64 max_age = 6;
 }
 
 message RetentionPolicy {
