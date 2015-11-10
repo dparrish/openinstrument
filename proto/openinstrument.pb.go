@@ -10,7 +10,6 @@ It is generated from these files:
 
 It has these top-level messages:
 	LogMessage
-	Label
 	StreamVariable
 	StreamMutation
 	StreamAggregation
@@ -242,18 +241,9 @@ func (m *LogMessage) Reset()         { *m = LogMessage{} }
 func (m *LogMessage) String() string { return proto.CompactTextString(m) }
 func (*LogMessage) ProtoMessage()    {}
 
-type Label struct {
-	Label string `protobuf:"bytes,1,opt,name=label" json:"label,omitempty"`
-	Value string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
-}
-
-func (m *Label) Reset()         { *m = Label{} }
-func (m *Label) String() string { return proto.CompactTextString(m) }
-func (*Label) ProtoMessage()    {}
-
 type StreamVariable struct {
 	Name  string                   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Label []*Label                 `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
+	Label map[string]string        `protobuf:"bytes,2,rep,name=label" json:"label,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Type  StreamVariable_ValueType `protobuf:"varint,3,opt,name=type,enum=openinstrument.proto.StreamVariable_ValueType" json:"type,omitempty"`
 	// Milliseconds since epoch, or if negative, milliseconds before now.
 	MinTimestamp int64 `protobuf:"varint,4,opt,name=min_timestamp" json:"min_timestamp,omitempty"`
@@ -264,7 +254,7 @@ func (m *StreamVariable) Reset()         { *m = StreamVariable{} }
 func (m *StreamVariable) String() string { return proto.CompactTextString(m) }
 func (*StreamVariable) ProtoMessage()    {}
 
-func (m *StreamVariable) GetLabel() []*Label {
+func (m *StreamVariable) GetLabel() map[string]string {
 	if m != nil {
 		return m.Label
 	}
@@ -596,7 +586,6 @@ type StoreFileHeader struct {
 	Version        uint32                  `protobuf:"varint,6,opt,name=version" json:"version,omitempty"`
 	StartTimestamp uint64                  `protobuf:"varint,1,opt,name=start_timestamp" json:"start_timestamp,omitempty"`
 	EndTimestamp   uint64                  `protobuf:"varint,2,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
-	Variable       []*StreamVariable       `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
 	Index          []*StoreFileHeaderIndex `protobuf:"bytes,5,rep,name=index" json:"index,omitempty"`
 	EndKey         string                  `protobuf:"bytes,7,opt,name=end_key" json:"end_key,omitempty"`
 }
@@ -604,13 +593,6 @@ type StoreFileHeader struct {
 func (m *StoreFileHeader) Reset()         { *m = StoreFileHeader{} }
 func (m *StoreFileHeader) String() string { return proto.CompactTextString(m) }
 func (*StoreFileHeader) ProtoMessage()    {}
-
-func (m *StoreFileHeader) GetVariable() []*StreamVariable {
-	if m != nil {
-		return m.Variable
-	}
-	return nil
-}
 
 func (m *StoreFileHeader) GetIndex() []*StoreFileHeaderIndex {
 	if m != nil {

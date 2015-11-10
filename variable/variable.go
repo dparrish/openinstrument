@@ -83,14 +83,9 @@ func (v *Variable) AsProto() (p *oproto.StreamVariable) {
 func (v *Variable) ToProto(p *oproto.StreamVariable) {
 	p.Reset()
 	p.Name = v.Variable
-	p.Label = make([]*oproto.Label, len(v.Labels))
+	p.Label = v.Labels
 	p.MinTimestamp = v.MinTimestamp
 	p.MaxTimestamp = v.MaxTimestamp
-	var i int
-	for key, value := range v.Labels {
-		p.Label[i] = &oproto.Label{Label: key, Value: value}
-		i++
-	}
 }
 
 // ParseFromString extracts the variable name and all labels from a string.
@@ -142,10 +137,7 @@ func (v *Variable) ParseFromProto(p *oproto.StreamVariable) error {
 	v.MinTimestamp = p.MinTimestamp
 	v.MaxTimestamp = p.MaxTimestamp
 	// Copy labels
-	v.Labels = make(map[string]string, len(p.Label))
-	for _, label := range p.Label {
-		v.Labels[label.Label] = label.Value
-	}
+	v.Labels = p.Label
 	return nil
 }
 

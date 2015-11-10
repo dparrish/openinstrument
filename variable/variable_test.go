@@ -19,9 +19,10 @@ func (s *MySuite) TestVariableCreation(c *C) {
 	newvar := NewFromString("/openinstrument/test{label1=value1,label2=spaced value}")
 	c.Check(newvar.String(), Equals, "/openinstrument/test{label1=value1,label2=spaced value}")
 
-	labels := make([]*oproto.Label, 2)
-	labels[0] = &oproto.Label{Label: "label1", Value: "value1"}
-	labels[1] = &oproto.Label{Label: "label2", Value: "spaced value"}
+	labels := map[string]string{
+		"label1": "value1",
+		"label2": "spaced value",
+	}
 	newvar = NewFromProto(&oproto.StreamVariable{
 		Name:  "/openinstrument/test",
 		Label: labels,
@@ -57,7 +58,7 @@ func (s *MySuite) TestMatch(c *C) {
 func (s *MySuite) TestInvalidVariable(c *C) {
 	c.Check(NewFromProto(nil).String(), Equals, "")
 	c.Check(NewFromProto(&oproto.StreamVariable{}).String(), Equals, "")
-	v := &oproto.StreamVariable{Label: []*oproto.Label{{Label: "foo", Value: "bar"}}}
+	v := &oproto.StreamVariable{Label: map[string]string{"foo": "bar"}}
 	c.Check(NewFromProto(v).String(), Equals, "{foo=bar}")
 }
 

@@ -25,15 +25,12 @@ type VariableLabelList struct {
 func NewVariable(name, labels interface{}) (*oproto.StreamVariable, error) {
 	v := &oproto.StreamVariable{
 		Name:  string(name.(*token.Token).Lit),
-		Label: []*oproto.Label{},
+		Label: map[string]string{},
 	}
 
 	if labels != nil {
 		for _, label := range labels.(*VariableLabelList).l {
-			v.Label = append(v.Label, &oproto.Label{
-				Label: label.key,
-				Value: label.value,
-			})
+			v.Label[label.key] = label.value
 		}
 	}
 

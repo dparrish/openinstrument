@@ -27,37 +27,37 @@ func (s *MySuite) TestWriteFile(c *C) {
 		writer, err := Write(filename)
 		c.Assert(err, IsNil)
 		defer writer.Close()
-		c.Assert(writer.Tell(), Equals, int64(0))
+		c.Check(writer.Tell(), Equals, int64(0))
 
-		msg := &oproto.Label{
-			Label: "greeting",
-			Value: "Hello world!",
+		msg := &oproto.LogMessage{
+			Timestamp: 1,
+			Message:   "Hello world!",
 		}
 		i, err := writer.Write(msg)
 		c.Assert(err, IsNil)
-		c.Assert(i, Equals, int64(32))
+		c.Check(i, Equals, int64(24))
 		j := i
-		c.Assert(writer.Tell(), Equals, j)
+		c.Check(writer.Tell(), Equals, j)
 
-		msg = &oproto.Label{
-			Label: "greeting",
-			Value: "Hola!",
+		msg = &oproto.LogMessage{
+			Timestamp: 2,
+			Message:   "Hola!",
 		}
 		i, err = writer.Write(msg)
 		j += i
-		c.Assert(i, Equals, int64(25))
 		c.Assert(err, IsNil)
-		c.Assert(writer.Tell(), Equals, j)
+		c.Check(i, Equals, int64(17))
+		c.Check(writer.Tell(), Equals, j)
 
 		// Write to a specific place in the file
-		msg = &oproto.Label{
-			Label: "greeting",
-			Value: "Far out man",
+		msg = &oproto.LogMessage{
+			Timestamp: 3,
+			Message:   "Far out man",
 		}
 		i, err = writer.WriteAt(60, msg)
-		c.Assert(i, Equals, int64(31))
-		c.Assert(writer.Tell(), Equals, i+60)
 		c.Assert(err, IsNil)
+		c.Check(i, Equals, int64(23))
+		c.Check(writer.Tell(), Equals, i+60)
 
 	}
 
@@ -66,50 +66,50 @@ func (s *MySuite) TestWriteFile(c *C) {
 		reader, err := Read(filename)
 		c.Assert(err, IsNil)
 		defer reader.Close()
-		c.Assert(reader.Tell(), Equals, int64(0))
+		c.Check(reader.Tell(), Equals, int64(0))
 
-		msg := &oproto.Label{}
+		msg := &oproto.LogMessage{}
 		i, err := reader.Read(msg)
 		c.Assert(err, IsNil)
-		c.Assert(i, Equals, int64(32))
-		c.Assert(msg.Label, Equals, "greeting")
-		c.Assert(msg.Value, Equals, "Hello world!")
+		c.Check(i, Equals, int64(24))
+		c.Check(msg.Timestamp, Equals, uint64(1))
+		c.Check(msg.Message, Equals, "Hello world!")
 		j := i
-		c.Assert(reader.Tell(), Equals, j)
+		c.Check(reader.Tell(), Equals, j)
 
-		msg = &oproto.Label{}
+		msg = &oproto.LogMessage{}
 		i, err = reader.Read(msg)
 		j += i
 		c.Assert(err, IsNil)
-		c.Assert(i, Equals, int64(25))
-		c.Assert(msg.Label, Equals, "greeting")
-		c.Assert(msg.Value, Equals, "Hola!")
-		c.Assert(reader.Tell(), Equals, j)
+		c.Check(i, Equals, int64(17))
+		c.Check(msg.Timestamp, Equals, uint64(2))
+		c.Check(msg.Message, Equals, "Hola!")
+		c.Check(reader.Tell(), Equals, j)
 
 		// Read the next message, which is after a few random bytes
-		msg = &oproto.Label{}
+		msg = &oproto.LogMessage{}
 		i, err = reader.Read(msg)
 		j = 60 + i
 		c.Assert(err, IsNil)
-		c.Assert(i, Equals, int64(31))
-		c.Assert(msg.Label, Equals, "greeting")
-		c.Assert(msg.Value, Equals, "Far out man")
-		c.Assert(reader.Tell(), Equals, j)
+		c.Check(i, Equals, int64(23))
+		c.Check(msg.Timestamp, Equals, uint64(3))
+		c.Check(msg.Message, Equals, "Far out man")
+		c.Check(reader.Tell(), Equals, j)
 
 		// Read from a specific place in the file
-		msg = &oproto.Label{}
+		msg = &oproto.LogMessage{}
 		i, err = reader.ReadAt(60, msg)
 		c.Assert(err, IsNil)
-		c.Assert(i, Equals, int64(31))
-		c.Assert(msg.Label, Equals, "greeting")
-		c.Assert(msg.Value, Equals, "Far out man")
-		c.Assert(reader.Tell(), Equals, j)
+		c.Check(i, Equals, int64(23))
+		c.Check(msg.Timestamp, Equals, uint64(3))
+		c.Check(msg.Message, Equals, "Far out man")
+		c.Check(reader.Tell(), Equals, j)
 
 		// An attempt to read past the end of the file should return an error
-		msg = &oproto.Label{}
+		msg = &oproto.LogMessage{}
 		i, err = reader.Read(msg)
 		c.Assert(err, ErrorMatches, "EOF")
-		c.Assert(i, Equals, int64(0))
+		c.Check(i, Equals, int64(0))
 	}
 }
 
@@ -126,8 +126,8 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 		vs := &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{
 				Name: "/test/bar",
-				Label: []*oproto.Label{
-					{Label: "test", Value: "bar"},
+				Label: map[string]string{
+					"test": "bar",
 				},
 			},
 			Value: []*oproto.Value{
