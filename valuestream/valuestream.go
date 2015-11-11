@@ -37,28 +37,31 @@ func (vs *valuesSorter) Less(i, j int) bool {
 // Merge merges multiple ValueStreams, returning a channel producing sorted Values.
 func Merge(streams []*oproto.ValueStream) <-chan *oproto.Value {
 	c := make(chan *oproto.Value)
-	n := len(streams)
 	go func() {
+		n := len(streams)
 		indexes := make([]int, n)
+		var minTimestamp uint64
+		var minStream int
+		var minValue *oproto.Value
 		for {
-			var minTimestamp uint64
-			var minStream *oproto.ValueStream
-			var minValue *oproto.Value
+			minTimestamp = 0
+			minStream = -1
+			minValue = nil
 			for i := 0; i < n; i++ {
 				if indexes[i] >= len(streams[i].Value) {
 					continue
 				}
 				v := streams[i].Value[indexes[i]]
-				if minStream == nil || v.Timestamp < minTimestamp {
+				if minStream == -1 || v.Timestamp < minTimestamp {
 					minTimestamp = v.Timestamp
-					minStream = streams[i]
+					minStream = i
 					minValue = v
-					indexes[i]++
 				}
 			}
 			if minValue == nil {
 				break
 			}
+			indexes[minStream]++
 			c <- minValue
 		}
 		close(c)
