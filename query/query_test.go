@@ -1,10 +1,8 @@
 package query
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 	. "gopkg.in/check.v1"
@@ -59,6 +57,12 @@ func (s *MySuite) TestVariableTwoLabels(c *C) {
 	c.Check(variable.ProtoToString(query.Variable[0]), Equals, "/test/foo{host=a,x=y}")
 }
 
+func (s *MySuite) TestLabelWildcard(c *C) {
+	query, err := Parse("/test/foo{host=*}")
+	c.Assert(err, IsNil)
+	c.Check(variable.ProtoToString(query.Variable[0]), Equals, "/test/foo{host=*}")
+}
+
 func (s *MySuite) TestAggregation(c *C) {
 	query, err := Parse("mean by (host, xyz) (/test/foo{host=a}, /test/foo{host=b})")
 	c.Assert(err, IsNil)
@@ -103,7 +107,7 @@ func (s *MySuite) TestAggregationOfMutations(c *C) {
 func (s *MySuite) TestAggregationOfPercentile(c *C) {
 	query, err := Parse("percentile(90) by (host) (rate(5m, /test/foo{host=a}[1200:1500], /test/foo{host=b}[1200:1500]))")
 	c.Assert(err, IsNil)
-	fmt.Println(openinstrument.ProtoText(query))
+	//fmt.Println(openinstrument.ProtoText(query))
 	c.Check(query.Aggregation[0].Type, Equals, oproto.StreamAggregation_PERCENTILE)
 	c.Check(query.Aggregation[0].Percentile, Equals, uint32(90))
 	c.Check(query.Aggregation[0].Label[0], Equals, "host")

@@ -7,7 +7,7 @@ _blockComment : '/' '*' {. | '*'} '*' '/' ;
 
 int64 : ( '1'-'9' | '-') {_digit};
 varname  : '/' (_letter | _digit) {_letter | _digit | '/' | '_' | '-'};
-varlabel : (_letter | _digit | '/') {_letter | _digit | '/' | '_' | '-'};
+varlabel : (_letter | _digit | '/' | '_' | '-' | '*') {_letter | _digit | '/' | '_' | '-' | '*'};
 
 !whitespace : ' ' | '\t' | '\n' | '\r';
 !comment : _lineComment | _blockComment;
