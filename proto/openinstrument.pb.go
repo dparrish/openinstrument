@@ -405,6 +405,8 @@ func (m *Query) GetAggregation() []*StreamAggregation {
 }
 
 type GetRequest struct {
+	Query *Query `protobuf:"bytes,1,opt,name=query" json:"query,omitempty"`
+	// deprecated
 	Variable *StreamVariable `protobuf:"bytes,9,opt,name=variable" json:"variable,omitempty"`
 	// If mutations or aggregations are supplied, the GetResponse will have a separate stream for each change requested.
 	Mutation    []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
@@ -421,6 +423,13 @@ type GetRequest struct {
 func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
+
+func (m *GetRequest) GetQuery() *Query {
+	if m != nil {
+		return m.Query
+	}
+	return nil
+}
 
 func (m *GetRequest) GetVariable() *StreamVariable {
 	if m != nil {
@@ -694,16 +703,17 @@ func (m *Block) String() string { return proto.CompactTextString(m) }
 func (*Block) ProtoMessage()    {}
 
 type LookupBlockRequest struct {
-	Block *Block `protobuf:"bytes,1,opt,name=block" json:"block,omitempty"`
+	Variable *StreamVariable `protobuf:"bytes,1,opt,name=variable" json:"variable,omitempty"`
+	BlockId  string          `protobuf:"bytes,2,opt,name=block_id" json:"block_id,omitempty"`
 }
 
 func (m *LookupBlockRequest) Reset()         { *m = LookupBlockRequest{} }
 func (m *LookupBlockRequest) String() string { return proto.CompactTextString(m) }
 func (*LookupBlockRequest) ProtoMessage()    {}
 
-func (m *LookupBlockRequest) GetBlock() *Block {
+func (m *LookupBlockRequest) GetVariable() *StreamVariable {
 	if m != nil {
-		return m.Block
+		return m.Variable
 	}
 	return nil
 }

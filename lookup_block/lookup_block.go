@@ -6,12 +6,13 @@ import (
 
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/variable"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
 var (
-	endKey         = flag.String("end_key", "", "End key")
+	varName        = flag.String("variable", "", "Variable")
 	ID             = flag.String("id", "", "Block ID")
 	connectAddress = flag.String("connect", "localhost:8021", "Connect directly to the specified datastore server.")
 )
@@ -26,15 +27,13 @@ func main() {
 	}
 	defer conn.Close()
 
-	request := &oproto.LookupBlockRequest{
-		Block: &oproto.Block{},
-	}
-	if *endKey != "" {
-		request.Block.EndKey = *endKey
+	request := &oproto.LookupBlockRequest{}
+	if *varName != "" {
+		request.Variable = variable.NewFromString(*varName).AsProto()
 	} else if *ID != "" {
-		request.Block.Id = *ID
+		request.BlockId = *ID
 	} else {
-		log.Fatal("Specify either --end_key or --id")
+		log.Fatal("Specify either --variable or --id")
 	}
 
 	stub := oproto.NewStoreClient(conn)

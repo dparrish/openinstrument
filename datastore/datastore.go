@@ -403,13 +403,13 @@ func (ds *Datastore) findBlock(variableName string) *Block {
 	// Search for a block with end key greater than the current key
 	// TODO(dparrish): Binary search for block
 	ds.blocksLock.RLock()
-	keys := ds.blockKeys
-	ds.blocksLock.RUnlock()
-	for _, key := range keys {
+	for _, key := range ds.blockKeys {
 		if key >= variableName {
+			ds.blocksLock.RUnlock()
 			return ds.blocks[key]
 		}
 	}
+	ds.blocksLock.RUnlock()
 	// Create a new block
 	block := newBlock(variableName, "", ds.Path)
 	ds.insertBlock(block)

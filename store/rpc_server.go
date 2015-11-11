@@ -70,62 +70,73 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 }
 
 func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) error {
-	if request.GetVariable() == nil {
-		return fmt.Errorf("No variable specified")
+	if request.Query == nil {
+		return fmt.Errorf("No query specified")
 	}
-	requestVariable := variable.NewFromProto(request.Variable)
-	if len(requestVariable.String()) == 0 {
-		return fmt.Errorf("No variable specified")
-	}
-	var streams []*oproto.ValueStream
-	for stream := range s.ds.Reader(requestVariable) {
-		streams = append(streams, stream)
-	}
-	mergeBy := ""
-	if len(request.Aggregation) > 0 {
-		mergeBy = request.Aggregation[0].Label[0]
-	}
-	wg := new(sync.WaitGroup)
-	for streams := range valuestream.MergeBy(streams, mergeBy) {
-		wg.Add(1)
-		go func(streams []*oproto.ValueStream) {
-			output := valuestream.Merge(streams)
 
-			if request.Mutation != nil && len(request.Mutation) > 0 {
-				for _, mut := range request.Mutation {
-					switch mut.SampleType {
-					case oproto.StreamMutation_MEAN:
-						output = mutations.Mean(uint64(mut.SampleFrequency), output)
-					case oproto.StreamMutation_MIN:
-						output = mutations.Min(uint64(mut.SampleFrequency), output)
-					case oproto.StreamMutation_MAX:
-						output = mutations.Max(uint64(mut.SampleFrequency), output)
-					case oproto.StreamMutation_RATE:
-						output = mutations.Rate(uint64(mut.SampleFrequency), output)
-					case oproto.StreamMutation_RATE_SIGNED:
-						output = mutations.SignedRate(uint64(mut.SampleFrequency), output)
+	wg := new(sync.WaitGroup)
+	for _, v := range request.Query.Variable {
+		// Direct variable retrieval
+		requestVariable := variable.NewFromProto(v)
+		if len(requestVariable.String()) == 0 {
+			return fmt.Errorf("No variable specified")
+		}
+		var streams []*oproto.ValueStream
+		for stream := range s.ds.Reader(requestVariable) {
+			streams = append(streams, stream)
+		}
+		mergeBy := ""
+		if len(request.Aggregation) > 0 {
+			mergeBy = request.Aggregation[0].Label[0]
+		}
+		for streams := range valuestream.MergeBy(streams, mergeBy) {
+			wg.Add(1)
+			go func(streams []*oproto.ValueStream) {
+				defer wg.Done()
+				output := valuestream.Merge(streams)
+
+				if request.Mutation != nil && len(request.Mutation) > 0 {
+					for _, mut := range request.Mutation {
+						switch mut.SampleType {
+						case oproto.StreamMutation_MEAN:
+							output = mutations.Mean(uint64(mut.SampleFrequency), output)
+						case oproto.StreamMutation_MIN:
+							output = mutations.Min(uint64(mut.SampleFrequency), output)
+						case oproto.StreamMutation_MAX:
+							output = mutations.Max(uint64(mut.SampleFrequency), output)
+						case oproto.StreamMutation_RATE:
+							output = mutations.Rate(uint64(mut.SampleFrequency), output)
+						case oproto.StreamMutation_RATE_SIGNED:
+							output = mutations.SignedRate(uint64(mut.SampleFrequency), output)
+						}
 					}
 				}
-			}
 
-			newstream := &oproto.ValueStream{Variable: streams[0].Variable}
-			for value := range output {
-				if request.MaxValues != 0 && uint32(len(newstream.Value)) >= request.MaxValues {
-					// More values than requested, remove the oldest element
-					newstream.Value = newstream.Value[1:]
-				}
+				newstream := &oproto.ValueStream{Variable: streams[0].Variable}
+				for value := range output {
+					if !requestVariable.TimestampInsideRange(value.Timestamp) {
+						continue
+					}
+					if request.MaxValues != 0 && uint32(len(newstream.Value)) >= request.MaxValues {
+						// More values than requested, remove the oldest element
+						newstream.Value = newstream.Value[1:]
+					}
 
-				if requestVariable.TimestampInsideRange(value.Timestamp) {
 					newstream.Value = append(newstream.Value, value)
 				}
-			}
 
-			server.Send(&oproto.GetResponse{
-				Success: true,
-				Stream:  []*oproto.ValueStream{newstream},
-			})
-			wg.Done()
-		}(streams)
+				server.Send(&oproto.GetResponse{
+					Success: true,
+					Stream:  []*oproto.ValueStream{newstream},
+				})
+			}(streams)
+		}
+	}
+	for _, a := range request.Query.Aggregation {
+		a = a
+	}
+	for _, a := range request.Query.Mutation {
+		a = a
 	}
 	wg.Wait()
 	return nil
@@ -158,11 +169,20 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 }
 
 func (s *server) LookupBlock(ctx context.Context, request *oproto.LookupBlockRequest) (*oproto.LookupBlockResponse, error) {
-	block, err := s.ds.GetBlock(request.Block.Id, request.Block.EndKey)
-	if err != nil {
-		return nil, err
+	if request.BlockId != "" {
+		block, err := s.ds.GetBlock(request.BlockId, "")
+		if err != nil {
+			return nil, err
+		}
+		return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
 	}
-	return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
+	v := variable.ProtoToString(request.Variable)
+	for _, block := range ds.Blocks() {
+		if block.EndKey >= v {
+			return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
+		}
+	}
+	return &oproto.LookupBlockResponse{}, nil
 }
 
 func (s *server) SplitBlock(ctx context.Context, request *oproto.SplitBlockRequest) (*oproto.SplitBlockResponse, error) {
