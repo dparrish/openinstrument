@@ -73,8 +73,10 @@ func NewQuery(input interface{}) (*oproto.Query, error) {
 		query.Mutation = append(query.Mutation, v)
 	case *oproto.StreamAggregation:
 		query.Aggregation = append(query.Aggregation, v)
-	case *oproto.StreamVariable:
-		query.Variable = append(query.Variable, v)
+	case VariableList:
+		for _, vv := range v {
+			query.Variable = append(query.Variable, vv)
+		}
 	}
 	return query, nil
 }
@@ -96,20 +98,20 @@ func AppendStringToList(l, s interface{}) ([]string, error) {
 	return append(l.([]string), str), nil
 }
 
-func NewMutation(t, d, v interface{}) (*oproto.StreamMutation, error) {
+func NewMutation(t, d, q interface{}) (*oproto.StreamMutation, error) {
 	m := &oproto.StreamMutation{}
-	duration := d.(time.Duration)
-	m.SampleFrequency = uint32(duration.Nanoseconds() / 1000000)
+	if d != nil {
+		duration := d.(time.Duration)
+		m.SampleFrequency = uint32(duration.Nanoseconds() / 1000000)
+	}
 
 	f, ok := oproto.StreamMutation_SampleType_value[strings.ToUpper(string(t.(*token.Token).Lit))]
 	if !ok {
 		return nil, fmt.Errorf("Invalid mutation type %s", string(t.(*token.Token).Lit))
 	}
-	m.SampleType = oproto.StreamMutation_SampleType(f)
+	m.Type = oproto.StreamMutation_SampleType(f)
 
-	for _, variable := range v.(VariableList) {
-		m.Variable = append(m.Variable, variable)
-	}
+	m.Query = q.(*oproto.Query)
 	return m, nil
 }
 
@@ -137,7 +139,7 @@ func NewPercentile(i interface{}) (Percentile, error) {
 	return Percentile{int32(i.(int64))}, nil
 }
 
-func NewAggregation(aggType, by, vars interface{}) (*oproto.StreamAggregation, error) {
+func NewAggregation(aggType, by, q interface{}) (*oproto.StreamAggregation, error) {
 	agg := &oproto.StreamAggregation{}
 	switch v := aggType.(type) {
 	case *token.Token:
@@ -162,15 +164,7 @@ func NewAggregation(aggType, by, vars interface{}) (*oproto.StreamAggregation, e
 			agg.Label = append(agg.Label, x)
 		}
 	}
-
-	switch v := vars.(type) {
-	case *oproto.StreamMutation:
-		agg.Mutation = append(agg.Mutation, v)
-	case VariableList:
-		for _, variable := range v {
-			agg.Variable = append(agg.Variable, variable)
-		}
-	}
+	agg.Query = append(agg.Query, q.(*oproto.Query))
 
 	return agg, nil
 }

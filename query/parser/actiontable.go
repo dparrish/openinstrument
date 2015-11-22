@@ -20,22 +20,23 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			shift(8),		/* percentile */
-			shift(9),		/* sum */
-			shift(10),		/* mean */
-			shift(11),		/* median */
-			shift(12),		/* min */
-			shift(13),		/* max */
-			shift(14),		/* stddev */
-			shift(15),		/* rate */
-			shift(16),		/* rate_signed */
-			shift(17),		/* delta */
-			shift(18),		/* latest */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			shift(20),		/* varname */
+			shift(22),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -54,7 +55,6 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -63,8 +63,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -86,9 +88,8 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			shift(23),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -97,8 +98,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -122,7 +125,6 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -131,8 +133,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -156,7 +160,6 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -165,8 +168,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -185,12 +190,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(21),		/* ( */
+			shift(24),		/* ( */
 			nil,		/* ) */
-			shift(22),		/* by */
+			shift(25),		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -199,8 +203,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -219,12 +225,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(23),		/* ( */
+			shift(26),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -233,8 +238,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -253,12 +260,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(18),		/* (, reduce: AggregationType */
+			reduce(10),		/* (, reduce: AggregationType */
 			nil,		/* ) */
-			reduce(18),		/* by, reduce: AggregationType */
+			reduce(10),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -267,8 +273,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -287,12 +295,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(24),		/* ( */
+			reduce(11),		/* (, reduce: AggregationType */
 			nil,		/* ) */
-			nil,		/* by */
+			reduce(11),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -301,8 +308,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -326,7 +335,6 @@ var actionTab = actionTable{
 			reduce(12),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -335,8 +343,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -360,7 +370,6 @@ var actionTab = actionTable{
 			reduce(13),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -369,8 +378,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -394,7 +405,6 @@ var actionTab = actionTable{
 			reduce(14),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -403,8 +413,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -428,7 +440,6 @@ var actionTab = actionTable{
 			reduce(15),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -437,8 +448,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -462,7 +475,6 @@ var actionTab = actionTable{
 			reduce(16),		/* by, reduce: AggregationType */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -471,8 +483,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -491,12 +505,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(17),		/* (, reduce: AggregationType */
+			reduce(17),		/* (, reduce: MutationType */
 			nil,		/* ) */
-			reduce(17),		/* by, reduce: AggregationType */
+			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -505,8 +518,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -525,12 +540,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(19),		/* (, reduce: MutationType */
+			reduce(18),		/* (, reduce: MutationType */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -539,8 +553,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -559,12 +575,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(20),		/* (, reduce: MutationType */
+			reduce(19),		/* (, reduce: MutationType */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -573,8 +588,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -593,12 +610,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(21),		/* (, reduce: MutationType */
+			reduce(20),		/* (, reduce: MutationType */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -607,8 +623,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -627,12 +645,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(22),		/* (, reduce: MutationType */
+			reduce(21),		/* (, reduce: MutationType */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -641,8 +658,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -660,13 +679,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(23),		/* $, reduce: Variable */
-			nil,		/* ( */
+			nil,		/* $ */
+			shift(27),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -675,9 +693,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			shift(25),		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -694,13 +714,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(26),		/* $, reduce: VarName */
+			reduce(32),		/* $, reduce: VariableList */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(32),		/* ,, reduce: VariableList */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -709,15 +728,17 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			reduce(26),		/* [, reduce: VarName */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
-			shift(26),		/* {} */
-			shift(27),		/* { */
+			nil,		/* {} */
+			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
 			
@@ -728,28 +749,29 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(23),		/* $, reduce: Variable */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(23),		/* ,, reduce: Variable */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
 			nil,		/* min */
 			nil,		/* max */
 			nil,		/* stddev */
-			shift(15),		/* rate */
-			shift(16),		/* rate_signed */
-			shift(17),		/* delta */
-			shift(18),		/* latest */
-			nil,		/* [ */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			shift(28),		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			shift(33),		/* varname */
+			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -762,13 +784,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
-			shift(34),		/* ( */
+			reduce(26),		/* $, reduce: VarName */
+			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(26),		/* ,, reduce: VarName */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -777,15 +798,17 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			reduce(26),		/* [, reduce: VarName */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
+			shift(29),		/* {} */
+			shift(30),		/* { */
 			nil,		/* } */
 			nil,		/* = */
 			
@@ -801,8 +824,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(36),		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -811,13 +833,15 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			nil,		/* varname */
+			shift(22),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -836,22 +860,23 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
 			nil,		/* [ */
-			shift(38),		/* int64 */
+			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			nil,		/* varname */
+			shift(40),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -865,12 +890,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			nil,		/* ( */
+			shift(41),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -879,10 +903,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			shift(39),		/* int64 */
+			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -898,28 +924,29 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(27),		/* $, reduce: VarName */
+			nil,		/* $ */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
-			reduce(27),		/* [, reduce: VarName */
+			shift(44),		/* varlabel */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			nil,		/* varname */
+			shift(40),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -937,8 +964,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(40),		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -947,10 +973,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			nil,		/* int64 */
+			shift(46),		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -968,11 +996,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(32),		/* ), reduce: VariableList */
+			nil,		/* ) */
 			nil,		/* by */
-			reduce(32),		/* ,, reduce: VariableList */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -981,10 +1008,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			nil,		/* int64 */
+			shift(47),		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -1000,13 +1029,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(27),		/* $, reduce: VarName */
 			nil,		/* ( */
-			shift(43),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(27),		/* ,, reduce: VarName */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1015,9 +1043,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			reduce(27),		/* [, reduce: VarName */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -1036,11 +1066,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(44),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			shift(45),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* , */
+			shift(48),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1049,8 +1078,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1068,13 +1099,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
-			shift(46),		/* ( */
+			reduce(33),		/* $, reduce: VariableList */
+			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(33),		/* ,, reduce: VariableList */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1083,8 +1113,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1104,11 +1136,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(23),		/* ), reduce: Variable */
+			shift(51),		/* ) */
 			nil,		/* by */
-			reduce(23),		/* ,, reduce: Variable */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1117,9 +1148,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			shift(47),		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -1138,11 +1171,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(26),		/* ), reduce: VarName */
+			reduce(1),		/* ), reduce: Query */
 			nil,		/* by */
-			reduce(26),		/* ,, reduce: VarName */
+			shift(52),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1151,15 +1183,17 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			reduce(26),		/* [, reduce: VarName */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
-			shift(48),		/* {} */
-			shift(49),		/* { */
+			nil,		/* {} */
+			nil,		/* { */
 			nil,		/* } */
 			nil,		/* = */
 			
@@ -1172,11 +1206,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(2),		/* ), reduce: Query */
 			nil,		/* by */
 			nil,		/* , */
-			shift(51),		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1185,8 +1218,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1206,11 +1241,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(3),		/* ), reduce: Query */
 			nil,		/* by */
-			shift(52),		/* , */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1219,8 +1253,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1239,12 +1275,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			nil,		/* ( */
+			shift(53),		/* ( */
 			nil,		/* ) */
-			nil,		/* by */
-			reduce(34),		/* ,, reduce: Duration */
+			shift(54),		/* by */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1253,8 +1288,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1273,12 +1310,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			nil,		/* ( */
-			shift(53),		/* ) */
+			shift(55),		/* ( */
+			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1287,8 +1323,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1308,11 +1346,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(35),		/* ), reduce: Int64 */
+			reduce(32),		/* ), reduce: VariableList */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(32),		/* ,, reduce: VariableList */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1321,8 +1358,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1342,11 +1381,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(23),		/* ), reduce: Variable */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(23),		/* ,, reduce: Variable */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1355,12 +1393,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			shift(56),		/* [ */
 			nil,		/* int64 */
-			shift(54),		/* : */
-			shift(55),		/* ] */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -1376,11 +1416,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(26),		/* ), reduce: VarName */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(26),		/* ,, reduce: VarName */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1389,17 +1428,19 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			reduce(26),		/* [, reduce: VarName */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
-			nil,		/* {} */
-			nil,		/* { */
+			shift(57),		/* {} */
+			shift(58),		/* { */
 			nil,		/* } */
-			shift(56),		/* = */
+			nil,		/* = */
 			
 		},
 
@@ -1412,9 +1453,8 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			shift(57),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* , */
+			shift(60),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1423,8 +1463,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1432,7 +1474,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			shift(58),		/* } */
+			nil,		/* } */
 			nil,		/* = */
 			
 		},
@@ -1444,11 +1486,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			shift(61),		/* ) */
 			nil,		/* by */
-			reduce(29),		/* ,, reduce: KeyValues */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1457,8 +1498,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1466,7 +1509,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			reduce(29),		/* }, reduce: KeyValues */
+			nil,		/* } */
 			nil,		/* = */
 			
 		},
@@ -1476,13 +1519,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(5),		/* $, reduce: Aggregation */
+			nil,		/* $ */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			shift(62),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1491,8 +1533,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1510,13 +1554,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(4),		/* $, reduce: Aggregation */
+			nil,		/* $ */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(34),		/* ,, reduce: Duration */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1525,8 +1568,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1546,11 +1591,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			shift(63),		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1559,13 +1603,15 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			shift(33),		/* varname */
+			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -1580,11 +1626,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(35),		/* ), reduce: Int64 */
 			nil,		/* by */
 			nil,		/* , */
-			shift(36),		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1593,8 +1638,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1618,7 +1665,6 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1627,12 +1673,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			shift(61),		/* int64 */
-			nil,		/* : */
-			nil,		/* ] */
+			nil,		/* int64 */
+			shift(64),		/* : */
+			shift(65),		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -1648,11 +1696,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(27),		/* ), reduce: VarName */
+			nil,		/* ) */
 			nil,		/* by */
-			reduce(27),		/* ,, reduce: VarName */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1661,9 +1708,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			reduce(27),		/* [, reduce: VarName */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -1671,7 +1720,7 @@ var actionTab = actionTable{
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
-			nil,		/* = */
+			shift(66),		/* = */
 			
 		},
 
@@ -1684,9 +1733,8 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
-			shift(40),		/* varlabel */
-			nil,		/* percentile */
+			shift(67),		/* , */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1695,8 +1743,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1704,7 +1754,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			nil,		/* } */
+			shift(68),		/* } */
 			nil,		/* = */
 			
 		},
@@ -1716,11 +1766,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(63),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			shift(64),		/* , */
+			reduce(29),		/* ,, reduce: KeyValues */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1729,8 +1778,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1738,7 +1789,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			nil,		/* } */
+			reduce(29),		/* }, reduce: KeyValues */
 			nil,		/* = */
 			
 		},
@@ -1748,13 +1799,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(4),		/* $, reduce: Aggregation */
 			nil,		/* ( */
-			reduce(9),		/* ), reduce: LabelList */
+			nil,		/* ) */
 			nil,		/* by */
-			reduce(9),		/* ,, reduce: LabelList */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1763,8 +1813,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -1788,7 +1840,6 @@ var actionTab = actionTable{
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1797,13 +1848,15 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			shift(33),		/* varname */
+			shift(40),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -1817,27 +1870,28 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			reduce(11),		/* (, reduce: Percentile */
+			nil,		/* ( */
 			nil,		/* ) */
-			reduce(11),		/* by, reduce: Percentile */
+			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			nil,		/* varname */
+			shift(40),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -1851,12 +1905,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			nil,		/* ( */
+			shift(71),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1865,10 +1918,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			shift(66),		/* int64 */
+			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -1884,28 +1939,29 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(25),		/* $, reduce: Variable */
+			nil,		/* $ */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
+			shift(44),		/* varlabel */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			nil,		/* varname */
+			shift(40),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -1923,8 +1979,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(67),		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1933,10 +1988,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			nil,		/* int64 */
+			shift(74),		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -1954,11 +2011,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(27),		/* ), reduce: VarName */
 			nil,		/* by */
-			nil,		/* , */
-			shift(40),		/* varlabel */
-			nil,		/* percentile */
+			reduce(27),		/* ,, reduce: VarName */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -1967,9 +2023,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			reduce(27),		/* [, reduce: VarName */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -1986,13 +2044,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(28),		/* $, reduce: VarName */
+			nil,		/* $ */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			shift(48),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2001,9 +2058,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			reduce(28),		/* [, reduce: VarName */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -2022,11 +2081,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(33),		/* ), reduce: VariableList */
+			shift(76),		/* ) */
 			nil,		/* by */
-			reduce(33),		/* ,, reduce: VariableList */
+			shift(77),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2035,8 +2093,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2056,11 +2116,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(8),		/* ), reduce: LabelList */
 			nil,		/* by */
-			shift(69),		/* , */
+			reduce(8),		/* ,, reduce: LabelList */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2069,8 +2128,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2088,13 +2149,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(7),		/* $, reduce: Mutation */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2103,12 +2163,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
-			shift(70),		/* : */
-			shift(71),		/* ] */
+			nil,		/* : */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -2126,27 +2188,28 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			shift(57),		/* , */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
-			nil,		/* sum */
-			nil,		/* mean */
-			nil,		/* median */
-			nil,		/* min */
-			nil,		/* max */
-			nil,		/* stddev */
-			nil,		/* rate */
-			nil,		/* rate_signed */
-			nil,		/* delta */
-			nil,		/* latest */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			nil,		/* varname */
+			shift(40),		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			shift(72),		/* } */
+			nil,		/* } */
 			nil,		/* = */
 			
 		},
@@ -2157,12 +2220,11 @@ var actionTab = actionTable{
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
 			nil,		/* $ */
-			shift(73),		/* ( */
+			reduce(22),		/* (, reduce: Percentile */
 			nil,		/* ) */
-			nil,		/* by */
+			reduce(22),		/* by, reduce: Percentile */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2171,8 +2233,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2195,8 +2259,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			shift(74),		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2205,10 +2268,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			nil,		/* int64 */
+			shift(79),		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -2224,13 +2289,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(25),		/* $, reduce: Variable */
 			nil,		/* ( */
-			shift(75),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			shift(45),		/* , */
+			reduce(25),		/* ,, reduce: Variable */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2239,8 +2303,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2263,8 +2329,7 @@ var actionTab = actionTable{
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			shift(80),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2273,12 +2338,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
-			shift(76),		/* ] */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -2296,9 +2363,8 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			reduce(31),		/* ,, reduce: KeyValue */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* , */
+			shift(48),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2307,8 +2373,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2316,7 +2384,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			reduce(31),		/* }, reduce: KeyValue */
+			nil,		/* } */
 			nil,		/* = */
 			
 		},
@@ -2326,13 +2394,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			nil,		/* $ */
+			reduce(28),		/* $, reduce: VarName */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			reduce(30),		/* ,, reduce: KeyValues */
+			reduce(28),		/* ,, reduce: VarName */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2341,16 +2408,18 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			nil,		/* [ */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			reduce(28),		/* [, reduce: VarName */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			reduce(30),		/* }, reduce: KeyValues */
+			nil,		/* } */
 			nil,		/* = */
 			
 		},
@@ -2362,11 +2431,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(33),		/* ), reduce: VariableList */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(33),		/* ,, reduce: VariableList */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2375,13 +2443,15 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			shift(33),		/* varname */
+			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -2396,11 +2466,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			shift(82),		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2409,10 +2478,12 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
-			shift(78),		/* int64 */
+			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
 			nil,		/* varname */
@@ -2430,11 +2501,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(25),		/* ), reduce: Variable */
+			nil,		/* ) */
 			nil,		/* by */
-			reduce(25),		/* ,, reduce: Variable */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* , */
+			shift(60),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2443,8 +2513,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2464,11 +2536,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(28),		/* ), reduce: VarName */
+			shift(84),		/* ) */
 			nil,		/* by */
-			reduce(28),		/* ,, reduce: VarName */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2477,9 +2548,11 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
-			reduce(28),		/* [, reduce: VarName */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
@@ -2500,24 +2573,25 @@ var actionTab = actionTable{
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			shift(85),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
 			nil,		/* min */
 			nil,		/* max */
 			nil,		/* stddev */
-			shift(15),		/* rate */
-			shift(16),		/* rate_signed */
-			shift(17),		/* delta */
-			shift(18),		/* latest */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
 			nil,		/* ] */
-			shift(33),		/* varname */
+			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
 			nil,		/* } */
@@ -2532,11 +2606,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(10),		/* ), reduce: LabelList */
+			nil,		/* ) */
 			nil,		/* by */
-			reduce(10),		/* ,, reduce: LabelList */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2545,12 +2618,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
-			nil,		/* : */
-			nil,		/* ] */
+			shift(86),		/* : */
+			shift(87),		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -2564,13 +2639,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(8),		/* $, reduce: Mutation */
+			nil,		/* $ */
 			nil,		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			shift(67),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2579,8 +2653,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2588,7 +2664,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			nil,		/* } */
+			shift(88),		/* } */
 			nil,		/* = */
 			
 		},
@@ -2598,13 +2674,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(24),		/* $, reduce: Variable */
-			nil,		/* ( */
+			nil,		/* $ */
+			shift(89),		/* ( */
 			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2613,8 +2688,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2634,11 +2711,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(81),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			shift(45),		/* , */
-			nil,		/* varlabel */
-			nil,		/* percentile */
+			nil,		/* , */
+			shift(90),		/* varlabel */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2647,8 +2723,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2668,11 +2746,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			shift(91),		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2681,12 +2758,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
-			shift(82),		/* ] */
+			nil,		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -2702,11 +2781,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(83),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2715,12 +2793,14 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
-			nil,		/* ] */
+			shift(92),		/* ] */
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
@@ -2736,11 +2816,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			shift(84),		/* ) */
+			nil,		/* ) */
 			nil,		/* by */
-			shift(45),		/* , */
+			reduce(31),		/* ,, reduce: KeyValue */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2749,8 +2828,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2758,7 +2839,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			nil,		/* } */
+			reduce(31),		/* }, reduce: KeyValue */
 			nil,		/* = */
 			
 		},
@@ -2770,11 +2851,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(8),		/* ), reduce: Mutation */
+			nil,		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			reduce(30),		/* ,, reduce: KeyValues */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2783,8 +2863,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2792,7 +2874,7 @@ var actionTab = actionTable{
 			nil,		/* varname */
 			nil,		/* {} */
 			nil,		/* { */
-			nil,		/* } */
+			reduce(30),		/* }, reduce: KeyValues */
 			nil,		/* = */
 			
 		},
@@ -2804,11 +2886,10 @@ var actionTab = actionTable{
 			nil,		/* INVALID */
 			nil,		/* $ */
 			nil,		/* ( */
-			reduce(24),		/* ), reduce: Variable */
+			reduce(4),		/* ), reduce: Aggregation */
 			nil,		/* by */
-			reduce(24),		/* ,, reduce: Variable */
+			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2817,8 +2898,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2836,13 +2919,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(7),		/* $, reduce: Aggregation */
+			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			shift(93),		/* ) */
 			nil,		/* by */
-			nil,		/* , */
+			shift(77),		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2851,8 +2933,10 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */
@@ -2870,13 +2954,12 @@ var actionTab = actionTable{
 				canRecover: false,
 		actions: [numSymbols]action{
 			nil,		/* INVALID */
-			reduce(6),		/* $, reduce: Aggregation */
+			nil,		/* $ */
 			nil,		/* ( */
-			nil,		/* ) */
+			reduce(7),		/* ), reduce: Mutation */
 			nil,		/* by */
 			nil,		/* , */
 			nil,		/* varlabel */
-			nil,		/* percentile */
 			nil,		/* sum */
 			nil,		/* mean */
 			nil,		/* median */
@@ -2885,8 +2968,640 @@ var actionTab = actionTable{
 			nil,		/* stddev */
 			nil,		/* rate */
 			nil,		/* rate_signed */
-			nil,		/* delta */
 			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S85
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(40),		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S86
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			shift(95),		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S87
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(25),		/* ), reduce: Variable */
+			nil,		/* by */
+			reduce(25),		/* ,, reduce: Variable */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S88
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(28),		/* ), reduce: VarName */
+			nil,		/* by */
+			reduce(28),		/* ,, reduce: VarName */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			reduce(28),		/* [, reduce: VarName */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S89
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(40),		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S90
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(9),		/* ), reduce: LabelList */
+			nil,		/* by */
+			reduce(9),		/* ,, reduce: LabelList */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S91
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			reduce(6),		/* $, reduce: Mutation */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S92
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			reduce(24),		/* $, reduce: Variable */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			reduce(24),		/* ,, reduce: Variable */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S93
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			shift(97),		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S94
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(98),		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S95
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			shift(99),		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S96
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(100),		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S97
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			shift(7),		/* sum */
+			shift(8),		/* mean */
+			shift(9),		/* median */
+			shift(10),		/* min */
+			shift(11),		/* max */
+			shift(12),		/* stddev */
+			shift(14),		/* rate */
+			shift(15),		/* rate_signed */
+			shift(16),		/* latest */
+			shift(17),		/* regularize */
+			shift(18),		/* interpolate */
+			shift(19),		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			shift(40),		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S98
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(6),		/* ), reduce: Mutation */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S99
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(24),		/* ), reduce: Variable */
+			nil,		/* by */
+			reduce(24),		/* ,, reduce: Variable */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S100
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			reduce(5),		/* $, reduce: Aggregation */
+			nil,		/* ( */
+			nil,		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S101
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			shift(102),		/* ) */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
+			nil,		/* [ */
+			nil,		/* int64 */
+			nil,		/* : */
+			nil,		/* ] */
+			nil,		/* varname */
+			nil,		/* {} */
+			nil,		/* { */
+			nil,		/* } */
+			nil,		/* = */
+			
+		},
+
+	},
+	actionRow{ // S102
+				canRecover: false,
+		actions: [numSymbols]action{
+			nil,		/* INVALID */
+			nil,		/* $ */
+			nil,		/* ( */
+			reduce(5),		/* ), reduce: Aggregation */
+			nil,		/* by */
+			nil,		/* , */
+			nil,		/* varlabel */
+			nil,		/* sum */
+			nil,		/* mean */
+			nil,		/* median */
+			nil,		/* min */
+			nil,		/* max */
+			nil,		/* stddev */
+			nil,		/* rate */
+			nil,		/* rate_signed */
+			nil,		/* latest */
+			nil,		/* regularize */
+			nil,		/* interpolate */
+			nil,		/* percentile */
 			nil,		/* [ */
 			nil,		/* int64 */
 			nil,		/* : */

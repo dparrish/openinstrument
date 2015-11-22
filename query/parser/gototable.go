@@ -17,14 +17,14 @@ var gotoTab = gotoTable{
 		4, // Aggregation
 		3, // Mutation
 		-1, // LabelList
-		7, // Percentile
 		5, // AggregationType
 		6, // MutationType
-		2, // Variable
-		19, // VarName
+		13, // Percentile
+		20, // Variable
+		21, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		-1, // VariableList
+		2, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -37,9 +37,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -57,9 +57,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -77,9 +77,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -97,9 +97,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -117,9 +117,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -137,9 +137,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -157,9 +157,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -177,9 +177,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -197,9 +197,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -217,9 +217,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -237,9 +237,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -257,9 +257,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -277,9 +277,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -297,9 +297,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -317,9 +317,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -337,9 +337,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -357,9 +357,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -377,9 +377,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -397,9 +397,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -417,9 +417,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -435,16 +435,16 @@ var gotoTab = gotoTable{
 		-1, // S'
 		-1, // Query
 		-1, // Aggregation
-		29, // Mutation
+		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
-		31, // MutationType
-		28, // Variable
-		32, // VarName
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		30, // VariableList
+		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -457,9 +457,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -477,15 +477,15 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
-		-1, // Variable
-		-1, // VarName
+		-1, // Percentile
+		31, // Variable
+		21, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
 		-1, // VariableList
-		35, // Duration
+		-1, // Duration
 		-1, // Int64
 		
 
@@ -493,20 +493,20 @@ var gotoTab = gotoTable{
 	gotoRow{ // S24
 		
 		-1, // S'
-		-1, // Query
-		-1, // Aggregation
-		-1, // Mutation
+		32, // Query
+		35, // Aggregation
+		34, // Mutation
 		-1, // LabelList
-		-1, // Percentile
-		-1, // AggregationType
-		-1, // MutationType
-		-1, // Variable
-		-1, // VarName
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		-1, // VariableList
+		33, // VariableList
 		-1, // Duration
-		37, // Int64
+		-1, // Int64
 		
 
 	},
@@ -517,9 +517,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -533,19 +533,19 @@ var gotoTab = gotoTable{
 	gotoRow{ // S26
 		
 		-1, // S'
-		-1, // Query
-		-1, // Aggregation
-		-1, // Mutation
+		42, // Query
+		35, // Aggregation
+		34, // Mutation
 		-1, // LabelList
-		-1, // Percentile
-		-1, // AggregationType
-		-1, // MutationType
-		-1, // Variable
-		-1, // VarName
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		-1, // VariableList
-		-1, // Duration
+		33, // VariableList
+		43, // Duration
 		-1, // Int64
 		
 
@@ -557,16 +557,16 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
-		41, // KeyValues
-		42, // KeyValue
+		-1, // KeyValues
+		-1, // KeyValue
 		-1, // VariableList
 		-1, // Duration
-		-1, // Int64
+		45, // Int64
 		
 
 	},
@@ -577,9 +577,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -597,9 +597,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -617,13 +617,13 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
-		-1, // KeyValues
-		-1, // KeyValue
+		49, // KeyValues
+		50, // KeyValue
 		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
@@ -637,9 +637,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -657,9 +657,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -677,9 +677,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -696,10 +696,10 @@ var gotoTab = gotoTable{
 		-1, // Query
 		-1, // Aggregation
 		-1, // Mutation
-		50, // LabelList
-		-1, // Percentile
+		-1, // LabelList
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -717,9 +717,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -737,9 +737,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -757,9 +757,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -777,9 +777,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -797,9 +797,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -817,9 +817,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -836,10 +836,10 @@ var gotoTab = gotoTable{
 		-1, // Query
 		-1, // Aggregation
 		-1, // Mutation
-		-1, // LabelList
-		-1, // Percentile
+		59, // LabelList
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -857,9 +857,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -877,9 +877,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -897,9 +897,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -917,11 +917,11 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
-		59, // Variable
-		32, // VarName
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
 		-1, // VariableList
@@ -937,15 +937,15 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
 		-1, // VariableList
-		60, // Duration
+		-1, // Duration
 		-1, // Int64
 		
 
@@ -957,9 +957,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -977,9 +977,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -997,13 +997,13 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
-		62, // KeyValues
-		42, // KeyValue
+		-1, // KeyValues
+		-1, // KeyValue
 		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
@@ -1017,9 +1017,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1037,9 +1037,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1057,14 +1057,14 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
-		28, // Variable
-		32, // VarName
+		-1, // Percentile
+		69, // Variable
+		39, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		65, // VariableList
+		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -1073,18 +1073,18 @@ var gotoTab = gotoTable{
 	gotoRow{ // S53
 		
 		-1, // S'
-		-1, // Query
-		-1, // Aggregation
-		-1, // Mutation
+		70, // Query
+		35, // Aggregation
+		34, // Mutation
 		-1, // LabelList
-		-1, // Percentile
-		-1, // AggregationType
-		-1, // MutationType
-		-1, // Variable
-		-1, // VarName
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		-1, // VariableList
+		33, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -1097,9 +1097,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1113,19 +1113,19 @@ var gotoTab = gotoTable{
 	gotoRow{ // S55
 		
 		-1, // S'
-		-1, // Query
-		-1, // Aggregation
-		-1, // Mutation
+		72, // Query
+		35, // Aggregation
+		34, // Mutation
 		-1, // LabelList
-		-1, // Percentile
-		-1, // AggregationType
-		-1, // MutationType
-		-1, // Variable
-		-1, // VarName
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		-1, // VariableList
-		-1, // Duration
+		33, // VariableList
+		73, // Duration
 		-1, // Int64
 		
 
@@ -1137,9 +1137,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1157,13 +1157,13 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
-		68, // KeyValue
+		-1, // KeyValue
 		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
@@ -1177,13 +1177,13 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
-		-1, // KeyValues
-		-1, // KeyValue
+		75, // KeyValues
+		50, // KeyValue
 		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
@@ -1197,9 +1197,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1217,9 +1217,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1237,9 +1237,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1253,18 +1253,18 @@ var gotoTab = gotoTable{
 	gotoRow{ // S62
 		
 		-1, // S'
-		-1, // Query
-		-1, // Aggregation
-		-1, // Mutation
+		78, // Query
+		35, // Aggregation
+		34, // Mutation
 		-1, // LabelList
-		-1, // Percentile
-		-1, // AggregationType
-		-1, // MutationType
-		-1, // Variable
-		-1, // VarName
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		-1, // VariableList
+		33, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -1277,9 +1277,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1297,9 +1297,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1317,9 +1317,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1337,9 +1337,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1357,13 +1357,13 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
-		-1, // KeyValue
+		81, // KeyValue
 		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
@@ -1377,9 +1377,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1397,14 +1397,14 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
-		28, // Variable
-		32, // VarName
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		77, // VariableList
+		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -1417,9 +1417,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1436,10 +1436,10 @@ var gotoTab = gotoTable{
 		-1, // Query
 		-1, // Aggregation
 		-1, // Mutation
-		-1, // LabelList
-		-1, // Percentile
+		83, // LabelList
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1457,9 +1457,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1475,16 +1475,16 @@ var gotoTab = gotoTable{
 		-1, // S'
 		-1, // Query
 		-1, // Aggregation
-		79, // Mutation
+		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
-		31, // MutationType
-		28, // Variable
-		32, // VarName
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
 		-1, // KeyValues
 		-1, // KeyValue
-		80, // VariableList
+		-1, // VariableList
 		-1, // Duration
 		-1, // Int64
 		
@@ -1497,9 +1497,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1517,9 +1517,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1537,9 +1537,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1557,9 +1557,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1577,9 +1577,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1597,9 +1597,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1617,9 +1617,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1637,9 +1637,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1657,9 +1657,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1677,9 +1677,9 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues
@@ -1697,9 +1697,369 @@ var gotoTab = gotoTable{
 		-1, // Aggregation
 		-1, // Mutation
 		-1, // LabelList
-		-1, // Percentile
 		-1, // AggregationType
 		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S85
+		
+		-1, // S'
+		94, // Query
+		35, // Aggregation
+		34, // Mutation
+		-1, // LabelList
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		33, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S86
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S87
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S88
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S89
+		
+		-1, // S'
+		96, // Query
+		35, // Aggregation
+		34, // Mutation
+		-1, // LabelList
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		33, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S90
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S91
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S92
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S93
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S94
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S95
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S96
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S97
+		
+		-1, // S'
+		101, // Query
+		35, // Aggregation
+		34, // Mutation
+		-1, // LabelList
+		36, // AggregationType
+		37, // MutationType
+		13, // Percentile
+		38, // Variable
+		39, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		33, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S98
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S99
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S100
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S101
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
+		-1, // Variable
+		-1, // VarName
+		-1, // KeyValues
+		-1, // KeyValue
+		-1, // VariableList
+		-1, // Duration
+		-1, // Int64
+		
+
+	},
+	gotoRow{ // S102
+		
+		-1, // S'
+		-1, // Query
+		-1, // Aggregation
+		-1, // Mutation
+		-1, // LabelList
+		-1, // AggregationType
+		-1, // MutationType
+		-1, // Percentile
 		-1, // Variable
 		-1, // VarName
 		-1, // KeyValues

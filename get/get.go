@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/query"
 	"golang.org/x/net/context"
@@ -44,7 +45,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Invalid query:", err)
 	}
-	//log.Println("Sending query:", openinstrument.ProtoText(q))
 
 	conn, err := grpc.Dial(*connectAddress, grpc.WithInsecure())
 	if err != nil {
@@ -53,11 +53,12 @@ func main() {
 	defer conn.Close()
 
 	request := &oproto.GetRequest{
-		Query:        q,
+		Query:        q.AsProto(),
 		MaxValues:    uint32(*maxValues),
 		MaxVariables: uint32(*maxVariables),
 	}
 
+	log.Printf("Sending query: %s", openinstrument.ProtoText(q.AsProto()))
 	stub := oproto.NewStoreClient(conn)
 	response_stream, err := stub.Get(context.Background(), request)
 	if err != nil {

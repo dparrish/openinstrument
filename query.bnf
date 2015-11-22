@@ -16,29 +16,26 @@ varlabel : (_letter | _digit | '/' | '_' | '-' | '*') {_letter | _digit | '/' | 
 
 << import "github.com/dparrish/openinstrument/query/ast" >>
 
-Query : Variable << ast.NewQuery($0) >>
+Query : VariableList << ast.NewQuery($0) >>
       | Mutation << ast.NewQuery($0) >>
       | Aggregation << ast.NewQuery($0) >> ;
 
 Aggregation :
               // sum (/test/foo)
-              AggregationType "(" VariableList ")" << ast.NewAggregation($0, nil, $2) >>
-              // sum (rate(10m, /test/foo))
-            | AggregationType "(" Mutation ")" << ast.NewAggregation($0, nil, $2) >>
+              AggregationType "(" Query ")" << ast.NewAggregation($0, nil, $2) >>
               // sum by (foo) (/test/foo{foo=bar})
-            | AggregationType "by" "(" LabelList ")" "(" VariableList ")" << ast.NewAggregation($0, $3, $6) >>
-              // sum by (foo) (rate(10m, /test/foo{foo=bar}))
-            | AggregationType "by" "(" LabelList ")" "(" Mutation ")" << ast.NewAggregation($0, $3, $6) >>
+            | AggregationType "by" "(" LabelList ")" "(" Query ")" << ast.NewAggregation($0, $3, $6) >>
             ;
 
-Mutation : MutationType "(" Duration "," VariableList ")" << ast.NewMutation($0, $2, $4) >>;
+Mutation : MutationType "(" Duration "," Query ")" << ast.NewMutation($0, $2, $4) >>
+         | MutationType "(" Query ")" << ast.NewMutation($0, nil, $2) >>;
 
 LabelList : varlabel << ast.NewLabelList($0) >>
           | LabelList "," varlabel << ast.AppendStringToList($0, $2) >> ;
 
-Percentile : "percentile" "(" Int64 ")" << ast.NewPercentile($2) >>;
 AggregationType : "sum" | "mean" | "median" | "min" | "max" | "stddev" | Percentile;
-MutationType:  "rate" | "rate_signed" | "delta" | "latest";
+MutationType:  "rate" | "rate_signed" | "latest" | "regularize" | "interpolate";
+Percentile : "percentile" "(" Int64 ")" << ast.NewPercentile($2) >>;
 
 Variable : VarName 
          | VarName "[" int64 ":" int64 "]" << ast.AddRangeToVariable($0, $2, $4) >>

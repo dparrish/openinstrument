@@ -17,6 +17,14 @@ import (
 	"github.com/dparrish/openinstrument/variable"
 )
 
+type ReadableStore interface {
+	// Reader builds a channel that will return streams for a supplied Variable.
+	// If min/maxTimestamp are not nil, streams will only be returned if SOME values inside the stream match.
+	// The supplied variable may be a search or a single.
+	// The streams returned may be out of order with respect to variable names or timestamps.
+	Reader(v *variable.Variable) <-chan *oproto.ValueStream
+}
+
 type Datastore struct {
 	Path string
 

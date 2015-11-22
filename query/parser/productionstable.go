@@ -30,7 +30,7 @@ var productionsTable = ProdTab {
 		},
 	},
 	ProdTabEntry{
-		String: `Query : Variable	<< ast.NewQuery(X[0]) >>`,
+		String: `Query : VariableList	<< ast.NewQuery(X[0]) >>`,
 		Id: "Query",
 		NTType: 1,
 		Index: 1,
@@ -60,7 +60,7 @@ var productionsTable = ProdTab {
 		},
 	},
 	ProdTabEntry{
-		String: `Aggregation : AggregationType "(" VariableList ")"	<< ast.NewAggregation(X[0], nil, X[2]) >>`,
+		String: `Aggregation : AggregationType "(" Query ")"	<< ast.NewAggregation(X[0], nil, X[2]) >>`,
 		Id: "Aggregation",
 		NTType: 2,
 		Index: 4,
@@ -70,50 +70,40 @@ var productionsTable = ProdTab {
 		},
 	},
 	ProdTabEntry{
-		String: `Aggregation : AggregationType "(" Mutation ")"	<< ast.NewAggregation(X[0], nil, X[2]) >>`,
+		String: `Aggregation : AggregationType "by" "(" LabelList ")" "(" Query ")"	<< ast.NewAggregation(X[0], X[3], X[6]) >>`,
 		Id: "Aggregation",
 		NTType: 2,
 		Index: 5,
-		NumSymbols: 4,
-		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewAggregation(X[0], nil, X[2])
-		},
-	},
-	ProdTabEntry{
-		String: `Aggregation : AggregationType "by" "(" LabelList ")" "(" VariableList ")"	<< ast.NewAggregation(X[0], X[3], X[6]) >>`,
-		Id: "Aggregation",
-		NTType: 2,
-		Index: 6,
 		NumSymbols: 8,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewAggregation(X[0], X[3], X[6])
 		},
 	},
 	ProdTabEntry{
-		String: `Aggregation : AggregationType "by" "(" LabelList ")" "(" Mutation ")"	<< ast.NewAggregation(X[0], X[3], X[6]) >>`,
-		Id: "Aggregation",
-		NTType: 2,
-		Index: 7,
-		NumSymbols: 8,
-		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewAggregation(X[0], X[3], X[6])
-		},
-	},
-	ProdTabEntry{
-		String: `Mutation : MutationType "(" Duration "," VariableList ")"	<< ast.NewMutation(X[0], X[2], X[4]) >>`,
+		String: `Mutation : MutationType "(" Duration "," Query ")"	<< ast.NewMutation(X[0], X[2], X[4]) >>`,
 		Id: "Mutation",
 		NTType: 3,
-		Index: 8,
+		Index: 6,
 		NumSymbols: 6,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewMutation(X[0], X[2], X[4])
 		},
 	},
 	ProdTabEntry{
+		String: `Mutation : MutationType "(" Query ")"	<< ast.NewMutation(X[0], nil, X[2]) >>`,
+		Id: "Mutation",
+		NTType: 3,
+		Index: 7,
+		NumSymbols: 4,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewMutation(X[0], nil, X[2])
+		},
+	},
+	ProdTabEntry{
 		String: `LabelList : varlabel	<< ast.NewLabelList(X[0]) >>`,
 		Id: "LabelList",
 		NTType: 4,
-		Index: 9,
+		Index: 8,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewLabelList(X[0])
@@ -123,27 +113,17 @@ var productionsTable = ProdTab {
 		String: `LabelList : LabelList "," varlabel	<< ast.AppendStringToList(X[0], X[2]) >>`,
 		Id: "LabelList",
 		NTType: 4,
-		Index: 10,
+		Index: 9,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AppendStringToList(X[0], X[2])
 		},
 	},
 	ProdTabEntry{
-		String: `Percentile : "percentile" "(" Int64 ")"	<< ast.NewPercentile(X[2]) >>`,
-		Id: "Percentile",
-		NTType: 5,
-		Index: 11,
-		NumSymbols: 4,
-		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewPercentile(X[2])
-		},
-	},
-	ProdTabEntry{
 		String: `AggregationType : "sum"	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 12,
+		NTType: 5,
+		Index: 10,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -152,8 +132,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `AggregationType : "mean"	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 13,
+		NTType: 5,
+		Index: 11,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -162,8 +142,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `AggregationType : "median"	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 14,
+		NTType: 5,
+		Index: 12,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -172,8 +152,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `AggregationType : "min"	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 15,
+		NTType: 5,
+		Index: 13,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -182,8 +162,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `AggregationType : "max"	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 16,
+		NTType: 5,
+		Index: 14,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -192,8 +172,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `AggregationType : "stddev"	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 17,
+		NTType: 5,
+		Index: 15,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -202,8 +182,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `AggregationType : Percentile	<<  >>`,
 		Id: "AggregationType",
-		NTType: 6,
-		Index: 18,
+		NTType: 5,
+		Index: 16,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -212,8 +192,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `MutationType : "rate"	<<  >>`,
 		Id: "MutationType",
-		NTType: 7,
-		Index: 19,
+		NTType: 6,
+		Index: 17,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -222,18 +202,8 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `MutationType : "rate_signed"	<<  >>`,
 		Id: "MutationType",
-		NTType: 7,
-		Index: 20,
-		NumSymbols: 1,
-		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return X[0], nil
-		},
-	},
-	ProdTabEntry{
-		String: `MutationType : "delta"	<<  >>`,
-		Id: "MutationType",
-		NTType: 7,
-		Index: 21,
+		NTType: 6,
+		Index: 18,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -242,11 +212,41 @@ var productionsTable = ProdTab {
 	ProdTabEntry{
 		String: `MutationType : "latest"	<<  >>`,
 		Id: "MutationType",
-		NTType: 7,
-		Index: 22,
+		NTType: 6,
+		Index: 19,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
+		},
+	},
+	ProdTabEntry{
+		String: `MutationType : "regularize"	<<  >>`,
+		Id: "MutationType",
+		NTType: 6,
+		Index: 20,
+		NumSymbols: 1,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return X[0], nil
+		},
+	},
+	ProdTabEntry{
+		String: `MutationType : "interpolate"	<<  >>`,
+		Id: "MutationType",
+		NTType: 6,
+		Index: 21,
+		NumSymbols: 1,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return X[0], nil
+		},
+	},
+	ProdTabEntry{
+		String: `Percentile : "percentile" "(" Int64 ")"	<< ast.NewPercentile(X[2]) >>`,
+		Id: "Percentile",
+		NTType: 7,
+		Index: 22,
+		NumSymbols: 4,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewPercentile(X[2])
 		},
 	},
 	ProdTabEntry{

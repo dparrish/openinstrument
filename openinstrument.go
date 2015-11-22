@@ -1,7 +1,6 @@
 package openinstrument
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"sort"
@@ -29,9 +28,5 @@ func ReadDirNames(directory string) ([]string, error) {
 }
 
 func ProtoText(msg proto.Message) string {
-	buf := new(bytes.Buffer)
-	if err := proto.MarshalText(buf, msg); err != nil {
-		return ""
-	}
-	return buf.String()
+	return proto.MarshalTextString(msg)
 }

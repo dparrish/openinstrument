@@ -12,9 +12,8 @@ import (
 
 	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
-	"github.com/dparrish/openinstrument/mutations"
 	oproto "github.com/dparrish/openinstrument/proto"
-	"github.com/dparrish/openinstrument/valuestream"
+	"github.com/dparrish/openinstrument/query"
 	"github.com/dparrish/openinstrument/variable"
 	"golang.org/x/net/context"
 )
@@ -74,71 +73,17 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 		return fmt.Errorf("No query specified")
 	}
 
-	wg := new(sync.WaitGroup)
-	for _, v := range request.Query.Variable {
-		// Direct variable retrieval
-		requestVariable := variable.NewFromProto(v)
-		if len(requestVariable.String()) == 0 {
-			return fmt.Errorf("No variable specified")
-		}
-		var streams []*oproto.ValueStream
-		for stream := range s.ds.Reader(requestVariable) {
-			streams = append(streams, stream)
-		}
-		mergeBy := ""
-		if len(request.Aggregation) > 0 {
-			mergeBy = request.Aggregation[0].Label[0]
-		}
-		for streams := range valuestream.MergeBy(streams, mergeBy) {
-			wg.Add(1)
-			go func(streams []*oproto.ValueStream) {
-				defer wg.Done()
-				output := valuestream.Merge(streams)
-
-				if request.Mutation != nil && len(request.Mutation) > 0 {
-					for _, mut := range request.Mutation {
-						switch mut.SampleType {
-						case oproto.StreamMutation_MEAN:
-							output = mutations.Mean(uint64(mut.SampleFrequency), output)
-						case oproto.StreamMutation_MIN:
-							output = mutations.Min(uint64(mut.SampleFrequency), output)
-						case oproto.StreamMutation_MAX:
-							output = mutations.Max(uint64(mut.SampleFrequency), output)
-						case oproto.StreamMutation_RATE:
-							output = mutations.Rate(uint64(mut.SampleFrequency), output)
-						case oproto.StreamMutation_RATE_SIGNED:
-							output = mutations.SignedRate(uint64(mut.SampleFrequency), output)
-						}
-					}
-				}
-
-				newstream := &oproto.ValueStream{Variable: streams[0].Variable}
-				for value := range output {
-					if !requestVariable.TimestampInsideRange(value.Timestamp) {
-						continue
-					}
-					if request.MaxValues != 0 && uint32(len(newstream.Value)) >= request.MaxValues {
-						// More values than requested, remove the oldest element
-						newstream.Value = newstream.Value[1:]
-					}
-
-					newstream.Value = append(newstream.Value, value)
-				}
-
-				server.Send(&oproto.GetResponse{
-					Success: true,
-					Stream:  []*oproto.ValueStream{newstream},
-				})
-			}(streams)
-		}
+	q := query.NewFromProto(request.Query)
+	c, err := q.Run(s.ds)
+	if err != nil {
+		return err
 	}
-	for _, a := range request.Query.Aggregation {
-		a = a
+	for stream := range c {
+		server.Send(&oproto.GetResponse{
+			Success: true,
+			Stream:  []*oproto.ValueStream{stream},
+		})
 	}
-	for _, a := range request.Query.Mutation {
-		a = a
-	}
-	wg.Wait()
 	return nil
 }
 

@@ -88,43 +88,62 @@ const (
 	StreamMutation_MAX StreamMutation_SampleType = 2
 	// Get the minimum value between each sampling point
 	StreamMutation_MIN StreamMutation_SampleType = 3
-	// Get the non-negative rate between each sampling point
+	// Get the positive rate between each sampling point
 	StreamMutation_RATE StreamMutation_SampleType = 4
 	// Get the (possibly) negative rate between each sampling point
 	StreamMutation_RATE_SIGNED StreamMutation_SampleType = 5
-	// Difference between each point
-	StreamMutation_DELTA StreamMutation_SampleType = 6
-	// Latest point
-	StreamMutation_LATEST StreamMutation_SampleType = 7
-	// Multiply all values by a constant
-	StreamMutation_MULTIPLY StreamMutation_SampleType = 8
-	// Add a constant to each value
-	StreamMutation_ADD StreamMutation_SampleType = 9
+	// Modify timestamps and values so that frequency (interval between consecutive samples) is constant (specify in param)
+	// Extra values between each sample will be aggregated according to <sample_type>.
+	// Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
+	// closest real values.
+	StreamMutation_INTERPOLATE StreamMutation_SampleType = 6
+	// Last point in a time bracket (specified in param)
+	StreamMutation_LAST StreamMutation_SampleType = 7
+	// First point in a time bracket (specified in param)
+	StreamMutation_FIRST StreamMutation_SampleType = 8
+	// Multiply all values by a constant (specify in param)
+	StreamMutation_MULTIPLY StreamMutation_SampleType = 9
+	// Add a constant to each value (specify in param)
+	StreamMutation_ADD StreamMutation_SampleType = 10
+	// Get the nth root of each value (specify in param)
+	StreamMutation_ROOT StreamMutation_SampleType = 11
+	// Get the nth power of each value (specify in param)
+	StreamMutation_POWER StreamMutation_SampleType = 12
+	// Moving average over a time period (specified in param)
+	StreamMutation_MOVING_AVERAGE StreamMutation_SampleType = 13
 )
 
 var StreamMutation_SampleType_name = map[int32]string{
-	0: "NONE",
-	1: "MEAN",
-	2: "MAX",
-	3: "MIN",
-	4: "RATE",
-	5: "RATE_SIGNED",
-	6: "DELTA",
-	7: "LATEST",
-	8: "MULTIPLY",
-	9: "ADD",
+	0:  "NONE",
+	1:  "MEAN",
+	2:  "MAX",
+	3:  "MIN",
+	4:  "RATE",
+	5:  "RATE_SIGNED",
+	6:  "INTERPOLATE",
+	7:  "LAST",
+	8:  "FIRST",
+	9:  "MULTIPLY",
+	10: "ADD",
+	11: "ROOT",
+	12: "POWER",
+	13: "MOVING_AVERAGE",
 }
 var StreamMutation_SampleType_value = map[string]int32{
-	"NONE":        0,
-	"MEAN":        1,
-	"MAX":         2,
-	"MIN":         3,
-	"RATE":        4,
-	"RATE_SIGNED": 5,
-	"DELTA":       6,
-	"LATEST":      7,
-	"MULTIPLY":    8,
-	"ADD":         9,
+	"NONE":           0,
+	"MEAN":           1,
+	"MAX":            2,
+	"MIN":            3,
+	"RATE":           4,
+	"RATE_SIGNED":    5,
+	"INTERPOLATE":    6,
+	"LAST":           7,
+	"FIRST":          8,
+	"MULTIPLY":       9,
+	"ADD":            10,
+	"ROOT":           11,
+	"POWER":          12,
+	"MOVING_AVERAGE": 13,
 }
 
 func (x StreamMutation_SampleType) String() string {
@@ -261,29 +280,29 @@ func (m *StreamVariable) GetLabel() map[string]string {
 	return nil
 }
 
+// Mutations return a modified copy of every input query
 type StreamMutation struct {
-	SampleType StreamMutation_SampleType `protobuf:"varint,1,opt,name=sample_type,enum=openinstrument.proto.StreamMutation_SampleType" json:"sample_type,omitempty"`
-	Variable   []*StreamVariable         `protobuf:"bytes,4,rep,name=variable" json:"variable,omitempty"`
-	// Stretch or compress the stream so that there is a value every <sample_frequency> ms.
-	// Extra values between each sample will be aggregated according to <sample_type>.
-	// Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
-	// closest real values.
+	Type  StreamMutation_SampleType `protobuf:"varint,1,opt,name=type,enum=openinstrument.proto.StreamMutation_SampleType" json:"type,omitempty"`
+	Param float64                   `protobuf:"fixed64,2,opt,name=param" json:"param,omitempty"`
+	// Input query
+	Query *Query `protobuf:"bytes,3,opt,name=query" json:"query,omitempty"`
 	// Gaps in the stream of more than <max_gap_interpolate> samples will not be filled.
-	SampleFrequency   uint32 `protobuf:"varint,2,opt,name=sample_frequency" json:"sample_frequency,omitempty"`
-	MaxGapInterpolate uint32 `protobuf:"varint,3,opt,name=max_gap_interpolate" json:"max_gap_interpolate,omitempty"`
+	MaxGapInterpolate uint32 `protobuf:"varint,4,opt,name=max_gap_interpolate" json:"max_gap_interpolate,omitempty"`
+	SampleFrequency   uint32 `protobuf:"varint,5,opt,name=sample_frequency" json:"sample_frequency,omitempty"`
 }
 
 func (m *StreamMutation) Reset()         { *m = StreamMutation{} }
 func (m *StreamMutation) String() string { return proto.CompactTextString(m) }
 func (*StreamMutation) ProtoMessage()    {}
 
-func (m *StreamMutation) GetVariable() []*StreamVariable {
+func (m *StreamMutation) GetQuery() *Query {
 	if m != nil {
-		return m.Variable
+		return m.Query
 	}
 	return nil
 }
 
+// Aggregations return a single output stream, built from the combination of every input query
 type StreamAggregation struct {
 	Type StreamAggregation_AggregateType `protobuf:"varint,1,opt,name=type,enum=openinstrument.proto.StreamAggregation_AggregateType" json:"type,omitempty"`
 	// Labels to aggregate by on the input streams. If no labels are specified, aggregation will be done on the variable
@@ -293,26 +312,17 @@ type StreamAggregation struct {
 	SampleInterval uint32 `protobuf:"varint,3,opt,name=sample_interval" json:"sample_interval,omitempty"`
 	// Optional percentile
 	Percentile uint32 `protobuf:"varint,4,opt,name=percentile" json:"percentile,omitempty"`
-	// Variables to aggregate
-	Variable []*StreamVariable `protobuf:"bytes,5,rep,name=variable" json:"variable,omitempty"`
-	// StreamMutations to aggregate
-	Mutation []*StreamMutation `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
+	// Input query
+	Query []*Query `protobuf:"bytes,5,rep,name=query" json:"query,omitempty"`
 }
 
 func (m *StreamAggregation) Reset()         { *m = StreamAggregation{} }
 func (m *StreamAggregation) String() string { return proto.CompactTextString(m) }
 func (*StreamAggregation) ProtoMessage()    {}
 
-func (m *StreamAggregation) GetVariable() []*StreamVariable {
+func (m *StreamAggregation) GetQuery() []*Query {
 	if m != nil {
-		return m.Variable
-	}
-	return nil
-}
-
-func (m *StreamAggregation) GetMutation() []*StreamMutation {
-	if m != nil {
-		return m.Mutation
+		return m.Query
 	}
 	return nil
 }
@@ -363,25 +373,17 @@ func (m *ValueStream) GetMutation() []*StreamMutation {
 	return nil
 }
 
+// Queries return a stream for every input variable / mutation / aggregation
 type Query struct {
-	// At least one of these must be set for each subquery
-	Subquery    []*Query             `protobuf:"bytes,1,rep,name=subquery" json:"subquery,omitempty"`
-	Variable    []*StreamVariable    `protobuf:"bytes,2,rep,name=variable" json:"variable,omitempty"`
-	Constant    []float64            `protobuf:"fixed64,3,rep,name=constant" json:"constant,omitempty"`
-	Mutation    []*StreamMutation    `protobuf:"bytes,6,rep,name=mutation" json:"mutation,omitempty"`
-	Aggregation []*StreamAggregation `protobuf:"bytes,7,rep,name=aggregation" json:"aggregation,omitempty"`
+	Variable    []*StreamVariable    `protobuf:"bytes,1,rep,name=variable" json:"variable,omitempty"`
+	Mutation    []*StreamMutation    `protobuf:"bytes,2,rep,name=mutation" json:"mutation,omitempty"`
+	Aggregation []*StreamAggregation `protobuf:"bytes,3,rep,name=aggregation" json:"aggregation,omitempty"`
+	Constant    []float64            `protobuf:"fixed64,4,rep,name=constant" json:"constant,omitempty"`
 }
 
 func (m *Query) Reset()         { *m = Query{} }
 func (m *Query) String() string { return proto.CompactTextString(m) }
 func (*Query) ProtoMessage()    {}
-
-func (m *Query) GetSubquery() []*Query {
-	if m != nil {
-		return m.Subquery
-	}
-	return nil
-}
 
 func (m *Query) GetVariable() []*StreamVariable {
 	if m != nil {

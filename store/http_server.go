@@ -18,12 +18,9 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
-	"github.com/dparrish/openinstrument/mutations"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
-	"github.com/dparrish/openinstrument/valuestream"
 	"github.com/dparrish/openinstrument/variable"
 	"github.com/golang/protobuf/proto"
 )
@@ -67,6 +64,7 @@ func returnResponse(w http.ResponseWriter, req *http.Request, response proto.Mes
 	return nil
 }
 
+/*
 func Get(w http.ResponseWriter, req *http.Request) {
 	var request oproto.GetRequest
 	var response oproto.GetResponse
@@ -105,17 +103,17 @@ func Get(w http.ResponseWriter, req *http.Request) {
 
 		if request.Mutation != nil && len(request.Mutation) > 0 {
 			for _, mut := range request.Mutation {
-				switch mut.SampleType {
+				switch mut.Type {
 				case oproto.StreamMutation_MEAN:
-					output = mutations.Mean(uint64(mut.SampleFrequency), output)
+					output = mutations.Mean(output)
 				case oproto.StreamMutation_MIN:
 					output = mutations.Min(uint64(mut.SampleFrequency), output)
 				case oproto.StreamMutation_MAX:
 					output = mutations.Max(uint64(mut.SampleFrequency), output)
 				case oproto.StreamMutation_RATE:
-					output = mutations.Rate(uint64(mut.SampleFrequency), output)
+					output = mutations.Rate(output)
 				case oproto.StreamMutation_RATE_SIGNED:
-					output = mutations.SignedRate(uint64(mut.SampleFrequency), output)
+					output = mutations.SignedRate(output)
 				}
 			}
 		}
@@ -139,6 +137,7 @@ func Get(w http.ResponseWriter, req *http.Request) {
 	response.Success = true
 	returnResponse(w, req, &response)
 }
+*/
 
 func Add(w http.ResponseWriter, req *http.Request) {
 	var request oproto.AddRequest
@@ -157,6 +156,7 @@ func Add(w http.ResponseWriter, req *http.Request) {
 	returnResponse(w, req, &response)
 }
 
+/*
 func List(w http.ResponseWriter, req *http.Request) {
 	var request oproto.ListRequest
 	var response oproto.ListResponse
@@ -206,6 +206,7 @@ func List(w http.ResponseWriter, req *http.Request) {
 	returnResponse(w, req, &response)
 	log.Printf("Timers: %s", response.Timer)
 }
+*/
 
 // Argument server.
 func Args(w http.ResponseWriter, req *http.Request) {
@@ -387,8 +388,10 @@ func serveHTTP() {
 	}
 	log.Printf("Serving HTTP on %v", sock.Addr().String())
 
-	http.Handle("/list", http.HandlerFunc(List))
-	http.Handle("/get", http.HandlerFunc(Get))
+	/*
+		http.Handle("/list", http.HandlerFunc(List))
+		http.Handle("/get", http.HandlerFunc(Get))
+	*/
 	http.Handle("/add", http.HandlerFunc(Add))
 	http.Handle("/args", http.HandlerFunc(Args))
 	http.Handle("/config", http.HandlerFunc(GetConfig))

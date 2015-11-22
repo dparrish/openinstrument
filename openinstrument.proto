@@ -22,6 +22,7 @@ message StreamVariable {
 	int64 max_timestamp = 5;
 }
 
+// Mutations return a modified copy of every input query
 message StreamMutation {
   enum SampleType {
     // Do not modify the data at all
@@ -32,32 +33,43 @@ message StreamMutation {
     MAX = 2;
     // Get the minimum value between each sampling point
     MIN = 3;
-    // Get the non-negative rate between each sampling point
+    // Get the positive rate between each sampling point
     RATE = 4;
     // Get the (possibly) negative rate between each sampling point
     RATE_SIGNED = 5;
-    // Difference between each point
-    DELTA = 6;
-    // Latest point
-    LATEST = 7;
-    // Multiply all values by a constant
-    MULTIPLY = 8;
-    // Add a constant to each value
-    ADD = 9;
+		// Modify timestamps and values so that frequency (interval between consecutive samples) is constant (specify in param)
+		// Extra values between each sample will be aggregated according to <sample_type>.
+		// Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
+		// closest real values.
+		INTERPOLATE = 6;
+    // Last point in a time bracket (specified in param)
+    LAST = 7;
+    // First point in a time bracket (specified in param)
+    FIRST = 8;
+    // Multiply all values by a constant (specify in param)
+    MULTIPLY = 9;
+    // Add a constant to each value (specify in param)
+    ADD = 10;
+		// Get the nth root of each value (specify in param)
+		ROOT = 11;
+		// Get the nth power of each value (specify in param)
+		POWER = 12;
+		// Moving average over a time period (specified in param)
+		MOVING_AVERAGE = 13;
   }
-  SampleType sample_type = 1;
+  SampleType type = 1;
 
-  repeated StreamVariable variable = 4;
+	double param = 2;
 
-  // Stretch or compress the stream so that there is a value every <sample_frequency> ms.
-  // Extra values between each sample will be aggregated according to <sample_type>.
-  // Gaps in the stream less than <max_gap_interpolate> samples will be filled with interpolated values between the
-  // closest real values.
+	// Input query
+  Query query = 3;
+
   // Gaps in the stream of more than <max_gap_interpolate> samples will not be filled.
-  uint32 sample_frequency = 2;
-  uint32 max_gap_interpolate = 3;
+  uint32 max_gap_interpolate = 4;
+	uint32 sample_frequency = 5;
 }
 
+// Aggregations return a single output stream, built from the combination of every input query
 message StreamAggregation {
   enum AggregateType {
     // Do not aggregate between streams
@@ -89,11 +101,8 @@ message StreamAggregation {
 	// Optional percentile
 	uint32 percentile = 4;
 
-	// Variables to aggregate
-	repeated StreamVariable variable = 5;
-
-	// StreamMutations to aggregate
-	repeated StreamMutation mutation = 6;
+	// Input query
+  repeated Query query = 5;
 }
 
 message Value {
@@ -115,14 +124,13 @@ message ValueStream {
   repeated StreamMutation mutation = 5;
 }
 
+// Queries return a stream for every input variable / mutation / aggregation
 message Query {
-  // At least one of these must be set for each subquery
-  repeated Query subquery = 1;
-  repeated StreamVariable variable = 2;
-  repeated double constant = 3;
+	repeated StreamVariable variable = 1;
+	repeated StreamMutation mutation = 2;
+	repeated StreamAggregation aggregation = 3;
 
-  repeated StreamMutation mutation = 6;
-  repeated StreamAggregation aggregation = 7;
+  repeated double constant = 4;
 }
 
 message GetRequest {
