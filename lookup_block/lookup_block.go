@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
@@ -32,6 +33,8 @@ func main() {
 		request.Variable = variable.NewFromString(*varName).AsProto()
 	} else if *ID != "" {
 		request.BlockId = *ID
+	} else if len(os.Args) > 1 {
+		request.BlockId = os.Args[1]
 	} else {
 		log.Fatal("Specify either --variable or --id")
 	}

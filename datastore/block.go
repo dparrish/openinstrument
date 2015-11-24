@@ -20,7 +20,7 @@ import (
 const (
 	maxLogValues      uint32 = 10000
 	splitPointStreams uint32 = 1500
-	splitPointValues  uint32 = 1000000
+	splitPointValues  uint32 = 5000000
 )
 
 type Block struct {

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
@@ -33,6 +34,8 @@ func main() {
 		request.Block.EndKey = *endKey
 	} else if *ID != "" {
 		request.Block.Id = *ID
+	} else if len(os.Args) > 1 {
+		request.Block.Id = os.Args[1]
 	} else {
 		log.Fatal("Specify either --end_key or --id")
 	}
