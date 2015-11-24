@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"text/template"
 	"time"
@@ -64,81 +65,6 @@ func returnResponse(w http.ResponseWriter, req *http.Request, response proto.Mes
 	return nil
 }
 
-/*
-func Get(w http.ResponseWriter, req *http.Request) {
-	var request oproto.GetRequest
-	var response oproto.GetResponse
-	if parseRequest(w, req, &request) != nil {
-		return
-	}
-	if request.GetVariable() == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response.Success = false
-		response.Errormessage = "No variable specified"
-		returnResponse(w, req, &response)
-		return
-	}
-	requestVariable := variable.NewFromProto(request.Variable)
-	if len(requestVariable.Variable) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		response.Success = false
-		response.Errormessage = "No variable specified"
-		returnResponse(w, req, &response)
-		return
-	}
-	fmt.Println(openinstrument.ProtoText(&request))
-	streamChan := ds.Reader(requestVariable)
-	streams := make([]*oproto.ValueStream, 0)
-	for stream := range streamChan {
-		streams = append(streams, stream)
-	}
-	mergeBy := ""
-	if len(request.Aggregation) > 0 {
-		mergeBy = request.Aggregation[0].Label[0]
-	}
-	sc := valuestream.MergeBy(streams, mergeBy)
-	response.Stream = make([]*oproto.ValueStream, 0)
-	for streams := range sc {
-		output := valuestream.Merge(streams)
-
-		if request.Mutation != nil && len(request.Mutation) > 0 {
-			for _, mut := range request.Mutation {
-				switch mut.Type {
-				case oproto.StreamMutation_MEAN:
-					output = mutations.Mean(output)
-				case oproto.StreamMutation_MIN:
-					output = mutations.Min(uint64(mut.SampleFrequency), output)
-				case oproto.StreamMutation_MAX:
-					output = mutations.Max(uint64(mut.SampleFrequency), output)
-				case oproto.StreamMutation_RATE:
-					output = mutations.Rate(output)
-				case oproto.StreamMutation_RATE_SIGNED:
-					output = mutations.SignedRate(output)
-				}
-			}
-		}
-
-		newstream := new(oproto.ValueStream)
-		newstream.Variable = variable.NewFromProto(streams[0].Variable).AsProto()
-		var valueCount uint32
-		for value := range output {
-			if requestVariable.TimestampInsideRange(value.Timestamp) {
-				newstream.Value = append(newstream.Value, value)
-				valueCount++
-			}
-		}
-
-		if request.MaxValues != 0 && valueCount >= request.MaxValues {
-			newstream.Value = newstream.Value[uint32(len(newstream.Value))-request.MaxValues:]
-		}
-
-		response.Stream = append(response.Stream, newstream)
-	}
-	response.Success = true
-	returnResponse(w, req, &response)
-}
-*/
-
 func Add(w http.ResponseWriter, req *http.Request) {
 	var request oproto.AddRequest
 	var response oproto.AddResponse
@@ -156,58 +82,6 @@ func Add(w http.ResponseWriter, req *http.Request) {
 	returnResponse(w, req, &response)
 }
 
-/*
-func List(w http.ResponseWriter, req *http.Request) {
-	var request oproto.ListRequest
-	var response oproto.ListResponse
-	response.Timer = make([]*oproto.LogMessage, 0)
-	if parseRequest(w, req, &request) != nil {
-		return
-	}
-	fmt.Println(openinstrument.ProtoText(&request))
-
-	addTimer := func(name string, response *oproto.ListResponse) *openinstrument.Timer {
-		response.Timer = append(response.Timer, &oproto.LogMessage{})
-		return openinstrument.NewTimer(name, response.Timer[len(response.Timer)-1])
-	}
-
-	requestVariable := variable.NewFromProto(request.Prefix)
-	if len(requestVariable.Variable) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		response.Success = false
-		response.Errormessage = "No variable specified"
-		returnResponse(w, req, &response)
-		return
-	}
-
-	// Retrieve all variables and store the names in a map for uniqueness
-	timer := addTimer("retrieve variables", &response)
-	vars := make(map[string]*oproto.StreamVariable)
-	if requestVariable.MinTimestamp == 0 {
-		requestVariable.MinTimestamp = -int64(86400000)
-	}
-	streamChan := ds.Reader(requestVariable)
-	for stream := range streamChan {
-		vars[variable.ProtoToString(stream.Variable)] = stream.Variable
-		if request.MaxVariables > 0 && len(vars) == int(request.MaxVariables) {
-			break
-		}
-	}
-	timer.Stop()
-
-	// Build the response out of the map
-	timer = addTimer("construct response", &response)
-	response.Variable = make([]*oproto.StreamVariable, 0)
-	for varname := range vars {
-		response.Variable = append(response.Variable, variable.NewFromString(varname).AsProto())
-	}
-	response.Success = true
-	timer.Stop()
-	returnResponse(w, req, &response)
-	log.Printf("Timers: %s", response.Timer)
-}
-*/
-
 // Argument server.
 func Args(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, os.Args[1:])
@@ -217,32 +91,18 @@ func GetConfig(w http.ResponseWriter, req *http.Request) {
 	returnResponse(w, req, store_config.Config().Config)
 }
 
-func StoreStatus(w http.ResponseWriter, req *http.Request) {
-	t, err := template.ParseFiles(fmt.Sprintf("%s/store_status.html", *templatePath))
-	if err != nil {
-		log.Printf("Couldn't find template file: %s", err)
-		return
-	}
+func GetBlocks(w http.ResponseWriter, req *http.Request) {
 	b := []*oproto.Block{}
 	for _, block := range ds.Blocks() {
 		b = append(b, block.ToProto())
 	}
 	datastore.ProtoBlockBy(func(a, b *oproto.Block) bool { return a.EndKey < b.EndKey }).Sort(b)
-	p := struct {
-		Title  string
-		Blocks []*oproto.Block
-	}{
-		Title:  "Store Status",
-		Blocks: b,
-	}
-	err = t.Execute(w, p)
-	if err != nil {
-		log.Println(err)
-	}
+	out, _ := json.Marshal(b)
+	w.Header().Set("Content-Type", "text/json")
+	w.Write(out)
 }
 
 func InspectVariable(w http.ResponseWriter, req *http.Request) {
-	//w.WriteHeader(http.StatusOK)
 	t, err := template.ParseFiles(fmt.Sprintf("%s/inspect_variable.html", *templatePath))
 	if err != nil {
 		log.Printf("Couldn't find template file: %s", err)
@@ -381,24 +241,53 @@ func PprofInuse(w http.ResponseWriter, req *http.Request) {
 	w.Write(out)
 }
 
+func ListVariables(w http.ResponseWriter, req *http.Request) {
+	prefix := req.FormValue("p")
+	if prefix == "" {
+		prefix = "/*"
+	}
+	if prefix[len(prefix)-1] != '*' {
+		prefix = prefix + "*"
+	}
+	v := variable.NewFromString(prefix)
+	vars := make(map[string]*oproto.StreamVariable)
+	for stream := range ds.Reader(v) {
+		vars[stream.Variable.Name] = stream.Variable
+	}
+	if len(vars) == 0 {
+		w.WriteHeader(404)
+		return
+	}
+	w.WriteHeader(200)
+	keys := make([]string, len(vars))
+	i := 0
+	for k := range vars {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	out, _ := json.Marshal(keys)
+	w.Header().Set("Content-Type", "text/json")
+	w.Write(out)
+}
+
 func serveHTTP() {
 	sock, e := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
 	if e != nil {
 		log.Fatalf("Can't listen on %s: %s", net.JoinHostPort(*address, strconv.Itoa(*port)), e)
 	}
 	log.Printf("Serving HTTP on %v", sock.Addr().String())
-
-	/*
-		http.Handle("/list", http.HandlerFunc(List))
-		http.Handle("/get", http.HandlerFunc(Get))
-	*/
 	http.Handle("/add", http.HandlerFunc(Add))
 	http.Handle("/args", http.HandlerFunc(Args))
 	http.Handle("/config", http.HandlerFunc(GetConfig))
-	http.Handle("/status", http.HandlerFunc(StoreStatus))
+	http.Handle("/blocks", http.HandlerFunc(GetBlocks))
 	http.Handle("/inspect", http.HandlerFunc(InspectVariable))
+	http.Handle("/list", http.HandlerFunc(ListVariables))
 	http.Handle("/query", http.HandlerFunc(Query))
 	http.Handle("/pprof/alloc", http.HandlerFunc(PprofAlloc))
 	http.Handle("/pprof/inuse", http.HandlerFunc(PprofInuse))
+	http.Handle("/js/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
+	http.Handle("/html/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
+	http.Handle("/", http.RedirectHandler("/html", 302))
 	http.Serve(sock, nil)
 }

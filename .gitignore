@@ -22,5 +22,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
-.*.swp
+.*.sw?
 query/LR1_conflicts.txt

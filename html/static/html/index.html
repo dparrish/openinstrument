@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html ng-app="openinstrumentApp">
+<head>
+  <title>OpenInstrument Datastore Status</title>
+  <meta charset="utf-8">
+	<meta name="viewport" content="initial-scale=1" />
+	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.2/angular-material.min.css">
+</head>
+<body ng-controller="DatastoreStatusCtrl as ctrl">
+
+	<md-toolbar layout="row">
+		<div class="md-toolbar-tools">
+			<h1>OpenInstrument</h1>
+		</div>
+	</md-toolbar>
+
+	<md-content layout="column">
+		<md-tabs md-dynamic-height md-border-bottom>
+
+			<md-tab label="Blocks">
+
+				<div class="md-padding">
+					<table cellspacing='0' style="border-collapse: collapse; border: 1px solid darkgray;" width='100%'>
+						<thead>
+							<tr>
+								<th style='width: 99%;' rowspan='2'>Id</th>
+								<th colspan='3' style='text-align: center; border-left: 1px solid darkgray;'>Streams</th>
+								<th colspan='3' style='text-align: center; border-left: 1px solid darkgray; border-right: 1px solid darkgray;'>Values</th>
+							</tr>
+							<tr valign='top'>
+								<th style='border-left: 1px solid darkgray;'>Indexed</th>
+								<th style='text-align: right;'>Log</th>
+								<th style='text-align: right;'>New</th>
+								<th style='text-align: right; border-left: 1px solid darkgray;'>Indexed</th>
+								<th style='text-align: right;'>Log</th>
+								<th style='text-align: right; border-right: 1px solid darkgray;'>New</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-repeat-start="block in blocks">
+								<td style='font-family: monospace; border-top: 1px solid darkgray;' colspan='8'>{{ block.end_key }}</td>
+							</tr>
+							<tr ng-repeat-end>
+								<td style='font-family: monospace;'>{{ block.id }}</td>
+								<td style='text-align: right;'>{{ block.indexed_streams || "0" }}</td>
+								<td style='text-align: right;'>{{ block.logged_streams || "0" }}</td>
+								<td style='text-align: right;'>{{ block.unlogged_streams || "0" }}</td>
+								<td style='text-align: right;'>{{ block.indexed_values || "0" }}</td>
+								<td style='text-align: right;'>{{ block.logged_values || "0" }}</td>
+								<td style='text-align: right; border-right: 1px solid darkgray;'>{{ block.unlogged_values || "0" }}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</md-tab>
+
+		</md-tabs>
+	</md-content>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-animate.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-aria.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angular_material/0.11.2/angular-material.min.js"></script>
+  <script src="/js/openinstrument.js"></script>
+</body>
+</html>

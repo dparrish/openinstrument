@@ -103,10 +103,13 @@ func (block *Block) IsCompacting() bool {
 	return block.isCompacting
 }
 
-func (block *Block) CompactDuration() time.Duration {
+func (block *Block) CompactDuration() string {
 	block.FlagsLock.RLock()
 	defer block.FlagsLock.RUnlock()
-	return time.Since(block.compactStartTime)
+	if block.isCompacting {
+		return time.Since(block.compactStartTime).String()
+	}
+	return ""
 }
 
 // Sort Block
@@ -158,7 +161,7 @@ func (block *Block) ToProto() *oproto.Block {
 		UnloggedStreams: uint32(len(block.NewStreams)),
 		UnloggedValues:  uint32(0),
 		IsCompacting:    block.IsCompacting(),
-		CompactDuration: block.CompactDuration().String(),
+		CompactDuration: block.CompactDuration(),
 	}
 	for _, index := range block.BlockHeader.Index {
 		b.IndexedValues += uint32(index.NumValues)
