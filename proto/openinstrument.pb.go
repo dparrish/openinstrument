@@ -167,7 +167,7 @@ const (
 	StreamAggregation_SUM StreamAggregation_AggregateType = 5
 	// Get the standard deviation of all values at a common time across streams
 	StreamAggregation_STDDEV StreamAggregation_AggregateType = 6
-	// Get a particular percentile (provided in percentile) of all values at a common time across streams
+	// Get a particular percentile (provided in param) of all values at a common time across streams
 	StreamAggregation_PERCENTILE StreamAggregation_AggregateType = 7
 )
 
@@ -310,8 +310,8 @@ type StreamAggregation struct {
 	Label []string `protobuf:"bytes,2,rep,name=label" json:"label,omitempty"`
 	// Points will be aggregated if they are less than sample_interval ms apart. Default is 30 seconds.
 	SampleInterval uint32 `protobuf:"varint,3,opt,name=sample_interval" json:"sample_interval,omitempty"`
-	// Optional percentile
-	Percentile uint32 `protobuf:"varint,4,opt,name=percentile" json:"percentile,omitempty"`
+	// Optional parameter
+	Param float64 `protobuf:"fixed64,4,opt,name=param" json:"param,omitempty"`
 	// Input query
 	Query []*Query `protobuf:"bytes,5,rep,name=query" json:"query,omitempty"`
 }

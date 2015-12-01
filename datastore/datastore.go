@@ -53,7 +53,7 @@ func Open(path string) *Datastore {
 			<-tick
 			for _, block := range ds.Blocks() {
 				// Split any blocks that need it
-				if block.shouldSplit() {
+				if block.SplitRequired() {
 					startTime := time.Now()
 					if _, _, err := ds.SplitBlock(block); err != nil {
 						log.Printf("Error splitting block: %s\n", err)
@@ -62,7 +62,7 @@ func Open(path string) *Datastore {
 				}
 
 				// Compact any blocks that need it
-				if block.shouldCompact() {
+				if block.CompactRequired() {
 					if err := block.Compact(); err != nil {
 						log.Printf("Error compacting block: %s\n", err)
 					}
@@ -90,22 +90,28 @@ func (ds *Datastore) readBlocks() bool {
 	}
 	// Index all the outstanding recordlogs in parallel
 	waitgroup := new(sync.WaitGroup)
-	for _, name := range names {
-		if matched, _ := regexp.MatchString("^block\\..+$", name); matched {
-			if matched, _ := regexp.MatchString("\\.(log|new\\.[0-9]+)$", name); matched {
+	for _, filename := range names {
+		if matched, _ := regexp.MatchString("^block\\..+$", filename); matched {
+			if matched, _ := regexp.MatchString("\\.(log|new\\.[0-9]+)$", filename); matched {
 				continue
 			}
 			waitgroup.Add(1)
-			go ds.readBlockHeader(name, waitgroup)
+			go func(filename string) {
+				defer waitgroup.Done()
+				ds.readBlockHeader(filename)
+			}(filename)
 		}
 	}
 	waitgroup.Wait()
 
 	waitgroup = new(sync.WaitGroup)
-	for _, name := range names {
-		if matched, _ := regexp.MatchString("^block\\..+\\.log$", name); matched {
+	for _, filename := range names {
+		if matched, _ := regexp.MatchString("^block\\..+\\.log$", filename); matched {
 			waitgroup.Add(1)
-			go ds.readBlockLog(name, waitgroup)
+			go func(filename string) {
+				defer waitgroup.Done()
+				ds.readBlockLog(filename)
+			}(filename)
 		}
 	}
 	waitgroup.Wait()
@@ -113,8 +119,7 @@ func (ds *Datastore) readBlocks() bool {
 	return true
 }
 
-func (ds *Datastore) readBlockHeader(filename string, waitgroup *sync.WaitGroup) {
-	defer waitgroup.Done()
+func (ds *Datastore) readBlockHeader(filename string) {
 	block := newBlock("", BlockIDFromFilename(filename), ds.Path)
 
 	file, err := protofile.Read(block.Filename())
@@ -140,11 +145,10 @@ func (ds *Datastore) readBlockHeader(filename string, waitgroup *sync.WaitGroup)
 		return
 	}
 	ds.insertBlock(block)
-	log.Printf("Read %s with end key %s containing %d streams\n", block.Filename(), block.EndKey, len(block.BlockHeader.Index))
+	log.Printf("Read block %s containing %d streams\n", block.ID, len(block.BlockHeader.Index))
 }
 
-func (ds *Datastore) readBlockLog(filename string, waitgroup *sync.WaitGroup) {
-	defer waitgroup.Done()
+func (ds *Datastore) readBlockLog(filename string) {
 	block := newBlock("", BlockIDFromFilename(filename), ds.Path)
 
 	file, err := protofile.Read(block.logFilename())
@@ -229,6 +233,9 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream, 1000)
 	go func() {
 		maybeReturnStreams := func(block *Block, stream *oproto.ValueStream) {
+			if stream == nil {
+				return
+			}
 			cv := variable.NewFromProto(stream.Variable)
 			if !cv.Match(v) {
 				return
@@ -278,7 +285,10 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 					if v.MaxTimestamp != 0 && int64(index.MinTimestamp) > v.MaxTimestamp {
 						continue
 					}
-					c <- block.GetStreamForVariable(index)
+					stream := block.GetStreamForVariable(index)
+					if stream != nil {
+						c <- stream
+					}
 				}
 			}(block)
 		}

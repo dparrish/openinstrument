@@ -3,7 +3,7 @@ package query
 import (
 	"log"
 
-	"github.com/dparrish/openinstrument"
+	"github.com/dparrish/openinstrument/aggregations"
 	"github.com/dparrish/openinstrument/datastore"
 	"github.com/dparrish/openinstrument/mutations"
 	oproto "github.com/dparrish/openinstrument/proto"
@@ -47,14 +47,16 @@ func RunQuery(query *oproto.Query, store datastore.ReadableStore) (chan *oproto.
 		for _, v := range query.Variable {
 			log.Printf("Returning variable %s", variable.ProtoToString(v))
 			for stream := range store.Reader(variable.NewFromProto(v)) {
-				outputStream := &oproto.ValueStream{Variable: stream.Variable}
-				stv := variable.NewFromProto(stream.Variable)
-				for _, v := range stream.Value {
-					if stv.TimestampInsideRange(v.Timestamp) {
-						outputStream.Value = append(outputStream.Value, v)
+				if stream != nil {
+					outputStream := &oproto.ValueStream{Variable: stream.Variable}
+					stv := variable.NewFromProto(stream.Variable)
+					for _, v := range stream.Value {
+						if stv.TimestampInsideRange(v.Timestamp) {
+							outputStream.Value = append(outputStream.Value, v)
+						}
 					}
+					output <- outputStream
 				}
-				output <- outputStream
 			}
 		}
 		for _, child := range query.Aggregation {
@@ -70,8 +72,27 @@ func RunQuery(query *oproto.Query, store datastore.ReadableStore) (chan *oproto.
 				}
 			}
 			log.Printf("Child aggregation returned output")
-			for _, stream := range input {
-				log.Println(openinstrument.ProtoText(stream))
+			o := []*oproto.ValueStream{}
+			switch child.Type {
+			case oproto.StreamAggregation_NONE:
+				o = input
+			case oproto.StreamAggregation_MEAN:
+				o = aggregations.Mean(child.Label, input)
+			case oproto.StreamAggregation_MAX:
+				o = aggregations.Max(child.Label, input)
+			case oproto.StreamAggregation_MIN:
+				o = aggregations.Min(child.Label, input)
+			case oproto.StreamAggregation_MEDIAN:
+				o = aggregations.Median(child.Label, input)
+			case oproto.StreamAggregation_SUM:
+				o = aggregations.Sum(child.Label, input)
+			case oproto.StreamAggregation_STDDEV:
+				o = aggregations.StdDev(child.Label, input)
+			case oproto.StreamAggregation_PERCENTILE:
+				o = aggregations.Percentile(child.Label, child.Param, input)
+			}
+			for _, stream := range o {
+				//log.Println(openinstrument.ProtoText(stream))
 				output <- stream
 			}
 		}

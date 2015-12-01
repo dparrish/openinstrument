@@ -215,7 +215,7 @@ func (block *Block) NumValues() uint32 {
 	return values
 }
 
-func (block *Block) shouldCompact() bool {
+func (block *Block) CompactRequired() bool {
 	block.logLock.RLock()
 	defer block.logLock.RUnlock()
 	if len(block.LogStreams) > 10000 {
@@ -229,7 +229,7 @@ func (block *Block) shouldCompact() bool {
 	return false
 }
 
-func (block *Block) shouldSplit() bool {
+func (block *Block) SplitRequired() bool {
 	ns := block.NumStreams()
 	if ns <= 1 {
 		return false

@@ -150,7 +150,7 @@ func NewAggregation(aggType, by, q interface{}) (*oproto.StreamAggregation, erro
 		agg.Type = oproto.StreamAggregation_AggregateType(f)
 	case Percentile:
 		agg.Type = oproto.StreamAggregation_PERCENTILE
-		agg.Percentile = uint32(v.percentile)
+		agg.Param = float64(v.percentile)
 	case string:
 		f, ok := oproto.StreamAggregation_AggregateType_value[strings.ToUpper(v)]
 		if !ok {
