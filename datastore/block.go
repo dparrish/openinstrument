@@ -9,9 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
 	"github.com/dparrish/openinstrument/rle"
+	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 	"github.com/nu7hatch/gouuid"
@@ -24,9 +27,6 @@ const (
 )
 
 type Block struct {
-	EndKey string
-	ID     string
-
 	BlockHeader *oproto.StoreFileHeader
 
 	// Contains any streams that have been written to disk but not yet indexed
@@ -37,12 +37,14 @@ type Block struct {
 	NewStreams     []*oproto.ValueStream
 	newStreamsLock sync.RWMutex
 
-	isCompacting     bool
 	compactStartTime time.Time
 	compactEndTime   time.Time
-	FlagsLock        sync.RWMutex
 
 	dsPath string
+
+	// Protobuf version of the block configuration
+	protoLock sync.RWMutex
+	Block     *oproto.Block
 }
 
 func newBlock(endKey, id, dsPath string) *Block {
@@ -55,8 +57,6 @@ func newBlock(endKey, id, dsPath string) *Block {
 		id = u.String()
 	}
 	return &Block{
-		EndKey:     endKey,
-		ID:         id,
 		LogStreams: make(map[string]*oproto.ValueStream, 0),
 		NewStreams: make([]*oproto.ValueStream, 0),
 		BlockHeader: &oproto.StoreFileHeader{
@@ -64,7 +64,33 @@ func newBlock(endKey, id, dsPath string) *Block {
 			Index:   make([]*oproto.StoreFileHeaderIndex, 0),
 		},
 		dsPath: dsPath,
+		Block: &oproto.Block{
+			Id:     id,
+			EndKey: endKey,
+			State:  oproto.Block_UNKNOWN,
+			Node:   store_config.ThisServer().Name,
+		},
 	}
+}
+
+func (block *Block) ID() string {
+	block.protoLock.RLock()
+	defer block.protoLock.RUnlock()
+	return block.Block.Id
+}
+
+func (block *Block) EndKey() string {
+	block.protoLock.RLock()
+	defer block.protoLock.RUnlock()
+	return block.Block.EndKey
+}
+
+func (block *Block) SetState(state oproto.Block_State) error {
+	block.protoLock.Lock()
+	defer block.protoLock.Unlock()
+	log.Printf("Updating cluster block %s to state %s", block.Block.Id, state.String())
+	block.Block.State = state
+	return store_config.UpdateBlock(context.Background(), block.Block)
 }
 
 func (block *Block) GetLogStreams() map[string]*oproto.ValueStream {
@@ -90,23 +116,23 @@ func (block *Block) UnloggedWriteLocker() sync.Locker {
 }
 
 func (block *Block) logFilename() string {
-	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s.log", block.ID))
+	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s.log", block.Block.Id))
 }
 
 func (block *Block) Filename() string {
-	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s", block.ID))
+	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s", block.Block.Id))
 }
 
 func (block *Block) IsCompacting() bool {
-	block.FlagsLock.RLock()
-	defer block.FlagsLock.RUnlock()
-	return block.isCompacting
+	block.protoLock.RLock()
+	defer block.protoLock.RUnlock()
+	return block.Block.State == oproto.Block_COMPACTING
 }
 
 func (block *Block) CompactDuration() string {
-	block.FlagsLock.RLock()
-	defer block.FlagsLock.RUnlock()
-	if block.isCompacting {
+	block.protoLock.RLock()
+	defer block.protoLock.RUnlock()
+	if block.Block.State == oproto.Block_COMPACTING {
 		return time.Since(block.compactStartTime).String()
 	}
 	return ""
@@ -141,7 +167,7 @@ func (ds *blockSorter) Less(i, j int) bool {
 }
 
 func (block *Block) String() string {
-	return block.ID
+	return block.Block.Id
 }
 
 func (block *Block) ToProto() *oproto.Block {
@@ -151,28 +177,23 @@ func (block *Block) ToProto() *oproto.Block {
 	defer block.logLock.RUnlock()
 	block.newStreamsLock.RLock()
 	defer block.newStreamsLock.RUnlock()
-	b := &oproto.Block{
-		Id:              block.ID,
-		EndKey:          block.EndKey,
-		IndexedStreams:  uint32(len(block.BlockHeader.Index)),
-		IndexedValues:   uint32(0),
-		LoggedStreams:   uint32(len(block.LogStreams)),
-		LoggedValues:    uint32(0),
-		UnloggedStreams: uint32(len(block.NewStreams)),
-		UnloggedValues:  uint32(0),
-		IsCompacting:    block.IsCompacting(),
-		CompactDuration: block.CompactDuration(),
-	}
+	block.Block.IndexedStreams = uint32(len(block.BlockHeader.Index))
+	block.Block.IndexedValues = uint32(0)
+	block.Block.LoggedStreams = uint32(len(block.LogStreams))
+	block.Block.LoggedValues = uint32(0)
+	block.Block.UnloggedStreams = uint32(len(block.NewStreams))
+	block.Block.UnloggedValues = uint32(0)
+	block.Block.CompactDuration = block.CompactDuration()
 	for _, index := range block.BlockHeader.Index {
-		b.IndexedValues += uint32(index.NumValues)
+		block.Block.IndexedValues += uint32(index.NumValues)
 	}
 	for _, stream := range block.NewStreams {
-		b.UnloggedValues += uint32(len(stream.Value))
+		block.Block.UnloggedValues += uint32(len(stream.Value))
 	}
 	for _, stream := range block.LogStreams {
-		b.LoggedValues += uint32(len(stream.Value))
+		block.Block.LoggedValues += uint32(len(stream.Value))
 	}
-	return b
+	return block.Block
 }
 
 func (block *Block) NumStreams() uint32 {
@@ -394,9 +415,9 @@ func (block *Block) Compact() error {
 	log.Printf("Compacting block %s\n", block)
 	startTime := time.Now()
 
-	block.FlagsLock.Lock()
-	defer block.FlagsLock.Unlock()
-	block.isCompacting = true
+	block.protoLock.Lock()
+	defer block.protoLock.Unlock()
+	block.Block.State = oproto.Block_COMPACTING
 	block.compactStartTime = time.Now()
 
 	locker := block.LogWriteLocker()
@@ -437,7 +458,7 @@ func (block *Block) Compact() error {
 	block.LogStreams = make(map[string]*oproto.ValueStream)
 
 	block.compactEndTime = time.Now()
-	block.isCompacting = false
+	block.Block.State = oproto.Block_LIVE
 	log.Printf("Finished compaction of %s in %v", block, time.Since(startTime))
 	return nil
 }

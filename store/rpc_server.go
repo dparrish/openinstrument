@@ -14,6 +14,7 @@ import (
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/query"
+	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/variable"
 	"golang.org/x/net/context"
 )
@@ -123,7 +124,7 @@ func (s *server) LookupBlock(ctx context.Context, request *oproto.LookupBlockReq
 	}
 	v := variable.ProtoToString(request.Variable)
 	for _, block := range ds.Blocks() {
-		if block.EndKey >= v {
+		if block.EndKey() >= v {
 			return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
 		}
 	}
@@ -167,6 +168,11 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 		return nil, err
 	}
 	return &oproto.CompactBlockResponse{Block: block.ToProto()}, nil
+}
+
+func (s *server) GetCluster(ctx context.Context, request *oproto.GetClusterRequest) (*oproto.GetClusterResponse, error) {
+	r := &oproto.GetClusterResponse{Config: store_config.Config}
+	return r, nil
 }
 
 func serveRPC(ds *datastore.Datastore) {

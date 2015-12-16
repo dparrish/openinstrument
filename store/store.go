@@ -5,34 +5,53 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+
+	"golang.org/x/net/context"
 
 	"github.com/dparrish/openinstrument/datastore"
+	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
 )
 
 var (
-	taskName   = flag.String("name", "", "Name of the task. Must be unique across the cluster. e.g. \"hostname:port\"")
-	address    = flag.String("address", "", "Address to listen on (blank for any)")
-	configFile = flag.String("config", "/store/config.txt", "Path to the store configuration file")
-	storePath  = flag.String("datastore", "/store", "Path to the data store files")
-	ds         *datastore.Datastore
+	storePath = flag.String("datastore", "/store", "Path to the data store files")
+	ds        *datastore.Datastore
 )
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Printf("Current PID: %d", os.Getpid())
 	flag.Parse()
-	_, err := store_config.New(*configFile)
-	if err != nil {
+
+	if err := store_config.Init(context.Background()); err != nil {
 		log.Fatal(err)
 	}
+
 	log.Printf("Opening store")
 	ds = datastore.Open(*storePath)
 	log.Printf("Finished opening store, serving")
 
 	go serveRPC(ds)
 	go serveHTTP()
-	select {}
+	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_RUN)
+
+	shutdown := make(chan interface{})
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			log.Printf("Caught signal %s, shutting down", sig)
+			shutdown <- true
+		}
+	}()
+
+	<-shutdown
+	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_DRAIN)
+	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_SHUTDOWN)
+
+	store_config.Shutdown()
 }
 
 // Live updating task information

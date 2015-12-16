@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/variable"
@@ -17,7 +19,7 @@ import (
 )
 
 type StoreClient struct {
-	servers  []oproto.StoreServerStatus
+	servers  []oproto.ClusterMember
 	hostport []string
 }
 
@@ -32,7 +34,7 @@ func NewAuto(hostport string) (*StoreClient, error) {
 	}
 
 	// Use the returned config to create a new client
-	client.servers = make([]oproto.StoreServerStatus, 0)
+	client.servers = make([]oproto.ClusterMember, 0)
 	for _, server := range config.GetServer() {
 		client.servers = append(client.servers, *server)
 	}
@@ -40,18 +42,18 @@ func NewAuto(hostport string) (*StoreClient, error) {
 }
 
 // New uses a config file to create a new StoreClient that can talk to the entire cluster.
-func New(configFile string) (*StoreClient, error) {
-	config, err := store_config.New(configFile)
+func New() (*StoreClient, error) {
+	err := store_config.Init(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(config.Config.Server) == 0 {
+	if len(store_config.Config.Server) == 0 {
 		return nil, errors.New("Store config does not contain any servers to connect to.")
 	}
 
 	client := new(StoreClient)
-	client.servers = make([]oproto.StoreServerStatus, 0)
-	for _, server := range config.Config.GetServer() {
+	client.servers = make([]oproto.ClusterMember, 0)
+	for _, server := range store_config.Config.GetServer() {
 		client.servers = append(client.servers, *server)
 	}
 	return client, nil
@@ -60,8 +62,8 @@ func New(configFile string) (*StoreClient, error) {
 // NewDirect creates a StoreClient that will talk to a single server.
 func NewDirect(hostport string) *StoreClient {
 	client := new(StoreClient)
-	state := oproto.StoreServerStatus_RUN
-	client.servers = append(make([]oproto.StoreServerStatus, 0), oproto.StoreServerStatus{
+	state := oproto.ClusterMember_RUN
+	client.servers = append(make([]oproto.ClusterMember, 0), oproto.ClusterMember{
 		Address: hostport,
 		State:   state,
 	})
@@ -132,12 +134,12 @@ func (sc *StoreClient) List(request *oproto.ListRequest) ([]*oproto.ListResponse
 	count := 0
 	for _, server := range sc.servers {
 		switch server.State {
-		case oproto.StoreServerStatus_UNKNOWN, oproto.StoreServerStatus_LOAD, oproto.StoreServerStatus_DRAIN, oproto.StoreServerStatus_READONLY, oproto.StoreServerStatus_SHUTDOWN:
+		case oproto.ClusterMember_UNKNOWN, oproto.ClusterMember_LOAD, oproto.ClusterMember_DRAIN, oproto.ClusterMember_READONLY, oproto.ClusterMember_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
 		count++
-		go func(server oproto.StoreServerStatus) {
+		go func(server oproto.ClusterMember) {
 			defer waitgroup.Done()
 			response := new(oproto.ListResponse)
 			err := sc.doRequest(server.Address, "list", request, response)
@@ -184,12 +186,12 @@ func (sc *StoreClient) Get(request *oproto.GetRequest) ([]*oproto.GetResponse, e
 	count := 0
 	for _, server := range sc.servers {
 		switch server.State {
-		case oproto.StoreServerStatus_UNKNOWN, oproto.StoreServerStatus_LOAD, oproto.StoreServerStatus_DRAIN, oproto.StoreServerStatus_READONLY, oproto.StoreServerStatus_SHUTDOWN:
+		case oproto.ClusterMember_UNKNOWN, oproto.ClusterMember_LOAD, oproto.ClusterMember_DRAIN, oproto.ClusterMember_READONLY, oproto.ClusterMember_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
 		count++
-		go func(server oproto.StoreServerStatus) {
+		go func(server oproto.ClusterMember) {
 			defer waitgroup.Done()
 			response := new(oproto.GetResponse)
 			err := sc.doRequest(server.Address, "get", request, response)
@@ -216,21 +218,21 @@ func (sc *StoreClient) Get(request *oproto.GetRequest) ([]*oproto.GetResponse, e
 	return response, nil
 }
 
-func (sc *StoreClient) GetConfig() *oproto.StoreConfig {
-	c := make(chan *oproto.StoreConfig, len(sc.servers))
+func (sc *StoreClient) GetConfig() *oproto.ClusterConfig {
+	c := make(chan *oproto.ClusterConfig, len(sc.servers))
 	waitgroup := new(sync.WaitGroup)
 	count := 0
 	for _, server := range sc.servers {
 		switch server.State {
-		case oproto.StoreServerStatus_UNKNOWN, oproto.StoreServerStatus_LOAD, oproto.StoreServerStatus_DRAIN, oproto.StoreServerStatus_READONLY, oproto.StoreServerStatus_SHUTDOWN:
+		case oproto.ClusterMember_UNKNOWN, oproto.ClusterMember_LOAD, oproto.ClusterMember_DRAIN, oproto.ClusterMember_READONLY, oproto.ClusterMember_SHUTDOWN:
 			continue
 		}
 		waitgroup.Add(1)
 		count++
-		go func(server oproto.StoreServerStatus) {
+		go func(server oproto.ClusterMember) {
 			defer waitgroup.Done()
 			request := new(oproto.GetRequest)
-			response := new(oproto.StoreConfig)
+			response := new(oproto.ClusterConfig)
 			err := sc.doRequest(server.Address, "config", request, response)
 			if err != nil {
 				log.Printf("Error in GetConfig to %s: %s", server.Address, err)

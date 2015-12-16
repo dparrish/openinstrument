@@ -27,7 +27,8 @@ import (
 )
 
 var (
-	port         = flag.Int("port", 8020, "HTTP Port to listen on")
+	port         = flag.Int("http_port", 8020, "HTTP Port to listen on")
+	address      = flag.String("http_address", "", "HTTP Address to listen on (blank for any)")
 	templatePath = flag.String("templates", "/html", "Path to HTML template files")
 )
 
@@ -88,7 +89,7 @@ func Args(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetConfig(w http.ResponseWriter, req *http.Request) {
-	returnResponse(w, req, store_config.Config().Config)
+	returnResponse(w, req, store_config.Config)
 }
 
 func GetBlocks(w http.ResponseWriter, req *http.Request) {

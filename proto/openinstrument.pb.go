@@ -26,8 +26,8 @@ It has these top-level messages:
 	StoreFileHeader
 	RetentionPolicyItem
 	RetentionPolicy
-	StoreServerStatus
-	StoreConfig
+	ClusterMember
+	ClusterConfig
 	Block
 	LookupBlockRequest
 	LookupBlockResponse
@@ -37,6 +37,12 @@ It has these top-level messages:
 	JoinBlockResponse
 	CompactBlockRequest
 	CompactBlockResponse
+	GetClusterRequest
+	GetClusterResponse
+	JoinClusterRequest
+	JoinClusterResponse
+	UpdateClusterRequest
+	UpdateClusterResponse
 */
 package openinstrument_proto
 
@@ -219,18 +225,18 @@ func (x RetentionPolicyItem_Target) String() string {
 	return proto.EnumName(RetentionPolicyItem_Target_name, int32(x))
 }
 
-type StoreServerStatus_State int32
+type ClusterMember_State int32
 
 const (
-	StoreServerStatus_UNKNOWN  StoreServerStatus_State = 0
-	StoreServerStatus_LOAD     StoreServerStatus_State = 1
-	StoreServerStatus_RUN      StoreServerStatus_State = 2
-	StoreServerStatus_DRAIN    StoreServerStatus_State = 3
-	StoreServerStatus_READONLY StoreServerStatus_State = 4
-	StoreServerStatus_SHUTDOWN StoreServerStatus_State = 5
+	ClusterMember_UNKNOWN  ClusterMember_State = 0
+	ClusterMember_LOAD     ClusterMember_State = 1
+	ClusterMember_RUN      ClusterMember_State = 2
+	ClusterMember_DRAIN    ClusterMember_State = 3
+	ClusterMember_READONLY ClusterMember_State = 4
+	ClusterMember_SHUTDOWN ClusterMember_State = 5
 )
 
-var StoreServerStatus_State_name = map[int32]string{
+var ClusterMember_State_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "LOAD",
 	2: "RUN",
@@ -238,7 +244,7 @@ var StoreServerStatus_State_name = map[int32]string{
 	4: "READONLY",
 	5: "SHUTDOWN",
 }
-var StoreServerStatus_State_value = map[string]int32{
+var ClusterMember_State_value = map[string]int32{
 	"UNKNOWN":  0,
 	"LOAD":     1,
 	"RUN":      2,
@@ -247,8 +253,46 @@ var StoreServerStatus_State_value = map[string]int32{
 	"SHUTDOWN": 5,
 }
 
-func (x StoreServerStatus_State) String() string {
-	return proto.EnumName(StoreServerStatus_State_name, int32(x))
+func (x ClusterMember_State) String() string {
+	return proto.EnumName(ClusterMember_State_name, int32(x))
+}
+
+type Block_State int32
+
+const (
+	Block_UNKNOWN    Block_State = 0
+	Block_LOADING    Block_State = 1
+	Block_LIVE       Block_State = 2
+	Block_COMPACTING Block_State = 3
+	Block_MIGRATING  Block_State = 4
+	Block_UNLOADING  Block_State = 5
+	Block_UNLOADED   Block_State = 6
+	Block_DESTROYED  Block_State = 7
+)
+
+var Block_State_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "LOADING",
+	2: "LIVE",
+	3: "COMPACTING",
+	4: "MIGRATING",
+	5: "UNLOADING",
+	6: "UNLOADED",
+	7: "DESTROYED",
+}
+var Block_State_value = map[string]int32{
+	"UNKNOWN":    0,
+	"LOADING":    1,
+	"LIVE":       2,
+	"COMPACTING": 3,
+	"MIGRATING":  4,
+	"UNLOADING":  5,
+	"UNLOADED":   6,
+	"DESTROYED":  7,
+}
+
+func (x Block_State) String() string {
+	return proto.EnumName(Block_State_name, int32(x))
 }
 
 type LogMessage struct {
@@ -647,40 +691,42 @@ func (m *RetentionPolicy) GetPolicy() []*RetentionPolicyItem {
 	return nil
 }
 
-type StoreServerStatus struct {
-	Address     string                  `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
-	State       StoreServerStatus_State `protobuf:"varint,2,opt,name=state,enum=openinstrument.proto.StoreServerStatus_State" json:"state,omitempty"`
-	LastUpdated uint64                  `protobuf:"varint,3,opt,name=last_updated" json:"last_updated,omitempty"`
-	// Optional name for use in the hash ring. This should never change once the
-	// server has been added but can be used to replace a server with another one
-	// on a different host.
-	// If this is not set, the address is used.
-	Name string `protobuf:"bytes,5,opt,name=name" json:"name,omitempty"`
-	// Desired size in bytes for indexed datastore files
-	TargetIndexedFileSize uint64 `protobuf:"varint,4,opt,name=target_indexed_file_size" json:"target_indexed_file_size,omitempty"`
+type ClusterMember struct {
+	Address     string              `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
+	State       ClusterMember_State `protobuf:"varint,2,opt,name=state,enum=openinstrument.proto.ClusterMember_State" json:"state,omitempty"`
+	LastUpdated uint64              `protobuf:"varint,3,opt,name=last_updated" json:"last_updated,omitempty"`
+	Name        string              `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
 }
 
-func (m *StoreServerStatus) Reset()         { *m = StoreServerStatus{} }
-func (m *StoreServerStatus) String() string { return proto.CompactTextString(m) }
-func (*StoreServerStatus) ProtoMessage()    {}
+func (m *ClusterMember) Reset()         { *m = ClusterMember{} }
+func (m *ClusterMember) String() string { return proto.CompactTextString(m) }
+func (*ClusterMember) ProtoMessage()    {}
 
-type StoreConfig struct {
-	Server          []*StoreServerStatus `protobuf:"bytes,1,rep,name=server" json:"server,omitempty"`
-	RetentionPolicy *RetentionPolicy     `protobuf:"bytes,2,opt,name=retention_policy" json:"retention_policy,omitempty"`
+type ClusterConfig struct {
+	Server          []*ClusterMember `protobuf:"bytes,1,rep,name=server" json:"server,omitempty"`
+	Block           []*Block         `protobuf:"bytes,2,rep,name=block" json:"block,omitempty"`
+	RetentionPolicy *RetentionPolicy `protobuf:"bytes,3,opt,name=retention_policy" json:"retention_policy,omitempty"`
 }
 
-func (m *StoreConfig) Reset()         { *m = StoreConfig{} }
-func (m *StoreConfig) String() string { return proto.CompactTextString(m) }
-func (*StoreConfig) ProtoMessage()    {}
+func (m *ClusterConfig) Reset()         { *m = ClusterConfig{} }
+func (m *ClusterConfig) String() string { return proto.CompactTextString(m) }
+func (*ClusterConfig) ProtoMessage()    {}
 
-func (m *StoreConfig) GetServer() []*StoreServerStatus {
+func (m *ClusterConfig) GetServer() []*ClusterMember {
 	if m != nil {
 		return m.Server
 	}
 	return nil
 }
 
-func (m *StoreConfig) GetRetentionPolicy() *RetentionPolicy {
+func (m *ClusterConfig) GetBlock() []*Block {
+	if m != nil {
+		return m.Block
+	}
+	return nil
+}
+
+func (m *ClusterConfig) GetRetentionPolicy() *RetentionPolicy {
 	if m != nil {
 		return m.RetentionPolicy
 	}
@@ -688,16 +734,21 @@ func (m *StoreConfig) GetRetentionPolicy() *RetentionPolicy {
 }
 
 type Block struct {
-	Id              string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	EndKey          string `protobuf:"bytes,2,opt,name=end_key" json:"end_key,omitempty"`
-	IndexedStreams  uint32 `protobuf:"varint,3,opt,name=indexed_streams" json:"indexed_streams,omitempty"`
-	IndexedValues   uint32 `protobuf:"varint,4,opt,name=indexed_values" json:"indexed_values,omitempty"`
-	LoggedStreams   uint32 `protobuf:"varint,5,opt,name=logged_streams" json:"logged_streams,omitempty"`
-	LoggedValues    uint32 `protobuf:"varint,6,opt,name=logged_values" json:"logged_values,omitempty"`
-	UnloggedStreams uint32 `protobuf:"varint,7,opt,name=unlogged_streams" json:"unlogged_streams,omitempty"`
-	UnloggedValues  uint32 `protobuf:"varint,8,opt,name=unlogged_values" json:"unlogged_values,omitempty"`
-	IsCompacting    bool   `protobuf:"varint,9,opt,name=is_compacting" json:"is_compacting,omitempty"`
-	CompactDuration string `protobuf:"bytes,10,opt,name=compact_duration" json:"compact_duration,omitempty"`
+	Id               string      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	EndKey           string      `protobuf:"bytes,2,opt,name=end_key" json:"end_key,omitempty"`
+	State            Block_State `protobuf:"varint,3,opt,name=state,enum=openinstrument.proto.Block_State" json:"state,omitempty"`
+	IndexedStreams   uint32      `protobuf:"varint,4,opt,name=indexed_streams" json:"indexed_streams,omitempty"`
+	IndexedValues    uint32      `protobuf:"varint,5,opt,name=indexed_values" json:"indexed_values,omitempty"`
+	LoggedStreams    uint32      `protobuf:"varint,6,opt,name=logged_streams" json:"logged_streams,omitempty"`
+	LoggedValues     uint32      `protobuf:"varint,7,opt,name=logged_values" json:"logged_values,omitempty"`
+	UnloggedStreams  uint32      `protobuf:"varint,8,opt,name=unlogged_streams" json:"unlogged_streams,omitempty"`
+	UnloggedValues   uint32      `protobuf:"varint,9,opt,name=unlogged_values" json:"unlogged_values,omitempty"`
+	CompactDuration  string      `protobuf:"bytes,10,opt,name=compact_duration" json:"compact_duration,omitempty"`
+	CompactStartTime uint64      `protobuf:"varint,11,opt,name=compact_start_time" json:"compact_start_time,omitempty"`
+	CompactEndTime   uint64      `protobuf:"varint,12,opt,name=compact_end_time" json:"compact_end_time,omitempty"`
+	Node             string      `protobuf:"bytes,13,opt,name=node" json:"node,omitempty"`
+	DestinationNode  string      `protobuf:"bytes,14,opt,name=destination_node" json:"destination_node,omitempty"`
+	LastUpdated      uint64      `protobuf:"varint,16,opt,name=last_updated" json:"last_updated,omitempty"`
 }
 
 func (m *Block) Reset()         { *m = Block{} }
@@ -828,12 +879,95 @@ func (m *CompactBlockResponse) GetBlock() *Block {
 	return nil
 }
 
+type GetClusterRequest struct {
+}
+
+func (m *GetClusterRequest) Reset()         { *m = GetClusterRequest{} }
+func (m *GetClusterRequest) String() string { return proto.CompactTextString(m) }
+func (*GetClusterRequest) ProtoMessage()    {}
+
+type GetClusterResponse struct {
+	Config *ClusterConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
+}
+
+func (m *GetClusterResponse) Reset()         { *m = GetClusterResponse{} }
+func (m *GetClusterResponse) String() string { return proto.CompactTextString(m) }
+func (*GetClusterResponse) ProtoMessage()    {}
+
+func (m *GetClusterResponse) GetConfig() *ClusterConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+type JoinClusterRequest struct {
+	Member *ClusterMember `protobuf:"bytes,1,opt,name=member" json:"member,omitempty"`
+}
+
+func (m *JoinClusterRequest) Reset()         { *m = JoinClusterRequest{} }
+func (m *JoinClusterRequest) String() string { return proto.CompactTextString(m) }
+func (*JoinClusterRequest) ProtoMessage()    {}
+
+func (m *JoinClusterRequest) GetMember() *ClusterMember {
+	if m != nil {
+		return m.Member
+	}
+	return nil
+}
+
+type JoinClusterResponse struct {
+	Member []*ClusterMember `protobuf:"bytes,1,rep,name=member" json:"member,omitempty"`
+}
+
+func (m *JoinClusterResponse) Reset()         { *m = JoinClusterResponse{} }
+func (m *JoinClusterResponse) String() string { return proto.CompactTextString(m) }
+func (*JoinClusterResponse) ProtoMessage()    {}
+
+func (m *JoinClusterResponse) GetMember() []*ClusterMember {
+	if m != nil {
+		return m.Member
+	}
+	return nil
+}
+
+type UpdateClusterRequest struct {
+	Member []*ClusterMember `protobuf:"bytes,1,rep,name=member" json:"member,omitempty"`
+}
+
+func (m *UpdateClusterRequest) Reset()         { *m = UpdateClusterRequest{} }
+func (m *UpdateClusterRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateClusterRequest) ProtoMessage()    {}
+
+func (m *UpdateClusterRequest) GetMember() []*ClusterMember {
+	if m != nil {
+		return m.Member
+	}
+	return nil
+}
+
+type UpdateClusterResponse struct {
+	Member []*ClusterMember `protobuf:"bytes,1,rep,name=member" json:"member,omitempty"`
+}
+
+func (m *UpdateClusterResponse) Reset()         { *m = UpdateClusterResponse{} }
+func (m *UpdateClusterResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateClusterResponse) ProtoMessage()    {}
+
+func (m *UpdateClusterResponse) GetMember() []*ClusterMember {
+	if m != nil {
+		return m.Member
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("openinstrument.proto.StreamVariable_ValueType", StreamVariable_ValueType_name, StreamVariable_ValueType_value)
 	proto.RegisterEnum("openinstrument.proto.StreamMutation_SampleType", StreamMutation_SampleType_name, StreamMutation_SampleType_value)
 	proto.RegisterEnum("openinstrument.proto.StreamAggregation_AggregateType", StreamAggregation_AggregateType_name, StreamAggregation_AggregateType_value)
 	proto.RegisterEnum("openinstrument.proto.RetentionPolicyItem_Target", RetentionPolicyItem_Target_name, RetentionPolicyItem_Target_value)
-	proto.RegisterEnum("openinstrument.proto.StoreServerStatus_State", StoreServerStatus_State_name, StoreServerStatus_State_value)
+	proto.RegisterEnum("openinstrument.proto.ClusterMember_State", ClusterMember_State_name, ClusterMember_State_value)
+	proto.RegisterEnum("openinstrument.proto.Block_State", Block_State_name, Block_State_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -850,6 +984,7 @@ type StoreClient interface {
 	SplitBlock(ctx context.Context, in *SplitBlockRequest, opts ...grpc.CallOption) (*SplitBlockResponse, error)
 	JoinBlock(ctx context.Context, in *JoinBlockRequest, opts ...grpc.CallOption) (*JoinBlockResponse, error)
 	CompactBlock(ctx context.Context, in *CompactBlockRequest, opts ...grpc.CallOption) (*CompactBlockResponse, error)
+	GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*GetClusterResponse, error)
 }
 
 type storeClient struct {
@@ -968,6 +1103,15 @@ func (c *storeClient) CompactBlock(ctx context.Context, in *CompactBlockRequest,
 	return out, nil
 }
 
+func (c *storeClient) GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*GetClusterResponse, error) {
+	out := new(GetClusterResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/GetCluster", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Store service
 
 type StoreServer interface {
@@ -978,6 +1122,7 @@ type StoreServer interface {
 	SplitBlock(context.Context, *SplitBlockRequest) (*SplitBlockResponse, error)
 	JoinBlock(context.Context, *JoinBlockRequest) (*JoinBlockResponse, error)
 	CompactBlock(context.Context, *CompactBlockRequest) (*CompactBlockResponse, error)
+	GetCluster(context.Context, *GetClusterRequest) (*GetClusterResponse, error)
 }
 
 func RegisterStoreServer(s *grpc.Server, srv StoreServer) {
@@ -1091,6 +1236,18 @@ func _Store_CompactBlock_Handler(srv interface{}, ctx context.Context, codec grp
 	return out, nil
 }
 
+func _Store_GetCluster_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(GetClusterRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).GetCluster(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Store_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "openinstrument.proto.Store",
 	HandlerType: (*StoreServer)(nil),
@@ -1114,6 +1271,10 @@ var _Store_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompactBlock",
 			Handler:    _Store_CompactBlock_Handler,
+		},
+		{
+			MethodName: "GetCluster",
+			Handler:    _Store_GetCluster_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

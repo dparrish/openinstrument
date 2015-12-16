@@ -1,93 +1,255 @@
 package store_config
 
 import (
+	"flag"
 	"fmt"
 	"log"
-	"net"
-	"os"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/coreos/etcd/client"
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
-type config struct {
-	filename   string
-	configText string
-	Config     *oproto.StoreConfig
-	stat       os.FileInfo
-}
+var (
+	// Current cluster configuration
+	Config *oproto.ClusterConfig
 
-var globalConfig *config
+	// etcd communication
+	taskName          = flag.String("name", "", "Name of the task. Must be unique across the cluster. e.g. \"hostname:port\"")
+	clusterName       = flag.String("cluster_name", "", "Cluster name")
+	etcdAddr          = flag.String("etcd", "http://127.0.0.1:4001", "List of urls for etcd servers")
+	etcdPrefix        = flag.String("etcd_prefix", "", "Prefix for storage of all etcd configuration")
+	clusterEtcdPrefix string
+	etcdClient        client.Client
+	kapi              client.KeysAPI
 
-func New(filename string) (*config, error) {
-	globalConfig = new(config)
-	globalConfig.filename = filename
-	if err := globalConfig.ReadConfig(); err != nil {
-		return nil, err
-	}
-	go globalConfig.watchConfigFile()
-	return globalConfig, nil
-}
+	// Context to handle graceful shutdown
+	wg         *sync.WaitGroup
+	cancel     context.CancelFunc
+	clusterCtx context.Context
+)
 
-func Config() *config {
-	if globalConfig == nil {
-		log.Panic("global config not loaded")
-	}
-	return globalConfig
-}
+// Init discovers and joins the datastore cluster.
+// This must be run before any other store_config methods are called.
+func Init(ctx context.Context) error {
+	// Create a child context that has Cancel
+	clusterCtx, cancel = context.WithCancel(ctx)
 
-func (c *config) ReadConfig() error {
-	file, err := os.Open(c.filename)
-	if err != nil {
-		return fmt.Errorf("Error opening config file %s: %s", c.filename, err)
-	}
-	defer file.Close()
-	c.stat, _ = file.Stat()
-	buf := make([]byte, c.stat.Size())
-	n, err := file.Read(buf)
-	if err != nil || int64(n) != c.stat.Size() {
-		return fmt.Errorf("Error reading config file %s: %s", c.filename, err)
-	}
-	if err := c.handleNewConfig(string(buf)); err != nil {
+	Config = &oproto.ClusterConfig{}
+	wg = &sync.WaitGroup{}
+
+	if err := connectEtcd(clusterCtx); err != nil {
 		return err
 	}
+
+	// Retrieve all the cluster servers
+	if err := getClusterServers(clusterCtx); err != nil {
+		return err
+	}
+	if err := getClusterBlocks(clusterCtx); err != nil {
+		return err
+	}
+
+	// Update the status of this cluster node
+	if err := createMyNode(clusterCtx); err != nil {
+		return err
+	}
+
+	if err := watchCluster(clusterCtx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (c *config) handleNewConfig(text string) error {
-	config := new(oproto.StoreConfig)
-	err := proto.UnmarshalText(text, config)
+// Shutdown shuts down the cluster link.
+// This returns once the member has been stopped and has left the cluster.
+func Shutdown() {
+	cancel()
+	// Wait for all background goroutines to complete
+	wg.Wait()
+}
+
+// ThisServer gets the member status for the current server.
+// If this is called before Init() has returned, it returns a dummy object suitable for testing.
+func ThisServer() *oproto.ClusterMember {
+	if Config == nil {
+		// Work-around so that testing doesn't require a cluster
+		return &oproto.ClusterMember{
+			Name:        *taskName,
+			State:       oproto.ClusterMember_RUN,
+			LastUpdated: openinstrument.NowMs(),
+		}
+	}
+	for _, member := range Config.Server {
+		if member.Name == *taskName {
+			return member
+		}
+	}
+	panic("This server is not in the cluster configuration")
+}
+
+// UpdateThisState makes a change to the state of the current server and broadcasts it to the cluster.
+func UpdateThisState(ctx context.Context, state oproto.ClusterMember_State) error {
+	s := ThisServer()
+	s.State = state
+	s.LastUpdated = openinstrument.NowMs()
+	return updateMember(ctx, s)
+}
+
+func updateMember(ctx context.Context, member *oproto.ClusterMember) error {
+	data := openinstrument.ProtoText(member)
+	_, err := kapi.Set(ctx, fmt.Sprintf("%s/members/%s", clusterEtcdPrefix, member.Name), data, nil)
+	return err
+}
+
+// GetBlock retrieves the cluster-wide view of a single block, given the ID
+// If the block is unknown, this returns nil.
+func GetBlock(id string) *oproto.Block {
+	for _, block := range Config.Block {
+		if block.Id == id {
+			return block
+		}
+	}
+	return nil
+}
+
+// UpdateBlock updates the cluster-wide view of a single block.
+func UpdateBlock(ctx context.Context, block *oproto.Block) error {
+	data := openinstrument.ProtoText(block)
+	_, err := kapi.Set(ctx, fmt.Sprintf("%s/blocks/%s", clusterEtcdPrefix, block.Id), data, nil)
+	return err
+}
+
+// getClusterBlocks loads the list of all cluster blocks from etcd.
+func getClusterBlocks(ctx context.Context) error {
+	Config.Block = []*oproto.Block{}
+
+	r, err := kapi.Get(ctx, fmt.Sprintf("%s/blocks/", clusterEtcdPrefix), &client.GetOptions{Recursive: false})
 	if err != nil {
-		return fmt.Errorf("Error parsing config file %s: %s", c.filename, err)
+		return fmt.Errorf("Error getting cluster blocks: %s", err)
 	}
-	c.Config = config
+
+	for _, node := range r.Node.Nodes {
+		block := &oproto.Block{}
+		if err = proto.UnmarshalText(node.Value, block); err != nil {
+			return err
+		}
+		Config.Block = append(Config.Block, block)
+	}
+
 	return nil
 }
 
-func (c *config) watchConfigFile() {
-	tick := time.Tick(1 * time.Second)
-	for {
-		select {
-		case <-tick:
-			stat, _ := os.Stat(c.filename)
-			if !os.SameFile(stat, c.stat) {
-				c.ReadConfig()
-			}
-		}
+// getClusterServers loads the list of all cluster members from etcd.
+func getClusterServers(ctx context.Context) error {
+	r, err := kapi.Get(ctx, fmt.Sprintf("%s/members/", clusterEtcdPrefix), nil)
+	if err != nil {
+		return fmt.Errorf("Error getting cluster members: %s", err)
 	}
+
+	for _, node := range r.Node.Nodes {
+		conf := &oproto.ClusterMember{}
+		if err = proto.UnmarshalText(node.Value, conf); err != nil {
+			return err
+		}
+		Config.Server = append(Config.Server, conf)
+	}
+	return nil
 }
 
-func (c *config) ThisServer(port string) *oproto.StoreServerStatus {
-	addrs, _ := net.InterfaceAddrs()
-	for _, server := range c.Config.Server {
-		for _, addr := range addrs {
-			parts := strings.SplitN(addr.String(), "/", 2)
-			if server.Address == net.JoinHostPort(parts[0], port) {
-				return server
+func connectEtcd(ctx context.Context) error {
+	var err error
+	cfg := client.Config{
+		Endpoints:               strings.Split(*etcdAddr, ","),
+		Transport:               client.DefaultTransport,
+		HeaderTimeoutPerRequest: time.Second,
+	}
+	if *clusterName != "" {
+		clusterEtcdPrefix = fmt.Sprintf("%s/cluster/%s", *etcdPrefix, *clusterName)
+	} else {
+		clusterEtcdPrefix = fmt.Sprintf("%s/cluster", *etcdPrefix)
+	}
+	etcdClient, err = client.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	kapi = client.NewKeysAPI(etcdClient)
+
+	// Run Sync every 10 seconds
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			if err := etcdClient.AutoSync(ctx, 10*time.Second); err == context.DeadlineExceeded || err == context.Canceled {
+				break
 			}
+			log.Print(err)
+		}
+	}()
+	return nil
+}
+
+func createMyNode(ctx context.Context) error {
+	for _, member := range Config.Server {
+		if member.Name == *taskName {
+			// Found it
+			return nil
 		}
 	}
+	// It's unknown to the cluster, create the entry
+	c := &oproto.ClusterMember{
+		Name:  *taskName,
+		State: oproto.ClusterMember_UNKNOWN,
+	}
+	Config.Server = append(Config.Server, c)
+	return updateMember(ctx, c)
+}
+
+func watchCluster(ctx context.Context) error {
+	watcher := kapi.Watcher(fmt.Sprintf("%s/members", clusterEtcdPrefix), &client.WatcherOptions{Recursive: true})
+	if watcher == nil {
+		return fmt.Errorf("Unable to create watcher")
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			r, err := watcher.Next(ctx)
+			if err != nil {
+				if ctx.Err() == context.Canceled {
+					// Timeout
+					return
+				}
+				log.Fatalf("etcd watcher returned error: %s", err)
+			}
+			c := &oproto.ClusterMember{}
+			if err = proto.UnmarshalText(r.Node.Value, c); err != nil {
+				log.Printf("Error parsing proto: %s", err)
+				log.Println(r.Node.Value)
+				continue
+			}
+			if c.Name != *taskName {
+				// Notification that another server has changed state
+				found := false
+				for i, member := range Config.Server {
+					if member.Name == c.Name {
+						Config.Server[i] = c
+						found = true
+						break
+					}
+				}
+				if !found {
+					// No known state for this server, add it to the list
+					Config.Server = append(Config.Server, c)
+				}
+			}
+		}
+	}()
 	return nil
 }

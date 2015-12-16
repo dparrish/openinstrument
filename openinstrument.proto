@@ -230,7 +230,7 @@ message RetentionPolicy {
   uint32 interval = 2;
 }
 
-message StoreServerStatus {
+message ClusterMember {
   enum State {
     UNKNOWN = 0;
     LOAD = 1;
@@ -242,33 +242,42 @@ message StoreServerStatus {
   string address = 1;
   State state = 2;
   uint64 last_updated = 3;
-
-  // Optional name for use in the hash ring. This should never change once the
-  // server has been added but can be used to replace a server with another one
-  // on a different host.
-  // If this is not set, the address is used.
-  string name = 5;
-
-  // Desired size in bytes for indexed datastore files
-  uint64 target_indexed_file_size = 4;
+	string name = 4;
 }
 
-message StoreConfig {
-  repeated StoreServerStatus server = 1;
-  RetentionPolicy retention_policy = 2;
+message ClusterConfig {
+  repeated ClusterMember server = 1;
+	repeated Block block = 2;
+  RetentionPolicy retention_policy = 3;
 }
 
 message Block {
+	enum State {
+		UNKNOWN = 0;
+		LOADING = 1;
+		LIVE = 2;
+		COMPACTING = 3;
+		MIGRATING = 4;
+		UNLOADING = 5;
+		UNLOADED = 6;
+		DESTROYED = 7;
+	}
   string id = 1;
   string end_key = 2;
-  uint32 indexed_streams = 3;
-  uint32 indexed_values = 4;
-  uint32 logged_streams = 5;
-  uint32 logged_values = 6;
-  uint32 unlogged_streams = 7;
-  uint32 unlogged_values = 8;
-  bool is_compacting = 9;
+	State state = 3;
+  uint32 indexed_streams = 4;
+  uint32 indexed_values = 5;
+  uint32 logged_streams = 6;
+  uint32 logged_values = 7;
+  uint32 unlogged_streams = 8;
+  uint32 unlogged_values = 9;
   string compact_duration = 10;
+	uint64 compact_start_time = 11;
+	uint64 compact_end_time = 12;
+
+	string node = 13;
+	string destination_node = 14;
+  uint64 last_updated = 16;
 }
 
 message LookupBlockRequest {
@@ -307,6 +316,29 @@ message CompactBlockResponse {
   Block block = 1;
 }
 
+message GetClusterRequest {
+}
+
+message GetClusterResponse {
+	ClusterConfig config = 1;
+}
+
+message JoinClusterRequest {
+	ClusterMember member = 1;
+}
+
+message JoinClusterResponse {
+	repeated ClusterMember member = 1;
+}
+
+message UpdateClusterRequest {
+	repeated ClusterMember member = 1;
+}
+
+message UpdateClusterResponse {
+	repeated ClusterMember member = 1;
+}
+
 service Store {
   rpc List(ListRequest) returns (ListResponse);
   rpc Get(GetRequest) returns (stream GetResponse);
@@ -316,4 +348,6 @@ service Store {
   rpc SplitBlock(SplitBlockRequest) returns (SplitBlockResponse);
   rpc JoinBlock(JoinBlockRequest) returns (JoinBlockResponse);
   rpc CompactBlock(CompactBlockRequest) returns (CompactBlockResponse);
+
+	rpc GetCluster(GetClusterRequest) returns (GetClusterResponse);
 }

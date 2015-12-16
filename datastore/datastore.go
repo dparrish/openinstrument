@@ -114,6 +114,11 @@ func (ds *Datastore) readBlocks() bool {
 			}(filename)
 		}
 	}
+
+	for _, block := range ds.blocks {
+		block.SetState(oproto.Block_LIVE)
+	}
+
 	waitgroup.Wait()
 	log.Printf("Read all datastore blocks in %v", time.Since(startTime))
 	return true
@@ -139,13 +144,13 @@ func (ds *Datastore) readBlockHeader(filename string) {
 		return
 	}
 
-	block.EndKey = block.BlockHeader.EndKey
-	if block.EndKey == "" {
+	block.Block.EndKey = block.BlockHeader.EndKey
+	if block.EndKey() == "" {
 		log.Printf("Block %s does not have an end key, ignoring", block.Filename())
 		return
 	}
 	ds.insertBlock(block)
-	log.Printf("Read block %s containing %d streams\n", block.ID, len(block.BlockHeader.Index))
+	log.Printf("Read block %s containing %d streams\n", block.Block.Id, len(block.BlockHeader.Index))
 }
 
 func (ds *Datastore) readBlockLog(filename string) {
@@ -161,8 +166,8 @@ func (ds *Datastore) readBlockLog(filename string) {
 	reader := file.ValueStreamReader(100)
 	for stream := range reader {
 		varName := variable.ProtoToString(stream.Variable)
-		if varName > block.EndKey {
-			block.EndKey = varName
+		if varName > block.EndKey() {
+			block.Block.EndKey = varName
 		}
 		locker := block.LogWriteLocker()
 		locker.Lock()
@@ -176,7 +181,7 @@ func (ds *Datastore) readBlockLog(filename string) {
 	}
 	ds.blocksLock.RLock()
 	for _, existingblock := range ds.blocks {
-		if existingblock.ID == block.ID {
+		if existingblock.Block.Id == block.Block.Id {
 			ds.blocksLock.RUnlock()
 			locker := existingblock.LogWriteLocker()
 			locker.Lock()
@@ -193,12 +198,13 @@ func (ds *Datastore) readBlockLog(filename string) {
 func (ds *Datastore) insertBlock(block *Block) {
 	ds.blocksLock.Lock()
 	defer ds.blocksLock.Unlock()
-	_, found := ds.blocks[block.EndKey]
-	ds.blocks[block.EndKey] = block
+	_, found := ds.blocks[block.EndKey()]
+	ds.blocks[block.EndKey()] = block
 	if !found {
-		ds.blockKeys = append(ds.blockKeys, block.EndKey)
+		ds.blockKeys = append(ds.blockKeys, block.EndKey())
 		sort.Strings(ds.blockKeys)
 	}
+	block.SetState(oproto.Block_LOADING)
 }
 
 // Writer builds a channel that can accept ValueStreams for writing to the datastore.
@@ -254,7 +260,7 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 		// Search for streams to return
 		wg := new(sync.WaitGroup)
 		for _, block := range ds.Blocks() {
-			if varName > block.EndKey {
+			if varName > block.EndKey() {
 				continue
 			}
 			wg.Add(1)
@@ -388,7 +394,7 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 
 	for stream := range streams {
 		varName := variable.ProtoToString(stream.Variable)
-		if varName <= leftBlock.EndKey {
+		if varName <= leftBlock.EndKey() {
 			leftStreams[varName] = stream
 		} else {
 			rightStreams[varName] = stream
@@ -441,21 +447,21 @@ func (ds *Datastore) JoinBlock(block *Block) (*Block, error) {
 	defer ds.blocksLock.Unlock()
 	var lastB *Block
 	for _, b := range ds.blocks {
-		if b.EndKey < block.EndKey && (lastB == nil || b.EndKey > lastB.EndKey) {
+		if b.EndKey() < block.EndKey() && (lastB == nil || b.EndKey() > lastB.EndKey()) {
 			lastB = b
 			continue
 		}
 	}
 	if lastB == nil {
-		return nil, fmt.Errorf("Unable to find block before %s", block.EndKey)
+		return nil, fmt.Errorf("Unable to find block before %s", block.EndKey())
 	}
-	log.Printf("Found previous block: %s", lastB.EndKey)
+	log.Printf("Found previous block: %s", lastB.EndKey())
 
 	log.Printf("Compacting old block")
 	lastB.Compact()
 	log.Printf("Done compacting old blocks")
 
-	log.Printf("Copying %d streams from %s to %s", lastB.NumStreams(), lastB.ID, block.ID)
+	log.Printf("Copying %d streams from %s to %s", lastB.NumStreams(), lastB.Block.Id, block.Block.Id)
 	r, err := lastB.Read()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read prior block: %s", err)
@@ -467,12 +473,12 @@ func (ds *Datastore) JoinBlock(block *Block) (*Block, error) {
 	}
 	locker.Unlock()
 
-	log.Printf("Deleting old block %s", lastB.ID)
+	log.Printf("Deleting old block %s", lastB.Block.Id)
 	err = os.Remove(lastB.Filename())
 	if err != nil {
 		log.Fatalf("Unable to delete old block file %s", lastB.Filename())
 	}
-	delete(ds.blocks, lastB.EndKey)
+	delete(ds.blocks, lastB.EndKey())
 
 	return block, nil
 }
@@ -503,10 +509,10 @@ func (ds *Datastore) GetBlock(id, endKey string) (*Block, error) {
 		return nil, fmt.Errorf("No block id or end key specified, cannnot look up blocks")
 	}
 	for _, block := range ds.Blocks() {
-		if id != "" && block.ID == id {
+		if id != "" && block.Block.Id == id {
 			return block, nil
 		}
-		if endKey != "" && block.EndKey == endKey {
+		if endKey != "" && block.EndKey() == endKey {
 			return block, nil
 		}
 	}
