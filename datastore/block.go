@@ -27,8 +27,6 @@ const (
 )
 
 type Block struct {
-	BlockHeader *oproto.StoreFileHeader
-
 	// Contains any streams that have been written to disk but not yet indexed
 	LogStreams map[string]*oproto.ValueStream
 	logLock    sync.RWMutex
@@ -59,12 +57,12 @@ func newBlock(endKey, id, dsPath string) *Block {
 	return &Block{
 		LogStreams: make(map[string]*oproto.ValueStream, 0),
 		NewStreams: make([]*oproto.ValueStream, 0),
-		BlockHeader: &oproto.StoreFileHeader{
-			Version: uint32(2),
-			Index:   make([]*oproto.StoreFileHeaderIndex, 0),
-		},
-		dsPath: dsPath,
+		dsPath:     dsPath,
 		Block: &oproto.Block{
+			Header: &oproto.BlockHeader{
+				Version: uint32(2),
+				Index:   make([]*oproto.BlockHeaderIndex, 0),
+			},
 			Id:     id,
 			EndKey: endKey,
 			State:  oproto.Block_UNKNOWN,
@@ -116,7 +114,7 @@ func (block *Block) UnloggedWriteLocker() sync.Locker {
 }
 
 func (block *Block) logFilename() string {
-	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s.log", block.Block.Id))
+	return fmt.Sprintf("%s.log", block.Filename())
 }
 
 func (block *Block) Filename() string {
@@ -177,23 +175,31 @@ func (block *Block) ToProto() *oproto.Block {
 	defer block.logLock.RUnlock()
 	block.newStreamsLock.RLock()
 	defer block.newStreamsLock.RUnlock()
-	block.Block.IndexedStreams = uint32(len(block.BlockHeader.Index))
-	block.Block.IndexedValues = uint32(0)
-	block.Block.LoggedStreams = uint32(len(block.LogStreams))
-	block.Block.LoggedValues = uint32(0)
-	block.Block.UnloggedStreams = uint32(len(block.NewStreams))
-	block.Block.UnloggedValues = uint32(0)
-	block.Block.CompactDuration = block.CompactDuration()
-	for _, index := range block.BlockHeader.Index {
-		block.Block.IndexedValues += uint32(index.NumValues)
+	b := &oproto.Block{
+		Id:              block.Block.Id,
+		EndKey:          block.Block.EndKey,
+		State:           block.Block.State,
+		Node:            block.Block.Node,
+		DestinationNode: block.Block.DestinationNode,
+		LastUpdated:     block.Block.LastUpdated,
+		IndexedStreams:  uint32(len(block.Block.Header.Index)),
+		IndexedValues:   uint32(0),
+		LoggedStreams:   uint32(len(block.LogStreams)),
+		LoggedValues:    uint32(0),
+		UnloggedStreams: uint32(len(block.NewStreams)),
+		UnloggedValues:  uint32(0),
+		CompactDuration: block.CompactDuration(),
+	}
+	for _, index := range block.Block.Header.Index {
+		b.IndexedValues += uint32(index.NumValues)
 	}
 	for _, stream := range block.NewStreams {
-		block.Block.UnloggedValues += uint32(len(stream.Value))
+		b.UnloggedValues += uint32(len(stream.Value))
 	}
 	for _, stream := range block.LogStreams {
-		block.Block.LoggedValues += uint32(len(stream.Value))
+		b.LoggedValues += uint32(len(stream.Value))
 	}
-	return block.Block
+	return b
 }
 
 func (block *Block) NumStreams() uint32 {
@@ -202,7 +208,7 @@ func (block *Block) NumStreams() uint32 {
 	block.newStreamsLock.RLock()
 	defer block.newStreamsLock.RUnlock()
 	var streams uint32
-	streams += uint32(len(block.BlockHeader.Index))
+	streams += uint32(len(block.Block.Header.Index))
 	streams += uint32(len(block.LogStreams))
 	streams += uint32(len(block.NewStreams))
 	return streams
@@ -224,7 +230,7 @@ func (block *Block) NumValues() uint32 {
 	block.newStreamsLock.RLock()
 	defer block.newStreamsLock.RUnlock()
 	var values uint32
-	for _, index := range block.BlockHeader.Index {
+	for _, index := range block.Block.Header.Index {
 		values += index.NumValues
 	}
 	for _, stream := range block.LogStreams {
@@ -303,17 +309,17 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	// Build the header with a 0-index for each variable
 	startTime := time.Now()
 
-	block.BlockHeader.Index = []*oproto.StoreFileHeaderIndex{}
-	block.BlockHeader.EndKey = ""
-	block.BlockHeader.StartTimestamp = 0
-	block.BlockHeader.EndTimestamp = 0
+	block.Block.Header.Index = []*oproto.BlockHeaderIndex{}
+	block.Block.Header.EndKey = ""
+	block.Block.Header.StartTimestamp = 0
+	block.Block.Header.EndTimestamp = 0
 	streams = block.RunLengthEncodeStreams(streams)
 	for v, stream := range streams {
-		if v > block.BlockHeader.EndKey {
-			block.BlockHeader.EndKey = v
+		if v > block.Block.Header.EndKey {
+			block.Block.Header.EndKey = v
 		}
 		// Add this stream to the index
-		block.BlockHeader.Index = append(block.BlockHeader.Index, &oproto.StoreFileHeaderIndex{
+		block.Block.Header.Index = append(block.Block.Header.Index, &oproto.BlockHeaderIndex{
 			Variable:     stream.Variable,
 			Offset:       uint64(1), // This must be set non-zero so that the protobuf marshals it to non-empty
 			MinTimestamp: stream.Value[0].Timestamp,
@@ -321,11 +327,11 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 			NumValues:    uint32(len(stream.Value)),
 		})
 
-		if block.BlockHeader.StartTimestamp == 0 || stream.Value[0].Timestamp < block.BlockHeader.StartTimestamp {
-			block.BlockHeader.StartTimestamp = stream.Value[0].Timestamp
+		if block.Block.Header.StartTimestamp == 0 || stream.Value[0].Timestamp < block.Block.Header.StartTimestamp {
+			block.Block.Header.StartTimestamp = stream.Value[0].Timestamp
 		}
-		if stream.Value[len(stream.Value)-1].Timestamp > block.BlockHeader.EndTimestamp {
-			block.BlockHeader.EndTimestamp = stream.Value[len(stream.Value)-1].Timestamp
+		if stream.Value[len(stream.Value)-1].Timestamp > block.Block.Header.EndTimestamp {
+			block.Block.Header.EndTimestamp = stream.Value[len(stream.Value)-1].Timestamp
 		}
 	}
 
@@ -336,7 +342,7 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 		newfile.Close()
 		return fmt.Errorf("Can't write to %s: %s\n", newfilename, err)
 	}
-	newfile.Write(block.BlockHeader)
+	newfile.Write(block.Block.Header)
 	blockEnd := newfile.Tell()
 
 	// Write all the ValueStreams
@@ -349,11 +355,11 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	}
 
 	// Update the offsets in the header, now that all the data has been written
-	for _, index := range block.BlockHeader.Index {
+	for _, index := range block.Block.Header.Index {
 		index.Offset = indexPos[variable.ProtoToString(index.Variable)]
 	}
 
-	newfile.WriteAt(0, block.BlockHeader)
+	newfile.WriteAt(0, block.Block.Header)
 	if blockEnd < newfile.Tell() {
 		// Sanity check, just in case goprotobuf breaks something again
 		newfile.Close()
@@ -363,6 +369,7 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 
 	newfile.Sync()
 	newfile.Close()
+
 	log.Printf("Wrote %d streams / %d values to %s in %v\n", len(streams), outValues, newfilename, time.Since(startTime))
 
 	// Rename the temporary file into place
@@ -379,21 +386,20 @@ func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error
 		return nil, fmt.Errorf("Can't read old block file %s: %s\n", block.Filename(), err)
 	}
 
-	var header oproto.StoreFileHeader
-	n, err := file.Read(&header)
+	n, err := file.Read(block.Block.Header)
 	if n < 1 || err != nil {
 		file.Close()
 		return nil, fmt.Errorf("Block %s has a corrupted header: %s\n", block.Filename(), err)
 	}
-	switch header.Version {
+	switch block.Block.Header.Version {
 	case 2:
 		return file.ValueStreamReader(ctx, 5000), nil
 	default:
-		return nil, fmt.Errorf("Block %s has unknown version '%v'\n", block.Filename(), header.Version)
+		return nil, fmt.Errorf("Block %s has unknown version '%v'\n", block.Filename(), block.Block.Header.Version)
 	}
 }
 
-func (block *Block) GetStreamForVariable(index *oproto.StoreFileHeaderIndex) *oproto.ValueStream {
+func (block *Block) GetStreamForVariable(index *oproto.BlockHeaderIndex) *oproto.ValueStream {
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		if !os.IsNotExist(err) {

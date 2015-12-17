@@ -22,8 +22,8 @@ It has these top-level messages:
 	AddResponse
 	ListRequest
 	ListResponse
-	StoreFileHeaderIndex
-	StoreFileHeader
+	BlockHeaderIndex
+	BlockHeader
 	RetentionPolicyItem
 	RetentionPolicy
 	ClusterMember
@@ -612,7 +612,7 @@ func (m *ListResponse) GetTimer() []*LogMessage {
 	return nil
 }
 
-type StoreFileHeaderIndex struct {
+type BlockHeaderIndex struct {
 	Variable     *StreamVariable `protobuf:"bytes,1,opt,name=variable" json:"variable,omitempty"`
 	Offset       uint64          `protobuf:"fixed64,2,opt,name=offset" json:"offset,omitempty"`
 	NumValues    uint32          `protobuf:"fixed32,3,opt,name=num_values" json:"num_values,omitempty"`
@@ -620,30 +620,30 @@ type StoreFileHeaderIndex struct {
 	MaxTimestamp uint64          `protobuf:"fixed64,5,opt,name=max_timestamp" json:"max_timestamp,omitempty"`
 }
 
-func (m *StoreFileHeaderIndex) Reset()         { *m = StoreFileHeaderIndex{} }
-func (m *StoreFileHeaderIndex) String() string { return proto.CompactTextString(m) }
-func (*StoreFileHeaderIndex) ProtoMessage()    {}
+func (m *BlockHeaderIndex) Reset()         { *m = BlockHeaderIndex{} }
+func (m *BlockHeaderIndex) String() string { return proto.CompactTextString(m) }
+func (*BlockHeaderIndex) ProtoMessage()    {}
 
-func (m *StoreFileHeaderIndex) GetVariable() *StreamVariable {
+func (m *BlockHeaderIndex) GetVariable() *StreamVariable {
 	if m != nil {
 		return m.Variable
 	}
 	return nil
 }
 
-type StoreFileHeader struct {
-	Version        uint32                  `protobuf:"varint,6,opt,name=version" json:"version,omitempty"`
-	StartTimestamp uint64                  `protobuf:"varint,1,opt,name=start_timestamp" json:"start_timestamp,omitempty"`
-	EndTimestamp   uint64                  `protobuf:"varint,2,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
-	Index          []*StoreFileHeaderIndex `protobuf:"bytes,5,rep,name=index" json:"index,omitempty"`
-	EndKey         string                  `protobuf:"bytes,7,opt,name=end_key" json:"end_key,omitempty"`
+type BlockHeader struct {
+	Version        uint32              `protobuf:"varint,6,opt,name=version" json:"version,omitempty"`
+	StartTimestamp uint64              `protobuf:"varint,1,opt,name=start_timestamp" json:"start_timestamp,omitempty"`
+	EndTimestamp   uint64              `protobuf:"varint,2,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
+	Index          []*BlockHeaderIndex `protobuf:"bytes,5,rep,name=index" json:"index,omitempty"`
+	EndKey         string              `protobuf:"bytes,7,opt,name=end_key" json:"end_key,omitempty"`
 }
 
-func (m *StoreFileHeader) Reset()         { *m = StoreFileHeader{} }
-func (m *StoreFileHeader) String() string { return proto.CompactTextString(m) }
-func (*StoreFileHeader) ProtoMessage()    {}
+func (m *BlockHeader) Reset()         { *m = BlockHeader{} }
+func (m *BlockHeader) String() string { return proto.CompactTextString(m) }
+func (*BlockHeader) ProtoMessage()    {}
 
-func (m *StoreFileHeader) GetIndex() []*StoreFileHeaderIndex {
+func (m *BlockHeader) GetIndex() []*BlockHeaderIndex {
 	if m != nil {
 		return m.Index
 	}
@@ -734,26 +734,34 @@ func (m *ClusterConfig) GetRetentionPolicy() *RetentionPolicy {
 }
 
 type Block struct {
-	Id               string      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	EndKey           string      `protobuf:"bytes,2,opt,name=end_key" json:"end_key,omitempty"`
-	State            Block_State `protobuf:"varint,3,opt,name=state,enum=openinstrument.proto.Block_State" json:"state,omitempty"`
-	IndexedStreams   uint32      `protobuf:"varint,4,opt,name=indexed_streams" json:"indexed_streams,omitempty"`
-	IndexedValues    uint32      `protobuf:"varint,5,opt,name=indexed_values" json:"indexed_values,omitempty"`
-	LoggedStreams    uint32      `protobuf:"varint,6,opt,name=logged_streams" json:"logged_streams,omitempty"`
-	LoggedValues     uint32      `protobuf:"varint,7,opt,name=logged_values" json:"logged_values,omitempty"`
-	UnloggedStreams  uint32      `protobuf:"varint,8,opt,name=unlogged_streams" json:"unlogged_streams,omitempty"`
-	UnloggedValues   uint32      `protobuf:"varint,9,opt,name=unlogged_values" json:"unlogged_values,omitempty"`
-	CompactDuration  string      `protobuf:"bytes,10,opt,name=compact_duration" json:"compact_duration,omitempty"`
-	CompactStartTime uint64      `protobuf:"varint,11,opt,name=compact_start_time" json:"compact_start_time,omitempty"`
-	CompactEndTime   uint64      `protobuf:"varint,12,opt,name=compact_end_time" json:"compact_end_time,omitempty"`
-	Node             string      `protobuf:"bytes,13,opt,name=node" json:"node,omitempty"`
-	DestinationNode  string      `protobuf:"bytes,14,opt,name=destination_node" json:"destination_node,omitempty"`
-	LastUpdated      uint64      `protobuf:"varint,16,opt,name=last_updated" json:"last_updated,omitempty"`
+	Header           *BlockHeader `protobuf:"bytes,17,opt,name=header" json:"header,omitempty"`
+	Id               string       `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	EndKey           string       `protobuf:"bytes,2,opt,name=end_key" json:"end_key,omitempty"`
+	State            Block_State  `protobuf:"varint,3,opt,name=state,enum=openinstrument.proto.Block_State" json:"state,omitempty"`
+	IndexedStreams   uint32       `protobuf:"varint,4,opt,name=indexed_streams" json:"indexed_streams,omitempty"`
+	IndexedValues    uint32       `protobuf:"varint,5,opt,name=indexed_values" json:"indexed_values,omitempty"`
+	LoggedStreams    uint32       `protobuf:"varint,6,opt,name=logged_streams" json:"logged_streams,omitempty"`
+	LoggedValues     uint32       `protobuf:"varint,7,opt,name=logged_values" json:"logged_values,omitempty"`
+	UnloggedStreams  uint32       `protobuf:"varint,8,opt,name=unlogged_streams" json:"unlogged_streams,omitempty"`
+	UnloggedValues   uint32       `protobuf:"varint,9,opt,name=unlogged_values" json:"unlogged_values,omitempty"`
+	CompactDuration  string       `protobuf:"bytes,10,opt,name=compact_duration" json:"compact_duration,omitempty"`
+	CompactStartTime uint64       `protobuf:"varint,11,opt,name=compact_start_time" json:"compact_start_time,omitempty"`
+	CompactEndTime   uint64       `protobuf:"varint,12,opt,name=compact_end_time" json:"compact_end_time,omitempty"`
+	Node             string       `protobuf:"bytes,13,opt,name=node" json:"node,omitempty"`
+	DestinationNode  string       `protobuf:"bytes,14,opt,name=destination_node" json:"destination_node,omitempty"`
+	LastUpdated      uint64       `protobuf:"varint,16,opt,name=last_updated" json:"last_updated,omitempty"`
 }
 
 func (m *Block) Reset()         { *m = Block{} }
 func (m *Block) String() string { return proto.CompactTextString(m) }
 func (*Block) ProtoMessage()    {}
+
+func (m *Block) GetHeader() *BlockHeader {
+	if m != nil {
+		return m.Header
+	}
+	return nil
+}
 
 type LookupBlockRequest struct {
 	Variable *StreamVariable `protobuf:"bytes,1,opt,name=variable" json:"variable,omitempty"`

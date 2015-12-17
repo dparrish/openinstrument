@@ -51,15 +51,12 @@ func parseRequest(w http.ResponseWriter, req *http.Request, request proto.Messag
 }
 
 func returnResponse(w http.ResponseWriter, req *http.Request, response proto.Message) error {
-	//log.Printf("Response: %s", response)
 	data, err := proto.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error encoding response: %s", err)
 		return errors.New("Error encoding response")
 	}
-	//encoded_data := base64.StdEncoding.EncodeToString(data)
-	//w.Write([]byte(encoded_data))
 	encoder := base64.NewEncoder(base64.StdEncoding, w)
 	encoder.Write(data)
 	encoder.Close()
@@ -242,6 +239,19 @@ func PprofInuse(ds *datastore.Datastore, w http.ResponseWriter, req *http.Reques
 	w.Write(out)
 }
 
+func PprofProfile(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+	url := fmt.Sprintf("http://%s:%d/debug/pprof/profile", *address, *port)
+	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("URL: %s<br>\nError: %s", url, err)))
+		return
+	}
+	w.Header().Add("Content-Type:", "image/svg")
+	w.WriteHeader(200)
+	w.Write(out)
+}
+
 func ListVariables(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	prefix := req.FormValue("p")
 	if prefix == "" {
@@ -279,7 +289,7 @@ func serveHTTP(ds *datastore.Datastore) {
 	}
 	log.Printf("Serving HTTP on %v", sock.Addr().String())
 	hf := func(f func(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request)) http.HandlerFunc {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { Add(ds, w, r) })
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { f(ds, w, r) })
 	}
 	http.Handle("/add", hf(Add))
 	http.Handle("/args", hf(Args))
@@ -290,6 +300,7 @@ func serveHTTP(ds *datastore.Datastore) {
 	http.Handle("/query", hf(Query))
 	http.Handle("/pprof/alloc", hf(PprofAlloc))
 	http.Handle("/pprof/inuse", hf(PprofInuse))
+	http.Handle("/pprof/profile", hf(PprofProfile))
 	http.Handle("/js/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
 	http.Handle("/html/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
 	http.Handle("/", http.RedirectHandler("/html", 302))

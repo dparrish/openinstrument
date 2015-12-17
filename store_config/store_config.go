@@ -189,7 +189,9 @@ func connectEtcd(ctx context.Context) error {
 			if err := etcdClient.AutoSync(ctx, 10*time.Second); err == context.DeadlineExceeded || err == context.Canceled {
 				break
 			}
-			log.Print(err)
+			if err != nil {
+				log.Print(err)
+			}
 		}
 	}()
 	return nil

@@ -196,7 +196,7 @@ message ListResponse {
   repeated LogMessage timer = 5;
 }
 
-message StoreFileHeaderIndex {
+message BlockHeaderIndex {
   StreamVariable variable = 1;
   fixed64 offset = 2;
   fixed32 num_values = 3;
@@ -204,11 +204,11 @@ message StoreFileHeaderIndex {
   fixed64 max_timestamp = 5;
 }
 
-message StoreFileHeader {
+message BlockHeader {
   uint32 version = 6;
   uint64 start_timestamp = 1;
   uint64 end_timestamp = 2;
-  repeated StoreFileHeaderIndex index = 5;
+  repeated BlockHeaderIndex index = 5;
   string end_key = 7;
 }
 
@@ -262,6 +262,7 @@ message Block {
 		UNLOADED = 6;
 		DESTROYED = 7;
 	}
+	BlockHeader header = 17;
   string id = 1;
   string end_key = 2;
 	State state = 3;

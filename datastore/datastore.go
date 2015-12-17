@@ -139,23 +139,23 @@ func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
 	}
 	defer file.Close()
 
-	if n, err := file.Read(block.BlockHeader); n < 1 || err != nil {
+	if n, err := file.Read(block.Block.Header); n < 1 || err != nil {
 		log.Printf("Block file %s has a corrupted header: %s\n", block.Filename(), err)
 		return
 	}
 
-	if block.BlockHeader.Version != 2 {
-		log.Printf("Block file %s has incorrect version identifier '%v'\n", block.Filename(), block.BlockHeader.Version)
+	if block.Block.Header.Version != 2 {
+		log.Printf("Block file %s has incorrect version identifier '%v'\n", block.Filename(), block.Block.Header.Version)
 		return
 	}
 
-	block.Block.EndKey = block.BlockHeader.EndKey
+	block.Block.EndKey = block.Block.Header.EndKey
 	if block.EndKey() == "" {
 		log.Printf("Block %s does not have an end key, ignoring", block.Filename())
 		return
 	}
 	ds.insertBlock(block)
-	log.Printf("Read block %s containing %d streams\n", block.Block.Id, len(block.BlockHeader.Index))
+	log.Printf("Read block %s containing %d streams\n", block.Block.Id, len(block.Block.Header.Index))
 }
 
 func (ds *Datastore) readBlockLog(ctx context.Context, filename string) {
@@ -282,7 +282,7 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 						maybeReturnStreams(block, stream)
 					}
 				}()
-				for _, index := range block.BlockHeader.Index {
+				for _, index := range block.Block.Header.Index {
 					cv := variable.NewFromProto(index.Variable)
 					if !cv.Match(v) {
 						continue
@@ -361,7 +361,7 @@ func (ds *Datastore) Flush() error {
 // This will block writes to a block for the duration of the reindexing.
 func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Block, error) {
 	keys := make(map[string]bool, 0)
-	for _, index := range block.BlockHeader.Index {
+	for _, index := range block.Block.Header.Index {
 		keys[variable.ProtoToString(index.Variable)] = true
 	}
 	for _, stream := range block.GetLogStreams() {
