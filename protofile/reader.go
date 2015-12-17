@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 
+	"golang.org/x/net/context"
+
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/golang/protobuf/proto"
 	"github.com/joaojeronimo/go-crc16"
@@ -41,22 +43,27 @@ func (pf *ProtoFile) ReadAt(pos int64, message proto.Message) (int64, error) {
 	return pf.Read(message)
 }
 
-func (pf *ProtoFile) ValueStreamReader(chanSize int) <-chan *oproto.ValueStream {
+func (pf *ProtoFile) ValueStreamReader(ctx context.Context, chanSize int) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream, 10000)
 	go func() {
+		defer close(c)
 		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
 			value := &oproto.ValueStream{}
 			_, err := pf.Read(value)
 			if err == io.EOF {
-				break
+				return
 			}
 			if err != nil {
 				log.Println(err)
-				break
+				return
 			}
 			c <- value
 		}
-		close(c)
 	}()
 	return c
 }

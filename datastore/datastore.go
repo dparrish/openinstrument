@@ -42,7 +42,7 @@ func Open(ctx context.Context, path string) *Datastore {
 		Path:   path,
 		blocks: make(map[string]*Block),
 	}
-	if !ds.readBlocks() {
+	if !ds.readBlocks(ctx) {
 		return nil
 	}
 
@@ -85,7 +85,7 @@ func (ds *Datastore) Blocks() map[string]*Block {
 
 // readBlocks opens up every block file, reading it to determine the block layout.
 // This is only called once when the datastore is opened the first time.
-func (ds *Datastore) readBlocks() bool {
+func (ds *Datastore) readBlocks(ctx context.Context) bool {
 	startTime := time.Now()
 	names, err := openinstrument.ReadDirNames(ds.Path)
 	if err != nil {
@@ -102,7 +102,7 @@ func (ds *Datastore) readBlocks() bool {
 			waitgroup.Add(1)
 			go func(filename string) {
 				defer waitgroup.Done()
-				ds.readBlockHeader(filename)
+				ds.readBlockHeader(ctx, filename)
 			}(filename)
 		}
 	}
@@ -114,21 +114,22 @@ func (ds *Datastore) readBlocks() bool {
 			waitgroup.Add(1)
 			go func(filename string) {
 				defer waitgroup.Done()
-				ds.readBlockLog(filename)
+				ds.readBlockLog(ctx, filename)
 			}(filename)
 		}
 	}
+
+	waitgroup.Wait()
 
 	for _, block := range ds.blocks {
 		block.SetState(oproto.Block_LIVE)
 	}
 
-	waitgroup.Wait()
 	log.Printf("Read all datastore blocks in %v", time.Since(startTime))
 	return true
 }
 
-func (ds *Datastore) readBlockHeader(filename string) {
+func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
 	block := newBlock("", BlockIDFromFilename(filename), ds.Path)
 
 	file, err := protofile.Read(block.Filename())
@@ -157,7 +158,7 @@ func (ds *Datastore) readBlockHeader(filename string) {
 	log.Printf("Read block %s containing %d streams\n", block.Block.Id, len(block.BlockHeader.Index))
 }
 
-func (ds *Datastore) readBlockLog(filename string) {
+func (ds *Datastore) readBlockLog(ctx context.Context, filename string) {
 	block := newBlock("", BlockIDFromFilename(filename), ds.Path)
 
 	file, err := protofile.Read(block.logFilename())
@@ -167,7 +168,7 @@ func (ds *Datastore) readBlockLog(filename string) {
 	defer file.Close()
 
 	// Read all the streams from the log file
-	reader := file.ValueStreamReader(100)
+	reader := file.ValueStreamReader(ctx, 100)
 	for stream := range reader {
 		varName := variable.ProtoToString(stream.Variable)
 		if varName > block.EndKey() {
@@ -388,7 +389,7 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	leftStreams := make(map[string]*oproto.ValueStream)
 	rightStreams := make(map[string]*oproto.ValueStream)
 
-	streams, err := block.Read()
+	streams, err := block.Read(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Couldn't read old block file: %s", err)
 	}
@@ -466,7 +467,7 @@ func (ds *Datastore) JoinBlock(ctx context.Context, block *Block) (*Block, error
 	log.Printf("Done compacting old blocks")
 
 	log.Printf("Copying %d streams from %s to %s", lastB.NumStreams(), lastB.Block.Id, block.Block.Id)
-	r, err := lastB.Read()
+	r, err := lastB.Read(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read prior block: %s", err)
 	}

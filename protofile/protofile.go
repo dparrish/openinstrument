@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"golang.org/x/net/context"
+
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/golang/protobuf/proto"
 )
@@ -23,7 +25,7 @@ type ReaderWriter interface {
 	Seek(pos int64) (int64, error)
 	Read(message proto.Message) (int64, error)
 	ReadAt(pos int64, message proto.Message) (int64, error)
-	ValueStreamReader(chanSize int) <-chan *oproto.ValueStream
+	ValueStreamReader(ctx context.Context, chanSize int) <-chan *oproto.ValueStream
 	Write(message proto.Message) (int64, error)
 	WriteAt(pos int64, message proto.Message) (int64, error)
 	ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream, <-chan interface{})

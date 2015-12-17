@@ -373,7 +373,7 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	return nil
 }
 
-func (block *Block) Read() (<-chan *oproto.ValueStream, error) {
+func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error) {
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		return nil, fmt.Errorf("Can't read old block file %s: %s\n", block.Filename(), err)
@@ -387,7 +387,7 @@ func (block *Block) Read() (<-chan *oproto.ValueStream, error) {
 	}
 	switch header.Version {
 	case 2:
-		return file.ValueStreamReader(5000), nil
+		return file.ValueStreamReader(ctx, 5000), nil
 	default:
 		return nil, fmt.Errorf("Block %s has unknown version '%v'\n", block.Filename(), header.Version)
 	}
@@ -426,7 +426,7 @@ func (block *Block) Compact(ctx context.Context) error {
 
 	streams := block.LogStreams
 	log.Printf("Block log contains %d streams", len(streams))
-	reader, err := block.Read()
+	reader, err := block.Read(ctx)
 	if err != nil {
 		log.Printf("Unable to read block: %s", err)
 	} else {
