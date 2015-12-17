@@ -410,7 +410,7 @@ func (block *Block) GetStreamForVariable(index *oproto.StoreFileHeaderIndex) *op
 	return stream
 }
 
-func (block *Block) Compact() error {
+func (block *Block) Compact(ctx context.Context) error {
 	st := time.Now()
 	log.Printf("Compacting block %s\n", block)
 	startTime := time.Now()

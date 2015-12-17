@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
@@ -32,12 +34,10 @@ type Datastore struct {
 	blocks     map[string]*Block
 	blocksLock sync.RWMutex
 	blockKeys  []string
-
-	shutdown bool
 }
 
 // Open opens a datastore at the supplied path.
-func Open(path string) *Datastore {
+func Open(ctx context.Context, path string) *Datastore {
 	ds := &Datastore{
 		Path:   path,
 		blocks: make(map[string]*Block),
@@ -48,23 +48,27 @@ func Open(path string) *Datastore {
 
 	go func() {
 		// Background processing of blocks
-		tick := time.Tick(1 * time.Second)
-		for !ds.shutdown {
-			<-tick
-			for _, block := range ds.Blocks() {
-				// Split any blocks that need it
-				if block.SplitRequired() {
-					startTime := time.Now()
-					if _, _, err := ds.SplitBlock(block); err != nil {
-						log.Printf("Error splitting block: %s\n", err)
+		for {
+			tick := time.Tick(1 * time.Second)
+			select {
+			case <-ctx.Done():
+				return
+			case <-tick:
+				for _, block := range ds.Blocks() {
+					// Split any blocks that need it
+					if block.SplitRequired() {
+						startTime := time.Now()
+						if _, _, err := ds.SplitBlock(ctx, block); err != nil {
+							log.Printf("Error splitting block: %s\n", err)
+						}
+						log.Printf("Finished splitting of %s in %v", block, time.Since(startTime))
 					}
-					log.Printf("Finished splitting of %s in %v", block, time.Since(startTime))
-				}
 
-				// Compact any blocks that need it
-				if block.CompactRequired() {
-					if err := block.Compact(); err != nil {
-						log.Printf("Error compacting block: %s\n", err)
+					// Compact any blocks that need it
+					if block.CompactRequired() {
+						if err := block.Compact(ctx); err != nil {
+							log.Printf("Error compacting block: %s\n", err)
+						}
 					}
 				}
 			}
@@ -354,7 +358,7 @@ func (ds *Datastore) Flush() error {
 // The new blocks' contents are immedately written to disk and reopened by the Datatstore.
 // The old block is removed from disk once the new contents are available.
 // This will block writes to a block for the duration of the reindexing.
-func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
+func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Block, error) {
 	keys := make(map[string]bool, 0)
 	for _, index := range block.BlockHeader.Index {
 		keys[variable.ProtoToString(index.Variable)] = true
@@ -369,7 +373,7 @@ func (ds *Datastore) SplitBlock(block *Block) (*Block, *Block, error) {
 		return nil, nil, fmt.Errorf("Could not split block %s: not enough streams", block)
 	}
 	// Compact the block before continuing, to make sure everything is flushed to disk
-	block.Compact()
+	block.Compact(ctx)
 	var sortedKeys []string
 	for key := range keys {
 		sortedKeys = append(sortedKeys, key)
@@ -441,7 +445,7 @@ func (ds *Datastore) findBlock(variableName string) *Block {
 	return block
 }
 
-func (ds *Datastore) JoinBlock(block *Block) (*Block, error) {
+func (ds *Datastore) JoinBlock(ctx context.Context, block *Block) (*Block, error) {
 	defer ds.Flush()
 	ds.blocksLock.Lock()
 	defer ds.blocksLock.Unlock()
@@ -458,7 +462,7 @@ func (ds *Datastore) JoinBlock(block *Block) (*Block, error) {
 	log.Printf("Found previous block: %s", lastB.EndKey())
 
 	log.Printf("Compacting old block")
-	lastB.Compact()
+	lastB.Compact(ctx)
 	log.Printf("Done compacting old blocks")
 
 	log.Printf("Copying %d streams from %s to %s", lastB.NumStreams(), lastB.Block.Id, block.Block.Id)

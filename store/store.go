@@ -16,7 +16,6 @@ import (
 
 var (
 	storePath = flag.String("datastore", "/store", "Path to the data store files")
-	ds        *datastore.Datastore
 )
 
 func main() {
@@ -29,11 +28,11 @@ func main() {
 	}
 
 	log.Printf("Opening store")
-	ds = datastore.Open(*storePath)
+	ds := datastore.Open(context.Background(), *storePath)
 	log.Printf("Finished opening store, serving")
 
 	go serveRPC(ds)
-	go serveHTTP()
+	go serveHTTP(ds)
 	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_RUN)
 
 	shutdown := make(chan interface{})

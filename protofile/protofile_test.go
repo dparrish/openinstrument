@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 
@@ -156,7 +158,7 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 		file, err := Read(filename)
 		c.Assert(err, IsNil)
 		defer file.Close()
-		reader := file.ValueStreamReader(500)
+		reader := file.ValueStreamReader(context.Background(), 500)
 		vs := <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/bar")
 		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
@@ -205,7 +207,7 @@ func (s *MySuite) TestValueStreamWriterMemoryLeak(c *C) {
 	c.Assert(err, IsNil)
 	defer file.Close()
 
-	reader := file.ValueStreamReader(10)
+	reader := file.ValueStreamReader(context.Background(), 10)
 	readStreams := 0
 	for range reader {
 		readStreams++
@@ -242,7 +244,7 @@ func (s *MySuite) BenchmarkReader(c *C) {
 		file, err := Read(filename)
 		c.Assert(err, IsNil)
 		defer file.Close()
-		reader := file.ValueStreamReader(500)
+		reader := file.ValueStreamReader(context.Background(), 500)
 		for range reader {
 		}
 	}

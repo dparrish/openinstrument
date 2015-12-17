@@ -123,7 +123,7 @@ func (s *server) LookupBlock(ctx context.Context, request *oproto.LookupBlockReq
 		return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
 	}
 	v := variable.ProtoToString(request.Variable)
-	for _, block := range ds.Blocks() {
+	for _, block := range s.ds.Blocks() {
 		if block.EndKey() >= v {
 			return &oproto.LookupBlockResponse{Block: block.ToProto()}, nil
 		}
@@ -136,7 +136,7 @@ func (s *server) SplitBlock(ctx context.Context, request *oproto.SplitBlockReque
 	if err != nil {
 		return nil, err
 	}
-	left, right, err := s.ds.SplitBlock(block)
+	left, right, err := s.ds.SplitBlock(ctx, block)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (s *server) JoinBlock(ctx context.Context, request *oproto.JoinBlockRequest
 	if err != nil {
 		return nil, err
 	}
-	if block, err = s.ds.JoinBlock(block); err != nil {
+	if block, err = s.ds.JoinBlock(ctx, block); err != nil {
 		return nil, err
 	}
 	return &oproto.JoinBlockResponse{Block: block.ToProto()}, nil
@@ -164,7 +164,7 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 	if err != nil {
 		return nil, err
 	}
-	if err = block.Compact(); err != nil {
+	if err = block.Compact(ctx); err != nil {
 		return nil, err
 	}
 	return &oproto.CompactBlockResponse{Block: block.ToProto()}, nil

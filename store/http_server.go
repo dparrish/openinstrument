@@ -66,7 +66,7 @@ func returnResponse(w http.ResponseWriter, req *http.Request, response proto.Mes
 	return nil
 }
 
-func Add(w http.ResponseWriter, req *http.Request) {
+func Add(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	var request oproto.AddRequest
 	var response oproto.AddResponse
 	if parseRequest(w, req, &request) != nil {
@@ -84,15 +84,15 @@ func Add(w http.ResponseWriter, req *http.Request) {
 }
 
 // Argument server.
-func Args(w http.ResponseWriter, req *http.Request) {
+func Args(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, os.Args[1:])
 }
 
-func GetConfig(w http.ResponseWriter, req *http.Request) {
+func GetConfig(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	returnResponse(w, req, store_config.Config)
 }
 
-func GetBlocks(w http.ResponseWriter, req *http.Request) {
+func GetBlocks(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	b := []*oproto.Block{}
 	for _, block := range ds.Blocks() {
 		b = append(b, block.ToProto())
@@ -103,7 +103,7 @@ func GetBlocks(w http.ResponseWriter, req *http.Request) {
 	w.Write(out)
 }
 
-func InspectVariable(w http.ResponseWriter, req *http.Request) {
+func InspectVariable(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	t, err := template.ParseFiles(fmt.Sprintf("%s/inspect_variable.html", *templatePath))
 	if err != nil {
 		log.Printf("Couldn't find template file: %s", err)
@@ -150,7 +150,7 @@ func InspectVariable(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func Query(w http.ResponseWriter, req *http.Request) {
+func Query(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	query := req.FormValue("q")
 	showValues := req.FormValue("v") == "1"
 	type Result struct {
@@ -216,7 +216,7 @@ func Query(w http.ResponseWriter, req *http.Request) {
 	w.Write(b)
 }
 
-func PprofAlloc(w http.ResponseWriter, req *http.Request) {
+func PprofAlloc(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/heap", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", "-alloc_space", url).Output()
 	if err != nil {
@@ -229,7 +229,7 @@ func PprofAlloc(w http.ResponseWriter, req *http.Request) {
 	w.Write(out)
 }
 
-func PprofInuse(w http.ResponseWriter, req *http.Request) {
+func PprofInuse(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/heap", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
 	if err != nil {
@@ -242,7 +242,7 @@ func PprofInuse(w http.ResponseWriter, req *http.Request) {
 	w.Write(out)
 }
 
-func ListVariables(w http.ResponseWriter, req *http.Request) {
+func ListVariables(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	prefix := req.FormValue("p")
 	if prefix == "" {
 		prefix = "/*"
@@ -272,21 +272,24 @@ func ListVariables(w http.ResponseWriter, req *http.Request) {
 	w.Write(out)
 }
 
-func serveHTTP() {
+func serveHTTP(ds *datastore.Datastore) {
 	sock, e := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
 	if e != nil {
 		log.Fatalf("Can't listen on %s: %s", net.JoinHostPort(*address, strconv.Itoa(*port)), e)
 	}
 	log.Printf("Serving HTTP on %v", sock.Addr().String())
-	http.Handle("/add", http.HandlerFunc(Add))
-	http.Handle("/args", http.HandlerFunc(Args))
-	http.Handle("/config", http.HandlerFunc(GetConfig))
-	http.Handle("/blocks", http.HandlerFunc(GetBlocks))
-	http.Handle("/inspect", http.HandlerFunc(InspectVariable))
-	http.Handle("/list", http.HandlerFunc(ListVariables))
-	http.Handle("/query", http.HandlerFunc(Query))
-	http.Handle("/pprof/alloc", http.HandlerFunc(PprofAlloc))
-	http.Handle("/pprof/inuse", http.HandlerFunc(PprofInuse))
+	hf := func(f func(ds *datastore.Datastore, w http.ResponseWriter, req *http.Request)) http.HandlerFunc {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { Add(ds, w, r) })
+	}
+	http.Handle("/add", hf(Add))
+	http.Handle("/args", hf(Args))
+	http.Handle("/config", hf(GetConfig))
+	http.Handle("/blocks", hf(GetBlocks))
+	http.Handle("/inspect", hf(InspectVariable))
+	http.Handle("/list", hf(ListVariables))
+	http.Handle("/query", hf(Query))
+	http.Handle("/pprof/alloc", hf(PprofAlloc))
+	http.Handle("/pprof/inuse", hf(PprofInuse))
 	http.Handle("/js/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
 	http.Handle("/html/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
 	http.Handle("/", http.RedirectHandler("/html", 302))

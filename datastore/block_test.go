@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 	. "gopkg.in/check.v1"
@@ -39,7 +41,7 @@ func (s *MySuite) TestRead(c *C) {
 	err := block.Write(streams)
 	c.Assert(err, Equals, nil)
 
-	reader, err := block.Read()
+	reader, err := block.Read(context.Background())
 	c.Assert(err, Equals, nil)
 	readStreams := 0
 	for range reader {
@@ -76,7 +78,7 @@ func (s *MySuite) TestWrite(c *C) {
 	err := block.Write(block.LogStreams)
 	c.Assert(err, Equals, nil)
 
-	reader, err := block.Read()
+	reader, err := block.Read(context.Background())
 	c.Assert(err, Equals, nil)
 	vs := <-reader
 	switch vs.Variable.Name {
@@ -147,7 +149,7 @@ func (s *MySuite) TestCompact(c *C) {
 				&oproto.Value{DoubleValue: float64(i)})
 		}
 	}
-	c.Assert(block.Compact(), IsNil)
+	c.Assert(block.Compact(context.Background()), IsNil)
 }
 
 func (s *MySuite) TestGetStreamForVariable(c *C) {
@@ -163,9 +165,9 @@ func (s *MySuite) TestGetStreamForVariable(c *C) {
 				&oproto.Value{DoubleValue: float64(i)})
 		}
 	}
-	c.Assert(block.Compact(), IsNil)
+	c.Assert(block.Compact(context.Background()), IsNil)
 	found := false
-	for _, index := range block.BlockHeader.Index {
+	for _, index := range block.Block.Header.Index {
 		cv := variable.NewFromProto(index.Variable)
 		if cv.String() != "/test/bar7" {
 			continue
@@ -192,6 +194,6 @@ func (s *MySuite) BenchmarkCompact(c *C) {
 		}
 	}
 	for run := 0; run < c.N; run++ {
-		block.Compact()
+		block.Compact(context.Background())
 	}
 }
