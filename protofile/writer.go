@@ -54,9 +54,9 @@ func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 	return bytes, nil
 }
 
-func (pf *ProtoFile) ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream, <-chan interface{}) {
+func (pf *ProtoFile) ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream, <-chan struct{}) {
 	c := make(chan *oproto.ValueStream, chanSize)
-	done := make(chan interface{}, 1)
+	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for value := range c {

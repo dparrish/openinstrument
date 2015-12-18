@@ -1,4 +1,4 @@
-package main
+package rpc_server
 
 import (
 	"flag"
@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	rpcPort = flag.Int("rpc_port", 8021, "RPC Port to listen on")
+	port    = flag.Int("rpc_port", 8021, "RPC Port to listen on")
+	address = flag.String("rpc_address", "", "RPC Address to listen on (blank for any)")
 )
 
 type server struct {
@@ -50,7 +51,7 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 		// Get the last day
 		requestVariable.MinTimestamp = -86400000
 	}
-	for stream := range s.ds.Reader(requestVariable) {
+	for stream := range s.ds.Reader(ctx, requestVariable) {
 		if request.MaxVariables == 0 || len(vars) < int(request.MaxVariables) {
 			vars[variable.ProtoToString(stream.Variable)] = stream.Variable
 		}
@@ -75,7 +76,7 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 	}
 
 	q := query.NewFromProto(request.Query)
-	c, err := q.Run(s.ds)
+	c, err := q.Run(server.Context(), s.ds)
 	if err != nil {
 		return err
 	}
@@ -175,10 +176,10 @@ func (s *server) GetCluster(ctx context.Context, request *oproto.GetClusterReque
 	return r, nil
 }
 
-func serveRPC(ds *datastore.Datastore) {
-	sock, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *rpcPort})
+func Serve(ds *datastore.Datastore) {
+	sock, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
 	if err != nil {
-		log.Fatalf("Failed to listen on %d: %s", *rpcPort, err)
+		log.Fatalf("Failed to listen on %d: %s", *port, err)
 	}
 	log.Printf("Serving RPC on %v", sock.Addr().String())
 

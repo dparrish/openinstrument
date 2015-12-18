@@ -5,6 +5,8 @@ package aggregations_test
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/dparrish/openinstrument/aggregations"
 	"github.com/dparrish/openinstrument/datastore"
 	"github.com/dparrish/openinstrument/variable"
@@ -58,8 +60,8 @@ func checkValue(c *C, value *oproto.Value, expectedTimestamp uint64, expectedVal
 
 func (s *MySuite) TestMean(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
 	output := aggregations.Mean(nil, input)
 	c.Assert(output, Not(IsNil))
@@ -82,10 +84,10 @@ func (s *MySuite) TestMean(c *C) {
 
 func (s *MySuite) TestMeanBy(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a,job=foo,other=w}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=a,job=bar,other=x}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b,job=foo,other=y}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b,job=bar,other=z}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a,job=foo,other=w}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a,job=bar,other=x}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=foo,other=y}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=bar,other=z}")),
 	}
 	output := aggregations.Mean([]string{"host"}, input)
 	c.Assert(output, Not(IsNil))
@@ -127,10 +129,10 @@ func (s *MySuite) TestMeanBy(c *C) {
 
 func (s *MySuite) TestMeanByJob(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a,job=foo,other=w}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=a,job=bar,other=x}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b,job=foo,other=y}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b,job=bar,other=z}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a,job=foo,other=w}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a,job=bar,other=x}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=foo,other=y}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=bar,other=z}")),
 	}
 	output := aggregations.Mean([]string{"job"}, input)
 	c.Assert(output, Not(IsNil))
@@ -184,10 +186,10 @@ func checkHostsAndJobs(c *C, streams []*oproto.ValueStream, hostA, hostB, jobFoo
 
 func (s *MySuite) TestMeanByTwoLabels(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a,job=foo,other=w}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=a,job=bar,other=x}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b,job=foo,other=y}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b,job=bar,other=z}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a,job=foo,other=w}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a,job=bar,other=x}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=foo,other=y}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=bar,other=z}")),
 	}
 	output := aggregations.Mean([]string{"host", "job"}, input)
 	c.Assert(output, Not(IsNil))
@@ -199,8 +201,8 @@ func (s *MySuite) TestMeanByTwoLabels(c *C) {
 func (s *MySuite) TestOffsetMean(c *C) {
 	return
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test/offset{host=a}")),
-		<-s.store.Reader(variable.NewFromString("/test/offset{host=b}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=a}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=b}")),
 	}
 	output := aggregations.Mean(nil, input)
 	c.Assert(output, Not(IsNil))
@@ -223,8 +225,8 @@ func (s *MySuite) TestOffsetMean(c *C) {
 
 func (s *MySuite) TestMin(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
 	output := aggregations.Min(nil, input)
 	c.Assert(output, Not(IsNil))
@@ -247,8 +249,8 @@ func (s *MySuite) TestMin(c *C) {
 
 func (s *MySuite) TestMax(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
 	output := aggregations.Max(nil, input)
 	c.Assert(output, Not(IsNil))
@@ -271,8 +273,8 @@ func (s *MySuite) TestMax(c *C) {
 
 func (s *MySuite) TestSum(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
 	output := aggregations.Sum(nil, input)
 	c.Assert(output, Not(IsNil))
@@ -295,8 +297,8 @@ func (s *MySuite) TestSum(c *C) {
 
 func (s *MySuite) TestStdDev(c *C) {
 	input := []*oproto.ValueStream{
-		<-s.store.Reader(variable.NewFromString("/test{host=a}")),
-		<-s.store.Reader(variable.NewFromString("/test{host=b}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
+		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
 	output := aggregations.StdDev(nil, input)
 	c.Assert(output, Not(IsNil))
@@ -319,7 +321,7 @@ func (s *MySuite) TestStdDev(c *C) {
 
 type FakeReadableStore struct{}
 
-func (s *FakeReadableStore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
+func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream, 100)
 	go func() {
 		defer close(c)

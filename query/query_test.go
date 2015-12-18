@@ -3,6 +3,8 @@ package query
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
@@ -16,7 +18,7 @@ func Test(t *testing.T) { TestingT(t) }
 
 type FakeReadableStore struct{}
 
-func (s *FakeReadableStore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
+func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream, 100)
 	go func() {
 		defer close(c)
@@ -102,7 +104,7 @@ func (s *MySuite) TestVariableNoLabels(c *C) {
 	c.Check(query.Variable[0].MinTimestamp, Equals, int64(0))
 	c.Check(query.Variable[0].MaxTimestamp, Equals, int64(0))
 
-	ch, err := q.Run(s.store)
+	ch, err := q.Run(context.Background(), s.store)
 	c.Assert(err, IsNil)
 	numStreams := 0
 	for stream := range ch {
@@ -121,7 +123,7 @@ func (s *MySuite) TestVariableWithStartRange(c *C) {
 	c.Check(query.Variable[0].MinTimestamp, Equals, int64(200))
 	c.Check(query.Variable[0].MaxTimestamp, Equals, int64(0))
 
-	ch, err := q.Run(s.store)
+	ch, err := q.Run(context.Background(), s.store)
 	c.Assert(err, IsNil)
 	numStreams := 0
 	for stream := range ch {
@@ -140,7 +142,7 @@ func (s *MySuite) TestVariableWithEndRange(c *C) {
 	c.Check(query.Variable[0].MinTimestamp, Equals, int64(200))
 	c.Check(query.Variable[0].MaxTimestamp, Equals, int64(400))
 
-	ch, err := q.Run(s.store)
+	ch, err := q.Run(context.Background(), s.store)
 	c.Assert(err, IsNil)
 	numStreams := 0
 	for stream := range ch {
@@ -181,7 +183,7 @@ func (s *MySuite) TestMean(c *C) {
 	c.Check(query.Aggregation[0].Type, Equals, oproto.StreamAggregation_MEAN)
 	c.Check(query.Aggregation[0].Label[0], Equals, "xyz")
 
-	ch, err := q.Run(s.store)
+	ch, err := q.Run(context.Background(), s.store)
 	c.Assert(err, IsNil)
 	output := []*oproto.ValueStream{}
 	for stream := range ch {
@@ -218,7 +220,7 @@ func (s *MySuite) TestMutation(c *C) {
 	c.Check(query.Mutation[0].Type, Equals, oproto.StreamMutation_RATE)
 	c.Check(variable.ProtoToString(query.Mutation[0].Query.Variable[0]), Equals, "/test{host=a}")
 
-	ch, err := q.Run(s.store)
+	ch, err := q.Run(context.Background(), s.store)
 	c.Assert(err, IsNil)
 	numStreams := 0
 	for stream := range ch {
@@ -299,7 +301,7 @@ func (s *MySuite) TestPipeline(c *C) {
 	err := proto.UnmarshalText(qs, qp)
 	c.Assert(err, IsNil)
 
-	_, err = NewFromProto(qp).Run(s.store)
+	_, err = NewFromProto(qp).Run(context.Background(), s.store)
 	c.Assert(err, IsNil)
 
 	//c.Fail()

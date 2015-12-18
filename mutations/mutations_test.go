@@ -6,6 +6,8 @@ import (
 	"math"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/dparrish/openinstrument/datastore"
 	"github.com/dparrish/openinstrument/mutations"
 	oproto "github.com/dparrish/openinstrument/proto"
@@ -33,7 +35,7 @@ func checkValue(c *C, value *oproto.Value, expectedTimestamp uint64, expectedVal
 }
 
 func (s *MySuite) TestMean(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Mean(input)
 		checkValue(c, output.Value[0], 60*0, float64((20*0+20*1)/2))
 		checkValue(c, output.Value[1], 60*1, float64((20*1+20*2)/2))
@@ -50,7 +52,7 @@ func (s *MySuite) TestMean(c *C) {
 }
 
 func (s *MySuite) TestMovingAverage(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.MovingAverage(120, input)
 		// Length should be 2 less than the input, as there is no moving average across the first two elements
 		c.Assert(len(output.Value), Equals, len(input.Value)-2)
@@ -67,7 +69,7 @@ func (s *MySuite) TestMovingAverage(c *C) {
 }
 
 func (s *MySuite) TestMin(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Min(120, input)
 		checkValue(c, output.Value[0], 0, 20*1)
 		checkValue(c, output.Value[1], 120, 20*3)
@@ -78,7 +80,7 @@ func (s *MySuite) TestMin(c *C) {
 }
 
 func (s *MySuite) TestMax(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Max(120, input)
 		checkValue(c, output.Value[0], 60*2, 20*3)
 		checkValue(c, output.Value[1], 60*4, 20*5)
@@ -89,7 +91,7 @@ func (s *MySuite) TestMax(c *C) {
 }
 
 func (s *MySuite) TestInterpolate(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test/offset")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test/offset")) {
 		output := mutations.Interpolate(300, input)
 		checkValue(c, output.Value[0], 0, float64(20))
 		checkValue(c, output.Value[1], 300, float64(121.81818181818181))
@@ -99,7 +101,7 @@ func (s *MySuite) TestInterpolate(c *C) {
 }
 
 func (s *MySuite) TestRate(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Rate(input)
 		for _, v := range output.Value {
 			checkValue(c, v, v.Timestamp, float64(1)/float64(3))
@@ -108,7 +110,7 @@ func (s *MySuite) TestRate(c *C) {
 }
 
 func (s *MySuite) TestSignedRate(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.SignedRate(input)
 		for _, v := range output.Value {
 			checkValue(c, v, v.Timestamp, float64(1)/float64(3))
@@ -117,7 +119,7 @@ func (s *MySuite) TestSignedRate(c *C) {
 }
 
 func (s *MySuite) TestFirst(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.First(120, input)
 		c.Assert(len(output.Value), Equals, 6)
 		checkValue(c, output.Value[0], 60*0, 20*1)
@@ -130,7 +132,7 @@ func (s *MySuite) TestFirst(c *C) {
 }
 
 func (s *MySuite) TestLast(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Last(120, input)
 		c.Assert(len(output.Value), Equals, 5)
 		checkValue(c, output.Value[0], 60*2, 20*3)
@@ -142,7 +144,7 @@ func (s *MySuite) TestLast(c *C) {
 }
 
 func (s *MySuite) TestMultiply(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Multiply(2, input)
 		c.Assert(len(output.Value), Equals, len(input.Value))
 		checkValue(c, output.Value[0], 60*0, 20*1*2)
@@ -160,7 +162,7 @@ func (s *MySuite) TestMultiply(c *C) {
 }
 
 func (s *MySuite) TestDivide(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Multiply(1.0/2.0, input)
 		c.Assert(len(output.Value), Equals, len(input.Value))
 		checkValue(c, output.Value[0], 60*0, (20*1)/2.0)
@@ -178,7 +180,7 @@ func (s *MySuite) TestDivide(c *C) {
 }
 
 func (s *MySuite) TestAdd(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Add(5, input)
 		c.Assert(len(output.Value), Equals, len(input.Value))
 		checkValue(c, output.Value[0], 60*0, 20*1+5)
@@ -196,7 +198,7 @@ func (s *MySuite) TestAdd(c *C) {
 }
 
 func (s *MySuite) TestSubtract(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Add(-5, input)
 		c.Assert(len(output.Value), Equals, len(input.Value))
 		checkValue(c, output.Value[0], 60*0, 20*1-5)
@@ -214,7 +216,7 @@ func (s *MySuite) TestSubtract(c *C) {
 }
 
 func (s *MySuite) TestRoot(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Root(2, input)
 		c.Assert(len(output.Value), Equals, len(input.Value))
 		checkValue(c, output.Value[0], 60*0, math.Sqrt(20*1))
@@ -232,7 +234,7 @@ func (s *MySuite) TestRoot(c *C) {
 }
 
 func (s *MySuite) TestPower(c *C) {
-	for input := range s.store.Reader(variable.NewFromString("/test")) {
+	for input := range s.store.Reader(context.Background(), variable.NewFromString("/test")) {
 		output := mutations.Power(2, input)
 		c.Assert(len(output.Value), Equals, len(input.Value))
 		checkValue(c, output.Value[0], 60*0, math.Pow(20*1, 2))
@@ -251,7 +253,7 @@ func (s *MySuite) TestPower(c *C) {
 
 type FakeReadableStore struct{}
 
-func (s *FakeReadableStore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
+func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream, 100)
 	go func() {
 		defer close(c)

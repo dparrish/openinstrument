@@ -10,7 +10,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/dparrish/openinstrument/datastore"
+	"github.com/dparrish/openinstrument/http_server"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/rpc_server"
 	"github.com/dparrish/openinstrument/store_config"
 )
 
@@ -31,23 +33,26 @@ func main() {
 	ds := datastore.Open(context.Background(), *storePath)
 	log.Printf("Finished opening store, serving")
 
-	go serveRPC(ds)
-	go serveHTTP(ds)
+	go rpc_server.Serve(ds)
+	go http_server.Serve(ds)
 	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_RUN)
 
-	shutdown := make(chan interface{})
-
+	shutdown := make(chan struct{})
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for sig := range c {
 			log.Printf("Caught signal %s, shutting down", sig)
-			shutdown <- true
+			close(shutdown)
 		}
 	}()
-
 	<-shutdown
+
+	// Drain server
 	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_DRAIN)
+	// TODO(drain)
+
+	// Shut down server
 	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_SHUTDOWN)
 
 	store_config.Shutdown()

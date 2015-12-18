@@ -24,7 +24,7 @@ type ReadableStore interface {
 	// If min/maxTimestamp are not nil, streams will only be returned if SOME values inside the stream match.
 	// The supplied variable may be a search or a single.
 	// The streams returned may be out of order with respect to variable names or timestamps.
-	Reader(v *variable.Variable) <-chan *oproto.ValueStream
+	Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream
 }
 
 type Datastore struct {
@@ -238,11 +238,12 @@ func (ds *Datastore) Writer() chan<- *oproto.ValueStream {
 // If min/maxTimestamp are not nil, streams will only be returned if SOME values inside the stream match.
 // The supplied variable may be a search or a single.
 // The streams returned may be out of order with respect to variable names or timestamps.
-func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
+func (ds *Datastore) Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream {
 	varName := v.String()
 	log.Printf("Creating Reader for %s between %d and %d\n", varName, v.MinTimestamp, v.MaxTimestamp)
 	c := make(chan *oproto.ValueStream, 1000)
 	go func() {
+		defer close(c)
 		maybeReturnStreams := func(block *Block, stream *oproto.ValueStream) {
 			if stream == nil {
 				return
@@ -265,6 +266,11 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 		// Search for streams to return
 		wg := new(sync.WaitGroup)
 		for _, block := range ds.Blocks() {
+			select {
+			case <-ctx.Done():
+				break
+			default:
+			}
 			if varName > block.EndKey() {
 				continue
 			}
@@ -283,6 +289,11 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 					}
 				}()
 				for _, index := range block.Block.Header.Index {
+					select {
+					case <-ctx.Done():
+						break
+					default:
+					}
 					cv := variable.NewFromProto(index.Variable)
 					if !cv.Match(v) {
 						continue
@@ -304,7 +315,6 @@ func (ds *Datastore) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 			}(block)
 		}
 		wg.Wait()
-		close(c)
 	}()
 	return c
 }

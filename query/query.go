@@ -3,6 +3,8 @@ package query
 import (
 	"log"
 
+	"golang.org/x/net/context"
+
 	"github.com/dparrish/openinstrument/aggregations"
 	"github.com/dparrish/openinstrument/datastore"
 	"github.com/dparrish/openinstrument/mutations"
@@ -35,18 +37,18 @@ func (q *Query) AsProto() *oproto.Query {
 	return q.query
 }
 
-func (q *Query) Run(store datastore.ReadableStore) (chan *oproto.ValueStream, error) {
-	return RunQuery(q.query, store)
+func (q *Query) Run(ctx context.Context, store datastore.ReadableStore) (chan *oproto.ValueStream, error) {
+	return RunQuery(ctx, q.query, store)
 }
 
-func RunQuery(query *oproto.Query, store datastore.ReadableStore) (chan *oproto.ValueStream, error) {
+func RunQuery(ctx context.Context, query *oproto.Query, store datastore.ReadableStore) (chan *oproto.ValueStream, error) {
 	log.Printf("Running query %v", query)
 	output := make(chan *oproto.ValueStream, 100)
 	go func() {
 		defer close(output)
 		for _, v := range query.Variable {
 			log.Printf("Returning variable %s", variable.ProtoToString(v))
-			for stream := range store.Reader(variable.NewFromProto(v)) {
+			for stream := range store.Reader(ctx, variable.NewFromProto(v)) {
 				if stream != nil {
 					outputStream := &oproto.ValueStream{Variable: stream.Variable}
 					stv := variable.NewFromProto(stream.Variable)
@@ -63,7 +65,7 @@ func RunQuery(query *oproto.Query, store datastore.ReadableStore) (chan *oproto.
 			log.Printf("Running child aggregation")
 			input := []*oproto.ValueStream{}
 			for _, q := range child.Query {
-				o, err := RunQuery(q, store)
+				o, err := RunQuery(ctx, q, store)
 				if err != nil {
 					return
 				}
@@ -98,7 +100,7 @@ func RunQuery(query *oproto.Query, store datastore.ReadableStore) (chan *oproto.
 		}
 		for _, child := range query.Mutation {
 			log.Printf("Running child mutation")
-			input, err := RunQuery(child.Query, store)
+			input, err := RunQuery(ctx, child.Query, store)
 			if err != nil {
 				log.Printf("Error in child mutation: %s", err)
 				return
