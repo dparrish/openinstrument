@@ -7,25 +7,28 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/dparrish/openinstrument"
+	"github.com/dparrish/openinstrument/client"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
-
-	"google.golang.org/grpc"
 )
 
 var (
 	connectAddress = flag.String("connect", "localhost:8021", "Connect directly to the specified datastore server.")
+	readTimeout    = flag.Duration("read_timeout", 0, "Timeout for reading from stdin. Default is no timeout")
 )
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	flag.Parse()
 
-	conn, err := grpc.Dial(*connectAddress, grpc.WithInsecure())
+	ctx := context.Background()
+
+	conn, err := client.NewRpcClient(ctx, *connectAddress)
 	if err != nil {
 		log.Fatalf("Error connecting to %s: %s", *connectAddress, err)
 	}
@@ -36,46 +39,70 @@ func main() {
 		log.Fatalf("Error compiling regex: %s", err)
 	}
 
-	request := &oproto.AddRequest{}
 	timestamp := openinstrument.NowMs()
 
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		matches := re.FindStringSubmatch(scanner.Text())
-		if len(matches) != 3 {
-			log.Printf("Invalid input line: %s", scanner.Text())
-			continue
+	// Read from stdin
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		defer close(c)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			matches := re.FindStringSubmatch(scanner.Text())
+			if len(matches) != 3 {
+				log.Printf("Invalid input line: %s", scanner.Text())
+				continue
+			}
+			v := variable.NewFromString(matches[1])
+			value := &oproto.Value{Timestamp: timestamp}
+			f, err := strconv.ParseFloat(matches[2], 64)
+			if err != nil {
+				value.StringValue = matches[2]
+			} else {
+				value.DoubleValue = f
+			}
+			c <- &oproto.ValueStream{
+				Variable: v.AsProto(),
+				Value:    []*oproto.Value{value},
+			}
 		}
-		v := variable.NewFromString(matches[1])
-		value := &oproto.Value{Timestamp: timestamp}
-		f, err := strconv.ParseFloat(matches[2], 64)
-		if err != nil {
-			value.StringValue = matches[2]
-		} else {
-			value.DoubleValue = f
-		}
-		stream := &oproto.ValueStream{
-			Variable: v.AsProto(),
-			Value:    []*oproto.Value{value},
-		}
-		request.Stream = append(request.Stream, stream)
-	}
-	log.Printf("%s", request)
+	}()
 
-	if len(request.Stream) == 0 {
-		log.Fatalf("No valid values to add")
+	if *readTimeout != 0 {
+		ctx, _ = context.WithTimeout(ctx, *readTimeout)
 	}
-
-	stub := oproto.NewStoreClient(conn)
-	server_stream, err := stub.Add(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-	server_stream.Send(request)
-	response, err := server_stream.Recv()
+	in, out, err := conn.Add(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("%s", response)
+	func() {
+		defer close(in)
+		interval := time.Tick(1 * time.Second)
+		request := &oproto.AddRequest{}
+		for {
+			select {
+			case stream := <-c:
+				if stream == nil {
+					in <- request
+					return
+				}
+				request.Stream = append(request.Stream, stream)
+			case <-interval:
+				in <- request
+				request = &oproto.AddRequest{}
+				timestamp = openinstrument.NowMs()
+			case response := <-out:
+				if response == nil {
+					return
+				}
+				log.Printf("%s", response)
+			}
+		}
+		in <- request
+		log.Printf("done")
+	}()
+
+	for response := range out {
+		log.Printf("%s", response)
+	}
 }

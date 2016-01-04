@@ -1,44 +1,65 @@
 package exported
 
 import (
-	"log"
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
+	"github.com/dparrish/openinstrument/client"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 )
 
 type VariableExporter struct {
-	shutdown  bool
-	completed sync.Mutex
+	ctx  context.Context
+	wg   *sync.WaitGroup
+	vars []Exportable
 }
 
-func NewVariableExporter(address string, interval int32) *VariableExporter {
-	ve := new(VariableExporter)
-	go func(ve *VariableExporter) {
-		ve.completed.Lock()
-		defer ve.completed.Unlock()
-		tick := time.Tick(time.Duration(interval) * time.Millisecond)
-		for !ve.shutdown {
-			<-tick
-			// Flush
-			log.Printf("Flushing exported variables")
+func NewExporter(ctx context.Context, c client.Client, interval time.Duration) *VariableExporter {
+	e := &VariableExporter{
+		ctx: ctx,
+		wg:  &sync.WaitGroup{},
+	}
+	go func() {
+		e.wg.Add(1)
+		defer e.wg.Done()
+		tick := time.Tick(interval)
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case <-tick:
+				e.GetStreams()
+			}
 		}
-	}(ve)
-	return ve
+	}()
+	return e
 }
 
-func (ve *VariableExporter) Shutdown() {
-	ve.shutdown = true
-	ve.completed.Lock()
-	ve.completed.Unlock()
+func (e *VariableExporter) GetStreams() []*oproto.ValueStream {
+	// Flush
+	streams := []*oproto.ValueStream{}
+	for _, v := range e.vars {
+		for stream := range v.Export() {
+			streams = append(streams, stream)
+		}
+	}
+	return streams
+}
+
+func (e *VariableExporter) Shutdown() {
+	e.wg.Wait()
+	e.vars = []Exportable{}
+}
+
+func (e *VariableExporter) addExportable(v Exportable) {
+	e.vars = append(e.vars, v)
 }
 
 type Exportable interface {
 	Export() chan *oproto.ValueStream
-	Variable() *variable.Variable
-	SetVariable(v *variable.Variable)
 }
 
 //////////// Integer ///////////////////////////////
@@ -47,32 +68,28 @@ type Integer struct {
 	v     *variable.Variable
 }
 
-func NewInteger(v string) *Integer {
-	return &Integer{
+func NewInteger(exporter *VariableExporter, v *variable.Variable) *Integer {
+	i := &Integer{
 		value: 0,
-		v:     variable.NewFromString(v),
+		v:     v,
 	}
-}
-
-func (ei *Integer) Variable() *variable.Variable {
-	return ei.v
-}
-
-func (ei *Integer) SetVariable(v *variable.Variable) {
-	ei.v = v
+	exporter.addExportable(i)
+	return i
 }
 
 func (ei *Integer) Export() chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
 	go func() {
-		stream := new(oproto.ValueStream)
-		stream.Variable = ei.v.AsProto()
-		stream.Value = append(stream.Value, &oproto.Value{
-			Timestamp:   uint64(time.Now().UnixNano() / 1000000),
-			DoubleValue: float64(ei.value),
-		})
-		c <- stream
-		close(c)
+		defer close(c)
+		c <- &oproto.ValueStream{
+			Variable: ei.v.AsProto(),
+			Value: []*oproto.Value{
+				{
+					Timestamp:   uint64(time.Now().UnixNano() / 1000000),
+					DoubleValue: float64(ei.value),
+				},
+			},
+		}
 	}()
 	return c
 }
@@ -99,32 +116,28 @@ type Float struct {
 	v     *variable.Variable
 }
 
-func NewFloat(v string) *Float {
-	return &Float{
+func NewFloat(exporter *VariableExporter, v *variable.Variable) *Float {
+	f := &Float{
 		value: 0,
-		v:     variable.NewFromString(v),
+		v:     v,
 	}
-}
-
-func (ef *Float) Variable() *variable.Variable {
-	return ef.v
-}
-
-func (ef *Float) SetVariable(v *variable.Variable) {
-	ef.v = v
+	exporter.addExportable(f)
+	return f
 }
 
 func (ef *Float) Export() chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
 	go func() {
-		stream := new(oproto.ValueStream)
-		stream.Variable = ef.v.AsProto()
-		stream.Value = append(stream.Value, &oproto.Value{
-			Timestamp:   uint64(time.Now().UnixNano() / 1000000),
-			DoubleValue: ef.value,
-		})
-		c <- stream
-		close(c)
+		defer close(c)
+		c <- &oproto.ValueStream{
+			Variable: ef.v.AsProto(),
+			Value: []*oproto.Value{
+				{
+					Timestamp:   uint64(time.Now().UnixNano() / 1000000),
+					DoubleValue: ef.value,
+				},
+			},
+		}
 	}()
 	return c
 }
@@ -152,23 +165,24 @@ type Ratio struct {
 	total   *Integer
 }
 
-func NewRatio(v string) *Ratio {
-	successVar := variable.NewFromString(v)
+func NewRatio(exporter *VariableExporter, v *variable.Variable) *Ratio {
+	successVar := variable.NewFromProto(v.AsProto())
 	successVar.Variable += "-success"
-	failureVar := variable.NewFromString(v)
+	failureVar := variable.NewFromProto(v.AsProto())
 	failureVar.Variable += "-failure"
-	totalVar := variable.NewFromString(v)
+	totalVar := variable.NewFromProto(v.AsProto())
 	totalVar.Variable += "-total"
 	return &Ratio{
-		success: NewInteger(successVar.String()),
-		failure: NewInteger(failureVar.String()),
-		total:   NewInteger(totalVar.String()),
+		success: NewInteger(exporter, successVar),
+		failure: NewInteger(exporter, failureVar),
+		total:   NewInteger(exporter, totalVar),
 	}
 }
 
 func (er *Ratio) Export() chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
 	go func() {
+		defer close(c)
 		for stream := range er.success.Export() {
 			c <- stream
 		}
@@ -178,7 +192,6 @@ func (er *Ratio) Export() chan *oproto.ValueStream {
 		for stream := range er.total.Export() {
 			c <- stream
 		}
-		close(c)
 	}()
 	return c
 }
@@ -199,27 +212,27 @@ type Average struct {
 	totalCount *Integer
 }
 
-func NewAverage(v string) *Average {
-	sumVar := variable.NewFromString(v)
+func NewAverage(exporter *VariableExporter, v *variable.Variable) *Average {
+	sumVar := variable.NewFromProto(v.AsProto())
 	sumVar.Variable += "-total-count"
-	totalVar := variable.NewFromString(v)
-	sumVar.Variable += "-overall-sum"
+	totalVar := variable.NewFromProto(v.AsProto())
+	totalVar.Variable += "-overall-sum"
 	return &Average{
-		overallSum: NewFloat(sumVar.String()),
-		totalCount: NewInteger(totalVar.String()),
+		overallSum: NewFloat(exporter, sumVar),
+		totalCount: NewInteger(exporter, totalVar),
 	}
 }
 
 func (ea *Average) Export() chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
 	go func() {
+		defer close(c)
 		for stream := range ea.overallSum.Export() {
 			c <- stream
 		}
 		for stream := range ea.totalCount.Export() {
 			c <- stream
 		}
-		close(c)
 	}()
 	return c
 }
@@ -235,9 +248,9 @@ type Timer struct {
 	startTime time.Time
 }
 
-func NewTimer(v string) *Timer {
+func NewTimer(exporter *VariableExporter, v *variable.Variable) *Timer {
 	return &Timer{
-		average: NewAverage(v),
+		average: NewAverage(exporter, v),
 	}
 }
 
@@ -260,32 +273,28 @@ type String struct {
 	v     *variable.Variable
 }
 
-func NewString(v string) *String {
-	return &String{
+func NewString(exporter *VariableExporter, v *variable.Variable) *String {
+	s := &String{
 		value: "",
-		v:     variable.NewFromString(v),
+		v:     v,
 	}
-}
-
-func (es *String) Variable() *variable.Variable {
-	return es.v
-}
-
-func (es *String) SetVariable(v *variable.Variable) {
-	es.v = v
+	exporter.addExportable(s)
+	return s
 }
 
 func (es *String) Export() chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
 	go func() {
-		stream := new(oproto.ValueStream)
-		stream.Variable = es.v.AsProto()
-		stream.Value = append(stream.Value, &oproto.Value{
-			Timestamp:   uint64(time.Now().UnixNano() / 1000000),
-			StringValue: es.value,
-		})
-		c <- stream
-		close(c)
+		defer close(c)
+		c <- &oproto.ValueStream{
+			Variable: es.v.AsProto(),
+			Value: []*oproto.Value{
+				{
+					Timestamp:   uint64(time.Now().UnixNano() / 1000000),
+					StringValue: es.value,
+				},
+			},
+		}
 	}()
 	return c
 }

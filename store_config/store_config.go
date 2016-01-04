@@ -32,6 +32,8 @@ var (
 	wg         *sync.WaitGroup
 	cancel     context.CancelFunc
 	clusterCtx context.Context
+
+	clusterChangeWatchers []chan *oproto.ClusterConfig
 )
 
 // Init discovers and joins the datastore cluster.
@@ -73,6 +75,11 @@ func Shutdown() {
 	cancel()
 	// Wait for all background goroutines to complete
 	wg.Wait()
+	for _, c := range clusterChangeWatchers {
+		if c != nil {
+			close(c)
+		}
+	}
 }
 
 // ThisServer gets the member status for the current server.
@@ -121,7 +128,10 @@ func GetBlock(id string) *oproto.Block {
 
 // UpdateBlock updates the cluster-wide view of a single block.
 func UpdateBlock(ctx context.Context, block *oproto.Block) error {
-	data := openinstrument.ProtoText(block)
+	m := proto.Clone(block)
+	b := m.(*oproto.Block)
+	b.Header = &oproto.BlockHeader{}
+	data := openinstrument.ProtoText(b)
 	_, err := kapi.Set(ctx, fmt.Sprintf("%s/blocks/%s", clusterEtcdPrefix, block.Id), data, nil)
 	return err
 }
@@ -132,7 +142,8 @@ func getClusterBlocks(ctx context.Context) error {
 
 	r, err := kapi.Get(ctx, fmt.Sprintf("%s/blocks/", clusterEtcdPrefix), &client.GetOptions{Recursive: false})
 	if err != nil {
-		return fmt.Errorf("Error getting cluster blocks: %s", err)
+		fmt.Printf("Error getting cluster blocks: %s", err)
+		return nil
 	}
 
 	for _, node := range r.Node.Nodes {
@@ -150,7 +161,8 @@ func getClusterBlocks(ctx context.Context) error {
 func getClusterServers(ctx context.Context) error {
 	r, err := kapi.Get(ctx, fmt.Sprintf("%s/members/", clusterEtcdPrefix), nil)
 	if err != nil {
-		return fmt.Errorf("Error getting cluster members: %s", err)
+		log.Printf("Error getting cluster members: %s", err)
+		return nil
 	}
 
 	for _, node := range r.Node.Nodes {
@@ -213,6 +225,31 @@ func createMyNode(ctx context.Context) error {
 	return updateMember(ctx, c)
 }
 
+func notifyClusterChange(ctx context.Context) {
+	for _, c := range clusterChangeWatchers {
+		go func() {
+			c <- Config
+		}()
+	}
+}
+
+func SubscribeClusterChanges() <-chan *oproto.ClusterConfig {
+	c := make(chan *oproto.ClusterConfig, 100)
+	clusterChangeWatchers = append(clusterChangeWatchers, c)
+	c <- Config
+	return c
+}
+
+func UnsubscribeClusterChanges(c <-chan *oproto.ClusterConfig) {
+	for i, e := range clusterChangeWatchers {
+		log.Println("Unwatching")
+		if c == e {
+			clusterChangeWatchers = append(clusterChangeWatchers[:i], clusterChangeWatchers[i+1:]...)
+			return
+		}
+	}
+}
+
 func watchCluster(ctx context.Context) error {
 	watcher := kapi.Watcher(fmt.Sprintf("%s/members", clusterEtcdPrefix), &client.WatcherOptions{Recursive: true})
 	if watcher == nil {
@@ -251,6 +288,8 @@ func watchCluster(ctx context.Context) error {
 					Config.Server = append(Config.Server, c)
 				}
 			}
+
+			notifyClusterChange(ctx)
 		}
 	}()
 	return nil

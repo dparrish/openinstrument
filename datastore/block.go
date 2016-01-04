@@ -380,6 +380,70 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	return nil
 }
 
+func (block *Block) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
+	c := make(chan *oproto.ValueStream)
+	if v.String() > block.EndKey() {
+		return nil
+	}
+
+	maybeReturnStreams := func(stream *oproto.ValueStream) {
+		if stream == nil {
+			return
+		}
+		if len(stream.Value) == 0 {
+			return
+		}
+		if int64(stream.Value[len(stream.Value)-1].Timestamp) < v.MinTimestamp {
+			return
+		}
+		if v.MaxTimestamp != 0 && int64(stream.Value[0].Timestamp) > v.MaxTimestamp {
+			return
+		}
+		cv := variable.NewFromProto(stream.Variable)
+		if !cv.Match(v) {
+			return
+		}
+		c <- stream
+	}
+
+	go func() {
+		defer close(c)
+
+		block.logLock.RLock()
+		for _, stream := range block.LogStreams {
+			maybeReturnStreams(stream)
+		}
+		block.logLock.RUnlock()
+
+		block.newStreamsLock.RLock()
+		for _, stream := range block.NewStreams {
+			maybeReturnStreams(stream)
+		}
+		block.newStreamsLock.RUnlock()
+
+		for _, index := range block.Block.Header.Index {
+			if index.NumValues == 0 {
+				continue
+			}
+			if int64(index.MaxTimestamp) < v.MinTimestamp {
+				continue
+			}
+			if v.MaxTimestamp != 0 && int64(index.MinTimestamp) > v.MaxTimestamp {
+				continue
+			}
+			cv := variable.NewFromProto(index.Variable)
+			if !cv.Match(v) {
+				continue
+			}
+			stream := block.GetStreamForVariable(index)
+			if stream != nil {
+				c <- stream
+			}
+		}
+	}()
+	return c
+}
+
 func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error) {
 	file, err := protofile.Read(block.Filename())
 	if err != nil {

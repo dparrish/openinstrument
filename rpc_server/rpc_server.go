@@ -101,12 +101,18 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 		}
 		wg.Add(1)
 		go func(request *oproto.AddRequest) {
-			response := &oproto.AddResponse{Success: true}
-			c := s.ds.Writer()
-			for _, stream := range request.Stream {
-				c <- stream
+			response := &oproto.AddResponse{
+				Success: true,
+				Streams: uint32(len(request.Stream)),
+				Values:  uint32(0),
 			}
-			close(c)
+			in, flushed := s.ds.Writer()
+			for _, stream := range request.Stream {
+				in <- stream
+				response.Values += uint32(len(stream.Value))
+			}
+			close(in)
+			<-flushed
 			server.Send(response)
 			wg.Done()
 		}(request)
@@ -174,6 +180,32 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 func (s *server) GetCluster(ctx context.Context, request *oproto.GetClusterRequest) (*oproto.GetClusterResponse, error) {
 	r := &oproto.GetClusterResponse{Config: store_config.Config}
 	return r, nil
+}
+
+func (s *server) WatchCluster(request *oproto.WatchClusterRequest, server oproto.Store_WatchClusterServer) error {
+	sendConfig := func(conf *oproto.ClusterConfig) {
+		c := &oproto.ClusterConfig{
+			Server:          conf.GetServer(),
+			RetentionPolicy: conf.GetRetentionPolicy(),
+		}
+		server.Send(&oproto.WatchClusterResponse{
+			Config: c,
+		})
+	}
+	watchConfig := store_config.SubscribeClusterChanges()
+
+loop:
+	for {
+		select {
+		case <-server.Context().Done():
+			break loop
+		case conf := <-watchConfig:
+			sendConfig(conf)
+		}
+	}
+
+	store_config.UnsubscribeClusterChanges(watchConfig)
+	return nil
 }
 
 func Serve(ds *datastore.Datastore) {

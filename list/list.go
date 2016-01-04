@@ -11,8 +11,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"google.golang.org/grpc"
-
+	"github.com/dparrish/openinstrument/client"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 )
@@ -54,20 +53,21 @@ func main() {
 		request.Prefix.MinTimestamp = -d.Nanoseconds() / 1000000
 	}
 
-	conn, err := grpc.Dial(*connectAddress, grpc.WithInsecure())
+	conn, err := client.NewRpcClient(context.Background(), *connectAddress)
 	if err != nil {
 		log.Fatalf("Error connecting to %s: %s", *connectAddress, err)
 	}
 	defer conn.Close()
 
-	stub := oproto.NewStoreClient(conn)
-	response, err := stub.List(context.Background(), request)
+	c, err := conn.List(context.Background(), request)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var vars []string
-	for _, v := range response.Variable {
-		vars = append(vars, variable.NewFromProto(v).String())
+	vars := []string{}
+	for response := range c {
+		for _, v := range response.Variable {
+			vars = append(vars, variable.NewFromProto(v).String())
+		}
 	}
 	sort.Strings(vars)
 	for _, variable := range vars {

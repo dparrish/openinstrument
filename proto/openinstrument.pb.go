@@ -43,6 +43,8 @@ It has these top-level messages:
 	JoinClusterResponse
 	UpdateClusterRequest
 	UpdateClusterResponse
+	WatchClusterRequest
+	WatchClusterResponse
 */
 package openinstrument_proto
 
@@ -547,6 +549,8 @@ type AddResponse struct {
 	Success      bool          `protobuf:"varint,1,opt,name=success" json:"success,omitempty"`
 	Errormessage string        `protobuf:"bytes,2,opt,name=errormessage" json:"errormessage,omitempty"`
 	Timer        []*LogMessage `protobuf:"bytes,3,rep,name=timer" json:"timer,omitempty"`
+	Streams      uint32        `protobuf:"varint,4,opt,name=streams" json:"streams,omitempty"`
+	Values       uint32        `protobuf:"varint,5,opt,name=values" json:"values,omitempty"`
 }
 
 func (m *AddResponse) Reset()         { *m = AddResponse{} }
@@ -969,6 +973,28 @@ func (m *UpdateClusterResponse) GetMember() []*ClusterMember {
 	return nil
 }
 
+type WatchClusterRequest struct {
+}
+
+func (m *WatchClusterRequest) Reset()         { *m = WatchClusterRequest{} }
+func (m *WatchClusterRequest) String() string { return proto.CompactTextString(m) }
+func (*WatchClusterRequest) ProtoMessage()    {}
+
+type WatchClusterResponse struct {
+	Config *ClusterConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
+}
+
+func (m *WatchClusterResponse) Reset()         { *m = WatchClusterResponse{} }
+func (m *WatchClusterResponse) String() string { return proto.CompactTextString(m) }
+func (*WatchClusterResponse) ProtoMessage()    {}
+
+func (m *WatchClusterResponse) GetConfig() *ClusterConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("openinstrument.proto.StreamVariable_ValueType", StreamVariable_ValueType_name, StreamVariable_ValueType_value)
 	proto.RegisterEnum("openinstrument.proto.StreamMutation_SampleType", StreamMutation_SampleType_name, StreamMutation_SampleType_value)
@@ -993,6 +1019,7 @@ type StoreClient interface {
 	JoinBlock(ctx context.Context, in *JoinBlockRequest, opts ...grpc.CallOption) (*JoinBlockResponse, error)
 	CompactBlock(ctx context.Context, in *CompactBlockRequest, opts ...grpc.CallOption) (*CompactBlockResponse, error)
 	GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*GetClusterResponse, error)
+	WatchCluster(ctx context.Context, in *WatchClusterRequest, opts ...grpc.CallOption) (Store_WatchClusterClient, error)
 }
 
 type storeClient struct {
@@ -1120,6 +1147,38 @@ func (c *storeClient) GetCluster(ctx context.Context, in *GetClusterRequest, opt
 	return out, nil
 }
 
+func (c *storeClient) WatchCluster(ctx context.Context, in *WatchClusterRequest, opts ...grpc.CallOption) (Store_WatchClusterClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_Store_serviceDesc.Streams[2], c.cc, "/openinstrument.proto.Store/WatchCluster", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &storeWatchClusterClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Store_WatchClusterClient interface {
+	Recv() (*WatchClusterResponse, error)
+	grpc.ClientStream
+}
+
+type storeWatchClusterClient struct {
+	grpc.ClientStream
+}
+
+func (x *storeWatchClusterClient) Recv() (*WatchClusterResponse, error) {
+	m := new(WatchClusterResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Server API for Store service
 
 type StoreServer interface {
@@ -1131,6 +1190,7 @@ type StoreServer interface {
 	JoinBlock(context.Context, *JoinBlockRequest) (*JoinBlockResponse, error)
 	CompactBlock(context.Context, *CompactBlockRequest) (*CompactBlockResponse, error)
 	GetCluster(context.Context, *GetClusterRequest) (*GetClusterResponse, error)
+	WatchCluster(*WatchClusterRequest, Store_WatchClusterServer) error
 }
 
 func RegisterStoreServer(s *grpc.Server, srv StoreServer) {
@@ -1256,6 +1316,27 @@ func _Store_GetCluster_Handler(srv interface{}, ctx context.Context, codec grpc.
 	return out, nil
 }
 
+func _Store_WatchCluster_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(WatchClusterRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(StoreServer).WatchCluster(m, &storeWatchClusterServer{stream})
+}
+
+type Store_WatchClusterServer interface {
+	Send(*WatchClusterResponse) error
+	grpc.ServerStream
+}
+
+type storeWatchClusterServer struct {
+	grpc.ServerStream
+}
+
+func (x *storeWatchClusterServer) Send(m *WatchClusterResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _Store_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "openinstrument.proto.Store",
 	HandlerType: (*StoreServer)(nil),
@@ -1296,6 +1377,11 @@ var _Store_serviceDesc = grpc.ServiceDesc{
 			Handler:       _Store_Add_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "WatchCluster",
+			Handler:       _Store_WatchCluster_Handler,
+			ServerStreams: true,
 		},
 	},
 }

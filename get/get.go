@@ -3,17 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/dparrish/openinstrument"
+	"github.com/dparrish/openinstrument/client"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/query"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	"github.com/dparrish/openinstrument/variable"
 )
@@ -46,7 +45,7 @@ func main() {
 		log.Fatal("Invalid query:", err)
 	}
 
-	conn, err := grpc.Dial(*connectAddress, grpc.WithInsecure())
+	conn, err := client.NewRpcClient(context.Background(), *connectAddress)
 	if err != nil {
 		log.Fatalf("Error connecting to %s: %s", *connectAddress, err)
 	}
@@ -59,20 +58,12 @@ func main() {
 	}
 
 	log.Printf("Sending query: %s", openinstrument.ProtoText(q.AsProto()))
-	stub := oproto.NewStoreClient(conn)
-	response_stream, err := stub.Get(context.Background(), request)
+	c, err := conn.Get(context.Background(), request)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for {
-		response, err := response_stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
+	for response := range c {
 		for _, stream := range response.Stream {
 			variable := variable.NewFromProto(stream.Variable).String()
 			for _, value := range stream.Value {

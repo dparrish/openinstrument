@@ -72,11 +72,12 @@ func Add(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, re
 		return
 	}
 
-	c := ds.Writer()
+	in, flushed := ds.Writer()
 	for _, stream := range request.Stream {
-		c <- stream
+		in <- stream
 	}
-	close(c)
+	close(in)
+	<-flushed
 
 	response.Success = true
 	returnResponse(w, req, &response)

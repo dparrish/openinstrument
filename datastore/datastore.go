@@ -215,11 +215,13 @@ func (ds *Datastore) insertBlock(block *Block) {
 // Writer builds a channel that can accept ValueStreams for writing to the datastore.
 // Any ValueStreams written to this channel will eventually be flushed to disk,
 // but they will be immediately available for use.
-// The writes to disk are not guaranteed until Flush() is called.
-func (ds *Datastore) Writer() chan<- *oproto.ValueStream {
-	c := make(chan *oproto.ValueStream, 1000)
+// The writes to disk are not guaranteed until the second returned channel is closed.
+func (ds *Datastore) Writer() (chan<- *oproto.ValueStream, <-chan struct{}) {
+	in := make(chan *oproto.ValueStream, 1000)
+	flushed := make(chan struct{})
 	go func() {
-		for stream := range c {
+		defer close(flushed)
+		for stream := range in {
 			// Write this stream
 			varName := variable.ProtoToString(stream.Variable)
 			if block := ds.findBlock(varName); block != nil {
@@ -231,7 +233,7 @@ func (ds *Datastore) Writer() chan<- *oproto.ValueStream {
 		}
 		ds.Flush()
 	}()
-	return c
+	return in, flushed
 }
 
 // Reader builds a channel that will return streams for a supplied Variable.

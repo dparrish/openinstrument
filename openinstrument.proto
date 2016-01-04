@@ -176,6 +176,8 @@ message AddResponse {
   bool success = 1;
   string errormessage = 2;
   repeated LogMessage timer = 3;
+	uint32 streams = 4;
+	uint32 values = 5;
 }
 
 message ListRequest {
@@ -340,6 +342,13 @@ message UpdateClusterResponse {
 	repeated ClusterMember member = 1;
 }
 
+message WatchClusterRequest {
+}
+
+message WatchClusterResponse {
+	ClusterConfig config = 1;
+}
+
 service Store {
   rpc List(ListRequest) returns (ListResponse);
   rpc Get(GetRequest) returns (stream GetResponse);
@@ -351,4 +360,6 @@ service Store {
   rpc CompactBlock(CompactBlockRequest) returns (CompactBlockResponse);
 
 	rpc GetCluster(GetClusterRequest) returns (GetClusterResponse);
+
+	rpc WatchCluster(WatchClusterRequest) returns (stream WatchClusterResponse);
 }
