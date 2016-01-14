@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 
 	"golang.org/x/net/context"
 
@@ -24,6 +25,7 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Printf("Current PID: %d", os.Getpid())
 	flag.Parse()
+	runtime.SetBlockProfileRate(1)
 
 	if err := store_config.Init(context.Background()); err != nil {
 		log.Fatal(err)

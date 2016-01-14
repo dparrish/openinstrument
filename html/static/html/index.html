@@ -41,15 +41,28 @@
 								<td style='font-family: monospace; border-top: 1px solid darkgray;' colspan='8'>{{ block.end_key }}</td>
 							</tr>
 							<tr ng-repeat-end>
-								<td style='font-family: monospace;'>{{ block.id }}</td>
-								<td style='text-align: right;'>{{ block.indexed_streams || "0" }}</td>
-								<td style='text-align: right;'>{{ block.logged_streams || "0" }}</td>
-								<td style='text-align: right;'>{{ block.unlogged_streams || "0" }}</td>
-								<td style='text-align: right;'>{{ block.indexed_values || "0" }}</td>
-								<td style='text-align: right;'>{{ block.logged_values || "0" }}</td>
-								<td style='text-align: right; border-right: 1px solid darkgray;'>{{ block.unlogged_values || "0" }}</td>
+								<td style='font-family: monospace;'>
+									{{ block.id }}     {{ block.size | bytes }}
+								</td>
+								<td style='text-align: right;'>{{ block.indexed_streams || "0" | number }}</td>
+								<td style='text-align: right;'>{{ block.logged_streams || "0" | number }}</td>
+								<td style='text-align: right;'>{{ block.unlogged_streams || "0" | number }}</td>
+								<td style='text-align: right;'>{{ block.indexed_values || "0" | number }}</td>
+								<td style='text-align: right;'>{{ block.logged_values || "0" | number }}</td>
+								<td style='text-align: right; border-right: 1px solid darkgray;'>{{ block.unlogged_values || "0" | number }}</td>
 							</tr>
 						</tbody>
+						<tfoot>
+							<tr>
+								<td style='border-top: 1px solid black;'><b>Total {{ total_size | bytes }}:</b></td>
+								<td style='text-align: right; border-top: 1px solid black;'><b>{{ indexed_streams || "0" | number }}</b></td>
+								<td style='text-align: right; border-top: 1px solid black;'><b>{{ logged_streams || "0" | number }}</b></td>
+								<td style='text-align: right; border-top: 1px solid black;'><b>{{ unlogged_streams || "0" | number }}</b></td>
+								<td style='text-align: right; border-top: 1px solid black;'><b>{{ indexed_values || "0" | number }}</b></td>
+								<td style='text-align: right; border-top: 1px solid black;'><b>{{ logged_values || "0" | number }}</b></td>
+								<td style='text-align: right; border-top: 1px solid black;'><b>{{ unlogged_values || "0" | number }}</b></td>
+							</tr>
+						</tfoot>
 					</table>
 				</div>
 			</md-tab>

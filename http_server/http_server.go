@@ -21,6 +21,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
@@ -48,7 +49,6 @@ func parseRequest(w http.ResponseWriter, req *http.Request, request proto.Messag
 		fmt.Fprintf(w, "Invalid GetRequest: %s", err)
 		return errors.New("Invalid GetRequest")
 	}
-	//log.Printf("Request: %s", request)
 	return nil
 }
 
@@ -72,12 +72,11 @@ func Add(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, re
 		return
 	}
 
-	in, flushed := ds.Writer()
+	in := ds.Writer(ctx)
 	for _, stream := range request.Stream {
 		in <- stream
 	}
 	close(in)
-	<-flushed
 
 	response.Success = true
 	returnResponse(w, req, &response)
@@ -106,7 +105,7 @@ func GetBlocks(ctx context.Context, ds *datastore.Datastore, w http.ResponseWrit
 func InspectVariable(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	t, err := template.ParseFiles(fmt.Sprintf("%s/inspect_variable.html", *templatePath))
 	if err != nil {
-		log.Printf("Couldn't find template file: %s", err)
+		openinstrument.Logf(ctx, "Couldn't find template file: %s", err)
 		return
 	}
 	type varInfo struct {
@@ -255,6 +254,32 @@ func PprofProfile(ctx context.Context, ds *datastore.Datastore, w http.ResponseW
 	w.Write(out)
 }
 
+func PprofBlock(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+	url := fmt.Sprintf("http://%s:%d/debug/pprof/block", *address, *port)
+	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("URL: %s<br>\nError: %s", url, err)))
+		return
+	}
+	w.Header().Add("Content-Type:", "image/svg")
+	w.WriteHeader(200)
+	w.Write(out)
+}
+
+func PprofGoroutine(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+	url := fmt.Sprintf("http://%s:%d/debug/pprof/goroutine", *address, *port)
+	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(fmt.Sprintf("URL: %s<br>\nError: %s", url, err)))
+		return
+	}
+	w.Header().Add("Content-Type:", "image/svg")
+	w.WriteHeader(200)
+	w.Write(out)
+}
+
 func ListVariables(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	prefix := req.FormValue("p")
 	if prefix == "" {
@@ -305,6 +330,8 @@ func Serve(ds *datastore.Datastore) {
 	http.Handle("/pprof/alloc", hf(PprofAlloc))
 	http.Handle("/pprof/inuse", hf(PprofInuse))
 	http.Handle("/pprof/profile", hf(PprofProfile))
+	http.Handle("/pprof/block", hf(PprofBlock))
+	http.Handle("/pprof/goroutine", hf(PprofGoroutine))
 	http.Handle("/js/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
 	http.Handle("/html/", http.FileServer(http.Dir(fmt.Sprintf("%s/static", *templatePath))))
 	http.Handle("/", http.RedirectHandler("/html", 302))

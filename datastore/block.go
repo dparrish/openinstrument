@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
 	"github.com/dparrish/openinstrument/rle"
@@ -43,13 +44,15 @@ type Block struct {
 	// Protobuf version of the block configuration
 	protoLock sync.RWMutex
 	Block     *oproto.Block
+
+	size uint32
 }
 
-func newBlock(endKey, id, dsPath string) *Block {
+func newBlock(ctx context.Context, endKey, id, dsPath string) *Block {
 	if id == "" {
 		u, err := uuid.NewV4()
 		if err != nil {
-			log.Printf("Error generating UUID for new datastore block filename: %s", err)
+			openinstrument.Logf(ctx, "Error generating UUID for new datastore block filename: %s", err)
 			return nil
 		}
 		id = u.String()
@@ -83,10 +86,10 @@ func (block *Block) EndKey() string {
 	return block.Block.EndKey
 }
 
-func (block *Block) SetState(state oproto.Block_State) error {
+func (block *Block) SetState(ctx context.Context, state oproto.Block_State) error {
 	block.protoLock.Lock()
 	defer block.protoLock.Unlock()
-	log.Printf("Updating cluster block %s to state %s", block.Block.Id, state.String())
+	openinstrument.Logf(ctx, "Updating cluster block %s to state %s", block.Block.Id, state.String())
 	block.Block.State = state
 	return store_config.UpdateBlock(context.Background(), block.Block)
 }
@@ -113,6 +116,45 @@ func (block *Block) UnloggedWriteLocker() sync.Locker {
 	return &block.newStreamsLock
 }
 
+// AddStream adds a new stream to the unlogged streams list.
+// The stream is not flushed to disk until block.Flush() is called (which happens regularly).
+func (block *Block) AddStream(stream *oproto.ValueStream) {
+	block.newStreamsLock.Lock()
+	defer block.newStreamsLock.Unlock()
+	v := variable.ProtoToString(stream.Variable)
+	for _, existingstream := range block.NewStreams {
+		if variable.ProtoToString(existingstream.Variable) == v {
+			existingstream.Value = append(existingstream.Value, stream.Value...)
+			block.Block.UnloggedValues += uint32(len(stream.Value))
+			return
+		}
+	}
+	block.NewStreams = append(block.NewStreams, stream)
+	block.Block.UnloggedValues += uint32(len(stream.Value))
+	block.Block.UnloggedStreams++
+}
+
+func (block *Block) AddStreams(c <-chan *oproto.ValueStream) {
+	block.newStreamsLock.Lock()
+	defer block.newStreamsLock.Unlock()
+CHAN:
+	for stream := range c {
+		v := variable.ProtoToString(stream.Variable)
+
+		for _, existingstream := range block.NewStreams {
+			if variable.ProtoToString(existingstream.Variable) == v {
+				existingstream.Value = append(existingstream.Value, stream.Value...)
+				block.Block.UnloggedValues += uint32(len(stream.Value))
+				continue CHAN
+			}
+		}
+
+		block.NewStreams = append(block.NewStreams, stream)
+		block.Block.UnloggedValues += uint32(len(stream.Value))
+		block.Block.UnloggedStreams++
+	}
+}
+
 func (block *Block) logFilename() string {
 	return fmt.Sprintf("%s.log", block.Filename())
 }
@@ -125,15 +167,6 @@ func (block *Block) IsCompacting() bool {
 	block.protoLock.RLock()
 	defer block.protoLock.RUnlock()
 	return block.Block.State == oproto.Block_COMPACTING
-}
-
-func (block *Block) CompactDuration() string {
-	block.protoLock.RLock()
-	defer block.protoLock.RUnlock()
-	if block.Block.State == oproto.Block_COMPACTING {
-		return time.Since(block.compactStartTime).String()
-	}
-	return ""
 }
 
 // Sort Block
@@ -169,12 +202,6 @@ func (block *Block) String() string {
 }
 
 func (block *Block) ToProto() *oproto.Block {
-	block.newStreamsLock.RLock()
-	defer block.newStreamsLock.RUnlock()
-	block.logLock.RLock()
-	defer block.logLock.RUnlock()
-	block.newStreamsLock.RLock()
-	defer block.newStreamsLock.RUnlock()
 	b := &oproto.Block{
 		Id:              block.Block.Id,
 		EndKey:          block.Block.EndKey,
@@ -182,101 +209,96 @@ func (block *Block) ToProto() *oproto.Block {
 		Node:            block.Block.Node,
 		DestinationNode: block.Block.DestinationNode,
 		LastUpdated:     block.Block.LastUpdated,
-		IndexedStreams:  uint32(len(block.Block.Header.Index)),
-		IndexedValues:   uint32(0),
-		LoggedStreams:   uint32(len(block.LogStreams)),
-		LoggedValues:    uint32(0),
-		UnloggedStreams: uint32(len(block.NewStreams)),
-		UnloggedValues:  uint32(0),
-		CompactDuration: block.CompactDuration(),
-	}
-	for _, index := range block.Block.Header.Index {
-		b.IndexedValues += uint32(index.NumValues)
-	}
-	for _, stream := range block.NewStreams {
-		b.UnloggedValues += uint32(len(stream.Value))
-	}
-	for _, stream := range block.LogStreams {
-		b.LoggedValues += uint32(len(stream.Value))
+		Size:            block.Block.Size,
+		IndexedStreams:  block.Block.IndexedStreams,
+		IndexedValues:   block.Block.IndexedValues,
+		LoggedStreams:   block.Block.LoggedStreams,
+		LoggedValues:    block.Block.LoggedValues,
+		UnloggedStreams: block.Block.UnloggedStreams,
+		UnloggedValues:  block.Block.UnloggedValues,
 	}
 	return b
 }
 
-func (block *Block) NumStreams() uint32 {
-	block.logLock.RLock()
-	defer block.logLock.RUnlock()
-	block.newStreamsLock.RLock()
-	defer block.newStreamsLock.RUnlock()
-	var streams uint32
-	streams += uint32(len(block.Block.Header.Index))
-	streams += uint32(len(block.LogStreams))
-	streams += uint32(len(block.NewStreams))
-	return streams
+// UpdateIndexedCount update the cached number of indexed streams and values
+func (block *Block) UpdateIndexedCount() {
+	block.Block.IndexedStreams = uint32(len(block.Block.Header.Index))
+	block.Block.IndexedValues = uint32(0)
+	for _, index := range block.Block.Header.Index {
+		block.Block.IndexedValues += uint32(index.NumValues)
+	}
 }
 
-func (block *Block) NumLogValues() uint32 {
+// UpdateLoggedCount update the cached number of logged streams and values
+func (block *Block) UpdateLoggedCount() {
 	block.logLock.RLock()
-	defer block.logLock.RUnlock()
-	var values uint32
+	block.Block.LoggedStreams = uint32(len(block.LogStreams))
+	block.Block.LoggedValues = uint32(0)
 	for _, stream := range block.LogStreams {
-		values += uint32(len(stream.Value))
+		block.Block.LoggedValues += uint32(len(stream.Value))
 	}
-	return values
+	block.logLock.RUnlock()
+
+}
+
+// UpdateUnloggedCount update the cached number of new (unlogged) streams and values
+func (block *Block) UpdateUnloggedCount() {
+	block.newStreamsLock.RLock()
+	block.Block.UnloggedStreams = uint32(len(block.NewStreams))
+	block.Block.UnloggedValues = uint32(0)
+	for _, stream := range block.NewStreams {
+		block.Block.UnloggedValues += uint32(len(stream.Value))
+	}
+	block.newStreamsLock.RUnlock()
+}
+
+func (block *Block) NumStreams() uint32 {
+	return block.Block.IndexedStreams + block.Block.LoggedStreams
 }
 
 func (block *Block) NumValues() uint32 {
-	block.logLock.RLock()
-	defer block.logLock.RUnlock()
-	block.newStreamsLock.RLock()
-	defer block.newStreamsLock.RUnlock()
-	var values uint32
-	for _, index := range block.Block.Header.Index {
-		values += index.NumValues
-	}
-	for _, stream := range block.LogStreams {
-		values += uint32(len(stream.Value))
-	}
-	for _, stream := range block.NewStreams {
-		values += uint32(len(stream.Value))
-	}
-	return values
+	return block.Block.IndexedValues + block.Block.LoggedValues
 }
 
-func (block *Block) CompactRequired() bool {
+func (block *Block) CompactRequired(ctx context.Context) bool {
 	block.logLock.RLock()
 	defer block.logLock.RUnlock()
 	if len(block.LogStreams) > 10000 {
-		log.Printf("Block %s has %d (> %d) log streams, scheduling compaction", block, len(block.LogStreams), 10000)
+		openinstrument.Logf(ctx, "Block %s has %d (> %d) log streams, scheduling compaction", block, len(block.LogStreams), 10000)
 		return true
 	}
-	if block.NumLogValues() > maxLogValues {
-		log.Printf("Block %s has %d (> %d) log values, scheduling compaction", block, block.NumLogValues(), maxLogValues)
+	block.newStreamsLock.RLock()
+	defer block.newStreamsLock.RUnlock()
+	if len(block.NewStreams) > 10000 {
+		openinstrument.Logf(ctx, "Block %s has %d (> %d) unlogged streams, scheduling compaction", block, len(block.NewStreams), 10000)
+		return true
+	}
+	if block.Block.LoggedValues > maxLogValues {
+		openinstrument.Logf(ctx, "Block %s has %d (> %d) log values, scheduling compaction", block, block.Block.LoggedValues, maxLogValues)
 		return true
 	}
 	return false
 }
 
-func (block *Block) SplitRequired() bool {
+func (block *Block) SplitRequired(ctx context.Context) bool {
 	ns := block.NumStreams()
 	if ns <= 1 {
 		return false
 	}
 	if ns > splitPointStreams {
-		log.Printf("Block %s contains %d streams, split", block, ns)
+		openinstrument.Logf(ctx, "Block %s contains %d streams, split", block, ns)
 		return true
 	}
 	nv := block.NumValues()
 	if nv >= splitPointValues {
-		log.Printf("Block %s contains %d values, split", block, nv)
+		openinstrument.Logf(ctx, "Block %s contains %d values, split", block, nv)
 		return true
 	}
 	return false
 }
 
-func (block *Block) RunLengthEncodeStreams(streams map[string]*oproto.ValueStream) map[string]*oproto.ValueStream {
+func (block *Block) RunLengthEncodeStreams(ctx context.Context, streams map[string]*oproto.ValueStream) map[string]*oproto.ValueStream {
 	// Run-length encode all streams in parallel
-	st := time.Now()
-
 	var sl sync.Mutex
 	var outputValues int
 	wg := &sync.WaitGroup{}
@@ -298,22 +320,20 @@ func (block *Block) RunLengthEncodeStreams(streams map[string]*oproto.ValueStrea
 	}
 	wg.Wait()
 
-	log.Printf("Run-length encoded %d streams to %d in %s", len(newStreams), outputValues, time.Since(st))
+	openinstrument.Logf(ctx, "Run-length encoded %d streams to %d", len(newStreams), outputValues)
 
 	return newStreams
 }
 
 // Write writes a map of ValueStreams to a single block file on disk.
 // The values inside each ValueStream will be sorted and run-length-encoded before writing.
-func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
+func (block *Block) Write(ctx context.Context, streams map[string]*oproto.ValueStream) error {
 	// Build the header with a 0-index for each variable
-	startTime := time.Now()
-
 	block.Block.Header.Index = []*oproto.BlockHeaderIndex{}
 	block.Block.Header.EndKey = ""
 	block.Block.Header.StartTimestamp = 0
 	block.Block.Header.EndTimestamp = 0
-	streams = block.RunLengthEncodeStreams(streams)
+	streams = block.RunLengthEncodeStreams(ctx, streams)
 	for v, stream := range streams {
 		if v > block.Block.Header.EndKey {
 			block.Block.Header.EndKey = v
@@ -370,7 +390,9 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	newfile.Sync()
 	newfile.Close()
 
-	log.Printf("Wrote %d streams / %d values to %s in %v\n", len(streams), outValues, newfilename, time.Since(startTime))
+	block.UpdateIndexedCount()
+
+	openinstrument.Logf(ctx, "Wrote %d streams / %d values to %s", len(streams), outValues, newfilename)
 
 	// Rename the temporary file into place
 	if err := os.Rename(newfilename, block.Filename()); err != nil {
@@ -380,7 +402,7 @@ func (block *Block) Write(streams map[string]*oproto.ValueStream) error {
 	return nil
 }
 
-func (block *Block) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
+func (block *Block) Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
 	if v.String() > block.EndKey() {
 		return nil
@@ -435,7 +457,7 @@ func (block *Block) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 			if !cv.Match(v) {
 				continue
 			}
-			stream := block.GetStreamForVariable(index)
+			stream := block.GetStreamForVariable(ctx, index)
 			if stream != nil {
 				c <- stream
 			}
@@ -445,6 +467,7 @@ func (block *Block) Reader(v *variable.Variable) <-chan *oproto.ValueStream {
 }
 
 func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error) {
+	block.UpdateSize()
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		return nil, fmt.Errorf("Can't read old block file %s: %s\n", block.Filename(), err)
@@ -463,73 +486,144 @@ func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error
 	}
 }
 
-func (block *Block) GetStreamForVariable(index *oproto.BlockHeaderIndex) *oproto.ValueStream {
+func (block *Block) GetStreamForVariable(ctx context.Context, index *oproto.BlockHeaderIndex) *oproto.ValueStream {
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		if !os.IsNotExist(err) {
-			log.Printf("Can't read block file %s: %s\n", block, err)
+			openinstrument.Logf(ctx, "Can't read block file %s: %s\n", block, err)
 		}
 		return nil
 	}
 	defer file.Close()
 	stream := &oproto.ValueStream{}
 	if n, err := file.ReadAt(int64(index.Offset), stream); n < 1 || err != nil {
-		log.Printf("Couldn't read ValueStream at %s:%d: %s", block, index.Offset, err)
+		openinstrument.Logf(ctx, "Couldn't read ValueStream at %s:%d: %s", block, index.Offset, err)
 		return nil
 	}
 	return stream
 }
 
+func (block *Block) Flush() error {
+	block.newStreamsLock.Lock()
+	defer block.newStreamsLock.Unlock()
+
+	if len(block.NewStreams) == 0 {
+		return nil
+	}
+
+	block.logLock.Lock()
+	defer block.logLock.Unlock()
+
+	// There are streams that need to be flushed to disk
+	file, err := protofile.Write(block.logFilename())
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	for _, stream := range block.NewStreams {
+		n, err := file.Write(stream)
+		if err != nil || n < 1 {
+			return err
+		}
+		varName := variable.ProtoToString(stream.Variable)
+		existingstream, found := block.LogStreams[varName]
+		if found {
+			existingstream.Value = append(existingstream.Value, stream.Value...)
+		} else {
+			block.LogStreams[varName] = stream
+		}
+	}
+	block.NewStreams = make([]*oproto.ValueStream, 0)
+	block.Block.LoggedStreams += block.Block.UnloggedStreams
+	block.Block.LoggedValues += block.Block.UnloggedValues
+	block.Block.UnloggedStreams = uint32(0)
+	block.Block.UnloggedValues = uint32(0)
+	block.UpdateSize()
+
+	return nil
+}
+
+func (block *Block) UpdateSize() {
+	block.Block.Size = 0
+	if fi, err := os.Stat(block.Filename()); err == nil {
+		block.Block.Size += uint32(fi.Size())
+	}
+	if fi, err := os.Stat(block.logFilename()); err == nil {
+		block.Block.Size += uint32(fi.Size())
+	}
+}
+
 func (block *Block) Compact(ctx context.Context) error {
-	st := time.Now()
-	log.Printf("Compacting block %s\n", block)
+	openinstrument.Logf(ctx, "Compacting block %s\n", block)
 	startTime := time.Now()
+
+	// Update cached number of streams and values
+	defer block.UpdateIndexedCount()
+	defer block.UpdateLoggedCount()
+	defer block.UpdateUnloggedCount()
 
 	block.protoLock.Lock()
 	defer block.protoLock.Unlock()
 	block.Block.State = oproto.Block_COMPACTING
 	block.compactStartTime = time.Now()
 
-	locker := block.LogWriteLocker()
-	locker.Lock()
-	defer locker.Unlock()
+	block.newStreamsLock.Lock()
+	defer block.newStreamsLock.Unlock()
+
+	block.logLock.Lock()
+	defer block.logLock.Unlock()
 
 	streams := block.LogStreams
-	log.Printf("Block log contains %d streams", len(streams))
-	reader, err := block.Read(ctx)
-	if err != nil {
-		log.Printf("Unable to read block: %s", err)
-	} else {
-		for stream := range reader {
-			if stream.Variable == nil {
-				log.Printf("Skipping reading stream that contains no variable")
-				continue
-			}
-			varName := variable.ProtoToString(stream.Variable)
-			outstream, found := streams[varName]
-			if found {
-				outstream.Value = append(outstream.Value, stream.Value...)
-			} else {
-				streams[varName] = stream
-			}
+	openinstrument.Logf(ctx, "Block log contains %d streams", len(streams))
+
+	appendValues := func(stream *oproto.ValueStream) {
+		if stream.Variable == nil {
+			openinstrument.Logf(ctx, "Skipping reading stream that contains no variable")
+			return
 		}
-		log.Printf("Compaction read block in %s and resulted in %d streams", time.Since(st), len(streams))
+		varName := variable.ProtoToString(stream.Variable)
+		outstream, found := streams[varName]
+		if found {
+			outstream.Value = append(outstream.Value, stream.Value...)
+		} else {
+			streams[varName] = stream
+		}
 	}
 
-	st = time.Now()
-	if err = block.Write(streams); err != nil {
-		log.Printf("Error writing: %s", err)
+	// Append indexed streams
+	reader, err := block.Read(ctx)
+	if err != nil {
+		openinstrument.Logf(ctx, "Unable to read block: %s", err)
+	} else {
+		for stream := range reader {
+			appendValues(stream)
+		}
+		openinstrument.Logf(ctx, "Compaction read block containing %d streams", len(streams))
+	}
+
+	// Append unlogged (new) streams
+	if len(block.NewStreams) > 0 {
+		for _, stream := range block.NewStreams {
+			appendValues(stream)
+		}
+		openinstrument.Logf(ctx, "Compaction added %d unlogged streams, total: %d streams", len(block.NewStreams), len(streams))
+	}
+
+	if err = block.Write(ctx, streams); err != nil {
+		openinstrument.Logf(ctx, "Error writing: %s", err)
 		return err
 	}
 
 	// Delete the log file
 	os.Remove(block.logFilename())
-	log.Printf("Deleted log file %s", block.logFilename())
+	openinstrument.Logf(ctx, "Deleted log file %s", block.logFilename())
 	block.LogStreams = make(map[string]*oproto.ValueStream)
+	block.NewStreams = make([]*oproto.ValueStream, 0)
 
 	block.compactEndTime = time.Now()
 	block.Block.State = oproto.Block_LIVE
-	log.Printf("Finished compaction of %s in %v", block, time.Since(startTime))
+	openinstrument.Logf(ctx, "Finished compaction of %s in %v", block, time.Since(startTime))
+
 	return nil
 }
 

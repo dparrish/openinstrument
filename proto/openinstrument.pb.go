@@ -10,6 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	LogMessage
+	OperationLog
 	StreamVariable
 	StreamMutation
 	StreamAggregation
@@ -298,13 +299,29 @@ func (x Block_State) String() string {
 }
 
 type LogMessage struct {
-	Timestamp uint64 `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
-	Message   string `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
+	Timestamp    uint64 `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	EndTimestamp uint64 `protobuf:"varint,3,opt,name=end_timestamp" json:"end_timestamp,omitempty"`
+	Message      string `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
 }
 
 func (m *LogMessage) Reset()         { *m = LogMessage{} }
 func (m *LogMessage) String() string { return proto.CompactTextString(m) }
 func (*LogMessage) ProtoMessage()    {}
+
+type OperationLog struct {
+	Log []*LogMessage `protobuf:"bytes,1,rep,name=log" json:"log,omitempty"`
+}
+
+func (m *OperationLog) Reset()         { *m = OperationLog{} }
+func (m *OperationLog) String() string { return proto.CompactTextString(m) }
+func (*OperationLog) ProtoMessage()    {}
+
+func (m *OperationLog) GetLog() []*LogMessage {
+	if m != nil {
+		return m.Log
+	}
+	return nil
+}
 
 type StreamVariable struct {
 	Name  string                   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
@@ -754,6 +771,8 @@ type Block struct {
 	Node             string       `protobuf:"bytes,13,opt,name=node" json:"node,omitempty"`
 	DestinationNode  string       `protobuf:"bytes,14,opt,name=destination_node" json:"destination_node,omitempty"`
 	LastUpdated      uint64       `protobuf:"varint,16,opt,name=last_updated" json:"last_updated,omitempty"`
+	// Bytes
+	Size uint32 `protobuf:"varint,18,opt,name=size" json:"size,omitempty"`
 }
 
 func (m *Block) Reset()         { *m = Block{} }

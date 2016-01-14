@@ -29,7 +29,6 @@ type server struct {
 }
 
 func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto.ListResponse, error) {
-	log.Printf("%s", request)
 	response := &oproto.ListResponse{
 		Timer: make([]*oproto.LogMessage, 0),
 	}
@@ -39,13 +38,8 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 		return nil, fmt.Errorf("No variable specified")
 	}
 
-	addTimer := func(name string, response *oproto.ListResponse) *openinstrument.Timer {
-		response.Timer = append(response.Timer, &oproto.LogMessage{})
-		return openinstrument.NewTimer(name, response.Timer[len(response.Timer)-1])
-	}
-
 	// Retrieve all variables and store the names in a map for uniqueness
-	timer := addTimer("retrieve variables", response)
+	timer := openinstrument.NewTimer(ctx, "retrieve variables")
 	vars := make(map[string]*oproto.StreamVariable)
 	if requestVariable.MinTimestamp == 0 {
 		// Get the last day
@@ -59,14 +53,15 @@ func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto
 	timer.Stop()
 
 	// Build the response out of the map
-	timer = addTimer("construct response", response)
+	timer = openinstrument.NewTimer(ctx, "construct response")
 	response.Variable = make([]*oproto.StreamVariable, 0)
 	for _, variable := range vars {
 		response.Variable = append(response.Variable, variable)
 	}
 	response.Success = true
 	timer.Stop()
-	log.Printf("Timers: %s", response.Timer)
+
+	log.Printf("Timers: %s", openinstrument.GetLog(ctx))
 	return response, nil
 }
 
@@ -90,6 +85,8 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 }
 
 func (s *server) Add(server oproto.Store_AddServer) error {
+	ctx := openinstrument.LogContext(server.Context())
+	timer := openinstrument.NewTimer(ctx, "Add request")
 	wg := new(sync.WaitGroup)
 	for {
 		request, err := server.Recv()
@@ -106,18 +103,19 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 				Streams: uint32(len(request.Stream)),
 				Values:  uint32(0),
 			}
-			in, flushed := s.ds.Writer()
+			in := s.ds.Writer(server.Context())
 			for _, stream := range request.Stream {
 				in <- stream
 				response.Values += uint32(len(stream.Value))
 			}
 			close(in)
-			<-flushed
 			server.Send(response)
 			wg.Done()
 		}(request)
 	}
 	wg.Wait()
+	timer.Stop()
+	log.Printf("Timers: %s", openinstrument.StringLog(ctx))
 	return nil
 }
 
@@ -167,13 +165,15 @@ func (s *server) JoinBlock(ctx context.Context, request *oproto.JoinBlockRequest
 }
 
 func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockRequest) (*oproto.CompactBlockResponse, error) {
+	logCtx := openinstrument.LogContext(ctx)
 	block, err := s.ds.GetBlock(request.Block.Id, request.Block.EndKey)
 	if err != nil {
 		return nil, err
 	}
-	if err = block.Compact(ctx); err != nil {
+	if err = block.Compact(logCtx); err != nil {
 		return nil, err
 	}
+	log.Printf("Log:\n%s", openinstrument.StringLog(logCtx))
 	return &oproto.CompactBlockResponse{Block: block.ToProto()}, nil
 }
 

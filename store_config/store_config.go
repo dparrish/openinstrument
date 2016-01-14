@@ -45,8 +45,12 @@ func Init(ctx context.Context) error {
 	Config = &oproto.ClusterConfig{}
 	wg = &sync.WaitGroup{}
 
-	if err := connectEtcd(clusterCtx); err != nil {
-		return err
+	if *taskName != "" && *clusterName != "" {
+		if err := connectEtcd(clusterCtx); err != nil {
+			return err
+		}
+	} else {
+		log.Println("Not connecting to cluster, specify --name and --cluster_name")
 	}
 
 	// Retrieve all the cluster servers
@@ -110,6 +114,9 @@ func UpdateThisState(ctx context.Context, state oproto.ClusterMember_State) erro
 }
 
 func updateMember(ctx context.Context, member *oproto.ClusterMember) error {
+	if kapi == nil {
+		return nil
+	}
 	data := openinstrument.ProtoText(member)
 	_, err := kapi.Set(ctx, fmt.Sprintf("%s/members/%s", clusterEtcdPrefix, member.Name), data, nil)
 	return err
@@ -128,6 +135,9 @@ func GetBlock(id string) *oproto.Block {
 
 // UpdateBlock updates the cluster-wide view of a single block.
 func UpdateBlock(ctx context.Context, block *oproto.Block) error {
+	if kapi == nil {
+		return nil
+	}
 	m := proto.Clone(block)
 	b := m.(*oproto.Block)
 	b.Header = &oproto.BlockHeader{}
@@ -138,6 +148,9 @@ func UpdateBlock(ctx context.Context, block *oproto.Block) error {
 
 // getClusterBlocks loads the list of all cluster blocks from etcd.
 func getClusterBlocks(ctx context.Context) error {
+	if kapi == nil {
+		return nil
+	}
 	Config.Block = []*oproto.Block{}
 
 	r, err := kapi.Get(ctx, fmt.Sprintf("%s/blocks/", clusterEtcdPrefix), &client.GetOptions{Recursive: false})
@@ -159,6 +172,9 @@ func getClusterBlocks(ctx context.Context) error {
 
 // getClusterServers loads the list of all cluster members from etcd.
 func getClusterServers(ctx context.Context) error {
+	if kapi == nil {
+		return nil
+	}
 	r, err := kapi.Get(ctx, fmt.Sprintf("%s/members/", clusterEtcdPrefix), nil)
 	if err != nil {
 		log.Printf("Error getting cluster members: %s", err)
@@ -251,6 +267,9 @@ func UnsubscribeClusterChanges(c <-chan *oproto.ClusterConfig) {
 }
 
 func watchCluster(ctx context.Context) error {
+	if kapi == nil {
+		return nil
+	}
 	watcher := kapi.Watcher(fmt.Sprintf("%s/members", clusterEtcdPrefix), &client.WatcherOptions{Recursive: true})
 	if watcher == nil {
 		return fmt.Errorf("Unable to create watcher")

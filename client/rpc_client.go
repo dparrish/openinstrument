@@ -24,36 +24,34 @@ func NewRpcClient(ctx context.Context, addr string) (*RpcClient, error) {
 		conn: conn,
 		stub: oproto.NewStoreClient(conn),
 	}
-	go c.watchCluster(ctx)
+	//go c.watchCluster(ctx)
 	return c, nil
 }
 
 func (c *RpcClient) Close() {
-	c.watchClusterCancel()
+	//c.watchClusterCancel()
 	c.conn.Close()
 }
 
 func (c *RpcClient) watchCluster(ctx context.Context) {
-	go func() {
-		var wcCtx context.Context
-		wcCtx, c.watchClusterCancel = context.WithCancel(ctx)
-		stream, err := c.stub.WatchCluster(wcCtx, &oproto.WatchClusterRequest{})
+	var wcCtx context.Context
+	wcCtx, c.watchClusterCancel = context.WithCancel(ctx)
+	stream, err := c.stub.WatchCluster(wcCtx, &oproto.WatchClusterRequest{})
+	if err != nil {
+		log.Fatalf("Can't watch cluster: %s", err)
+	}
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
-			log.Fatalf("Can't watch cluster: %s", err)
+			log.Fatalf("Error watching cluster: %s", err)
+			return
 		}
-		for {
-			resp, err := stream.Recv()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Fatalf("Error watching cluster: %s", err)
-				return
-			}
-			resp = resp
-			log.Printf("Got cluster update: %s", resp)
-		}
-	}()
+		resp = resp
+		log.Printf("Got cluster update: %s", resp)
+	}
 }
 
 func (c *RpcClient) List(ctx context.Context, request *oproto.ListRequest) (<-chan *oproto.ListResponse, error) {

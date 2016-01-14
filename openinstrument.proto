@@ -4,7 +4,12 @@ package openinstrument.proto;
 
 message LogMessage {
   uint64 timestamp = 1;
+	uint64 end_timestamp = 3;
   string message = 2;
+}
+
+message OperationLog {
+	repeated LogMessage log = 1;
 }
 
 message StreamVariable {
@@ -281,6 +286,9 @@ message Block {
 	string node = 13;
 	string destination_node = 14;
   uint64 last_updated = 16;
+
+	// Bytes
+	uint32 size = 18;
 }
 
 message LookupBlockRequest {
