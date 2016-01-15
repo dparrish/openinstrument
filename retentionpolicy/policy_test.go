@@ -28,14 +28,12 @@ func (s *MySuite) TestDefaultDropPolicy(c *C) {
 		interval: 3600
 		policy {
 			comment: "Throw everything away"
-			variable { name: "*" }
 			policy: DROP
 		}
 	`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
 	policy := New(policyProto)
-	log.Println(policyProto)
 
 	input := &oproto.ValueStream{
 		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
@@ -50,6 +48,43 @@ func (s *MySuite) TestDefaultDropPolicy(c *C) {
 		log.Printf("Got output when none was expected: %s", value)
 		c.Fail()
 	}
+}
+
+func (s *MySuite) TestDropByValue(c *C) {
+	policyTxt := `
+		interval: 3600
+		policy {
+			variable: {
+				name: "/system/filesystem/*",
+				label {
+					key: "device"
+					value: "/@zfs-auto-snap/"
+				}
+			}
+			policy: DROP
+		}
+		policy {
+			policy: KEEP
+		}
+	`
+	policyProto := &oproto.RetentionPolicy{}
+	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
+	policy := New(policyProto)
+	//log.Println(policyProto)
+
+	// Device not matching regexp is kept
+	input := &oproto.ValueStream{
+		Variable: variable.NewFromString("/system/filesystem/available{device=r2/home}").AsProto(),
+		Value:    []*oproto.Value{{Timestamp: uint64(1), DoubleValue: 1.0}},
+	}
+	c.Check(len(policy.Apply(input).Value), Equals, 1)
+
+	// Device matching regexp is dropped
+	input = &oproto.ValueStream{
+		Variable: variable.NewFromString("/system/filesystem/used{device=r2/home@zfs-auto-snap_hourly}").AsProto(),
+		Value:    []*oproto.Value{{Timestamp: uint64(1), DoubleValue: 1.0}},
+	}
+	c.Check(len(policy.Apply(input).Value), Equals, 0)
 }
 
 func (s *MySuite) TestAgeKeepPolicy(c *C) {

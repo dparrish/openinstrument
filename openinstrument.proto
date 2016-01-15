@@ -356,10 +356,30 @@ message WatchClusterResponse {
 	ClusterConfig config = 1;
 }
 
+message UpdateRetentionPolicyRequest {
+	enum Operation {
+		UNKNOWN = 0;
+		APPEND = 1;
+		INSERT = 2;
+		REMOVE = 3;
+	}
+	Operation op = 1;
+	RetentionPolicyItem item = 2;
+
+	// 0-indexed position for insert or remove
+	uint32 position = 3;
+}
+
+message UpdateRetentionPolicyResponse {
+	RetentionPolicy policy = 1;
+}
+
 service Store {
   rpc List(ListRequest) returns (ListResponse);
   rpc Get(GetRequest) returns (stream GetResponse);
   rpc Add(stream AddRequest) returns (stream AddResponse);
+
+  rpc UpdateRetentionPolicy(UpdateRetentionPolicyRequest) returns (UpdateRetentionPolicyResponse);
 
   rpc LookupBlock(LookupBlockRequest) returns (LookupBlockResponse);
   rpc SplitBlock(SplitBlockRequest) returns (SplitBlockResponse);

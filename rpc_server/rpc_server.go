@@ -174,8 +174,37 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 }
 
 func (s *server) GetCluster(ctx context.Context, request *oproto.GetClusterRequest) (*oproto.GetClusterResponse, error) {
-	r := &oproto.GetClusterResponse{Config: store_config.Config}
-	return r, nil
+	return &oproto.GetClusterResponse{Config: store_config.Config}, nil
+}
+
+func (s *server) UpdateRetentionPolicy(ctx context.Context, request *oproto.UpdateRetentionPolicyRequest) (*oproto.UpdateRetentionPolicyResponse, error) {
+	if store_config.Config.RetentionPolicy == nil {
+		store_config.Config.RetentionPolicy = &oproto.RetentionPolicy{}
+	}
+
+	switch request.Op {
+	case oproto.UpdateRetentionPolicyRequest_APPEND:
+		store_config.Config.RetentionPolicy.Policy = append(store_config.Config.RetentionPolicy.Policy, request.Item)
+
+	case oproto.UpdateRetentionPolicyRequest_INSERT:
+		if request.Position >= uint32(len(store_config.Config.RetentionPolicy.Policy)) {
+			return nil, fmt.Errorf("Invalid position for insert")
+		}
+		i := []*oproto.RetentionPolicyItem{request.Item}
+		i = append(i, store_config.Config.RetentionPolicy.Policy[request.Position:]...)
+		store_config.Config.RetentionPolicy.Policy = append(store_config.Config.RetentionPolicy.Policy[:request.Position], i...)
+
+	case oproto.UpdateRetentionPolicyRequest_REMOVE:
+		if request.Position >= uint32(len(store_config.Config.RetentionPolicy.Policy)) {
+			return nil, fmt.Errorf("Invalid position for remove")
+		}
+		store_config.Config.RetentionPolicy.Policy = append(store_config.Config.RetentionPolicy.Policy[:request.Position], store_config.Config.RetentionPolicy.Policy[request.Position+1:]...)
+
+	default:
+		return nil, fmt.Errorf("Invalid operation")
+	}
+
+	return &oproto.UpdateRetentionPolicyResponse{store_config.Config.RetentionPolicy}, nil
 }
 
 func (s *server) WatchCluster(request *oproto.WatchClusterRequest, server oproto.Store_WatchClusterServer) error {

@@ -55,6 +55,15 @@ func (s *MySuite) TestMatch(c *C) {
 	c.Check(var1.Match(NewFromString("/openinstrument/test{label3=*}")), Equals, false)
 }
 
+func (s *MySuite) TestMatchRegexp(c *C) {
+	v := NewFromString("/openinstrument/test{label1=/^.*foobar$/}")
+	c.Assert(v.Labels["label1"], Equals, "/^.*foobar$/")
+	c.Check(NewFromString("/openinstrument/test{label1=testing}").Match(v), Equals, false)
+	c.Check(NewFromString("/openinstrument/test{label2=testing}").Match(v), Equals, false)
+	c.Check(NewFromString("/openinstrument/test{label1=testfoobaring}").Match(v), Equals, false)
+	c.Check(NewFromString("/openinstrument/test{label1=testingfoobar}").Match(v), Equals, true)
+}
+
 func (s *MySuite) TestInvalidVariable(c *C) {
 	c.Check(NewFromProto(nil).String(), Equals, "")
 	c.Check(NewFromProto(&oproto.StreamVariable{}).String(), Equals, "")

@@ -44,7 +44,13 @@ func (policy *RetentionPolicy) Apply(input *oproto.ValueStream) *oproto.ValueStr
 				continue
 			}
 
+			if len(policy.Mutation) == 0 {
+				output.Value = append(output.Value, value)
+				continue
+			}
+
 			/*
+				// TODO(dparrish): Fix this!
 				for _, mutation := range policy.Mutation {
 					//log.Printf("Applying mutation %s", mutation)
 					var outStream &oproto.ValueStream
@@ -82,10 +88,7 @@ func (policy *RetentionPolicy) Apply(input *oproto.ValueStream) *oproto.ValueStr
 					}
 					outStream.Variable = stream.Variable
 				}
-
-				output.Value = append(output.Value, value)
 			*/
-
 		}
 	}
 	return output
@@ -93,11 +96,13 @@ func (policy *RetentionPolicy) Apply(input *oproto.ValueStream) *oproto.ValueStr
 
 func doesVariableMatch(itemVar *variable.Variable, policyVars []*oproto.StreamVariable) bool {
 	if len(policyVars) == 0 {
+		log.Printf("Stream variable %s matches default policy", itemVar.String())
 		return true
 	}
 	for _, v := range policyVars {
 		policyVar := variable.NewFromProto(v)
 		if itemVar.Match(policyVar) {
+			log.Printf("Stream variable %s matches policy variable %s", itemVar.String(), policyVar.String())
 			return true
 		}
 		log.Printf("Stream variable %s doesn't match policy variable %s", itemVar.String(), policyVar.String())

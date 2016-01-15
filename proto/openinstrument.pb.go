@@ -46,6 +46,8 @@ It has these top-level messages:
 	UpdateClusterResponse
 	WatchClusterRequest
 	WatchClusterResponse
+	UpdateRetentionPolicyRequest
+	UpdateRetentionPolicyResponse
 */
 package openinstrument_proto
 
@@ -293,6 +295,32 @@ var Block_State_value = map[string]int32{
 
 func (x Block_State) String() string {
 	return proto.EnumName(Block_State_name, int32(x))
+}
+
+type UpdateRetentionPolicyRequest_Operation int32
+
+const (
+	UpdateRetentionPolicyRequest_UNKNOWN UpdateRetentionPolicyRequest_Operation = 0
+	UpdateRetentionPolicyRequest_APPEND  UpdateRetentionPolicyRequest_Operation = 1
+	UpdateRetentionPolicyRequest_INSERT  UpdateRetentionPolicyRequest_Operation = 2
+	UpdateRetentionPolicyRequest_REMOVE  UpdateRetentionPolicyRequest_Operation = 3
+)
+
+var UpdateRetentionPolicyRequest_Operation_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "APPEND",
+	2: "INSERT",
+	3: "REMOVE",
+}
+var UpdateRetentionPolicyRequest_Operation_value = map[string]int32{
+	"UNKNOWN": 0,
+	"APPEND":  1,
+	"INSERT":  2,
+	"REMOVE":  3,
+}
+
+func (x UpdateRetentionPolicyRequest_Operation) String() string {
+	return proto.EnumName(UpdateRetentionPolicyRequest_Operation_name, int32(x))
 }
 
 type LogMessage struct {
@@ -1011,6 +1039,39 @@ func (m *WatchClusterResponse) GetConfig() *ClusterConfig {
 	return nil
 }
 
+type UpdateRetentionPolicyRequest struct {
+	Op   UpdateRetentionPolicyRequest_Operation `protobuf:"varint,1,opt,name=op,enum=openinstrument.proto.UpdateRetentionPolicyRequest_Operation" json:"op,omitempty"`
+	Item *RetentionPolicyItem                   `protobuf:"bytes,2,opt,name=item" json:"item,omitempty"`
+	// 0-indexed position for insert or remove
+	Position uint32 `protobuf:"varint,3,opt,name=position" json:"position,omitempty"`
+}
+
+func (m *UpdateRetentionPolicyRequest) Reset()         { *m = UpdateRetentionPolicyRequest{} }
+func (m *UpdateRetentionPolicyRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateRetentionPolicyRequest) ProtoMessage()    {}
+
+func (m *UpdateRetentionPolicyRequest) GetItem() *RetentionPolicyItem {
+	if m != nil {
+		return m.Item
+	}
+	return nil
+}
+
+type UpdateRetentionPolicyResponse struct {
+	Policy *RetentionPolicy `protobuf:"bytes,1,opt,name=policy" json:"policy,omitempty"`
+}
+
+func (m *UpdateRetentionPolicyResponse) Reset()         { *m = UpdateRetentionPolicyResponse{} }
+func (m *UpdateRetentionPolicyResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateRetentionPolicyResponse) ProtoMessage()    {}
+
+func (m *UpdateRetentionPolicyResponse) GetPolicy() *RetentionPolicy {
+	if m != nil {
+		return m.Policy
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("openinstrument.proto.StreamVariable_ValueType", StreamVariable_ValueType_name, StreamVariable_ValueType_value)
 	proto.RegisterEnum("openinstrument.proto.StreamMutation_SampleType", StreamMutation_SampleType_name, StreamMutation_SampleType_value)
@@ -1018,6 +1079,7 @@ func init() {
 	proto.RegisterEnum("openinstrument.proto.RetentionPolicyItem_Target", RetentionPolicyItem_Target_name, RetentionPolicyItem_Target_value)
 	proto.RegisterEnum("openinstrument.proto.ClusterMember_State", ClusterMember_State_name, ClusterMember_State_value)
 	proto.RegisterEnum("openinstrument.proto.Block_State", Block_State_name, Block_State_value)
+	proto.RegisterEnum("openinstrument.proto.UpdateRetentionPolicyRequest_Operation", UpdateRetentionPolicyRequest_Operation_name, UpdateRetentionPolicyRequest_Operation_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1030,6 +1092,7 @@ type StoreClient interface {
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (Store_GetClient, error)
 	Add(ctx context.Context, opts ...grpc.CallOption) (Store_AddClient, error)
+	UpdateRetentionPolicy(ctx context.Context, in *UpdateRetentionPolicyRequest, opts ...grpc.CallOption) (*UpdateRetentionPolicyResponse, error)
 	LookupBlock(ctx context.Context, in *LookupBlockRequest, opts ...grpc.CallOption) (*LookupBlockResponse, error)
 	SplitBlock(ctx context.Context, in *SplitBlockRequest, opts ...grpc.CallOption) (*SplitBlockResponse, error)
 	JoinBlock(ctx context.Context, in *JoinBlockRequest, opts ...grpc.CallOption) (*JoinBlockResponse, error)
@@ -1118,6 +1181,15 @@ func (x *storeAddClient) Recv() (*AddResponse, error) {
 	return m, nil
 }
 
+func (c *storeClient) UpdateRetentionPolicy(ctx context.Context, in *UpdateRetentionPolicyRequest, opts ...grpc.CallOption) (*UpdateRetentionPolicyResponse, error) {
+	out := new(UpdateRetentionPolicyResponse)
+	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/UpdateRetentionPolicy", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *storeClient) LookupBlock(ctx context.Context, in *LookupBlockRequest, opts ...grpc.CallOption) (*LookupBlockResponse, error) {
 	out := new(LookupBlockResponse)
 	err := grpc.Invoke(ctx, "/openinstrument.proto.Store/LookupBlock", in, out, c.cc, opts...)
@@ -1201,6 +1273,7 @@ type StoreServer interface {
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	Get(*GetRequest, Store_GetServer) error
 	Add(Store_AddServer) error
+	UpdateRetentionPolicy(context.Context, *UpdateRetentionPolicyRequest) (*UpdateRetentionPolicyResponse, error)
 	LookupBlock(context.Context, *LookupBlockRequest) (*LookupBlockResponse, error)
 	SplitBlock(context.Context, *SplitBlockRequest) (*SplitBlockResponse, error)
 	JoinBlock(context.Context, *JoinBlockRequest) (*JoinBlockResponse, error)
@@ -1270,6 +1343,18 @@ func (x *storeAddServer) Recv() (*AddRequest, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func _Store_UpdateRetentionPolicy_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+	in := new(UpdateRetentionPolicyRequest)
+	if err := codec.Unmarshal(buf, in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(StoreServer).UpdateRetentionPolicy(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func _Store_LookupBlock_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
@@ -1360,6 +1445,10 @@ var _Store_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _Store_List_Handler,
+		},
+		{
+			MethodName: "UpdateRetentionPolicy",
+			Handler:    _Store_UpdateRetentionPolicy_Handler,
 		},
 		{
 			MethodName: "LookupBlock",

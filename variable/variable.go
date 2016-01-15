@@ -173,6 +173,18 @@ func (v *Variable) Match(match *Variable) bool {
 			if val == "" {
 				return false
 			}
+		} else if value[0] == '/' && value[len(value)-1] == '/' {
+			// Regular expression
+			reg, err := regexp.Compile(value[1 : len(value)-1])
+			if err != nil {
+				log.Printf("Error compiling regular expression \"%s\": %s", value[1:len(value)-1], err)
+				return false
+			}
+			if reg.MatchString(v.Labels[key]) {
+				return true
+			}
+			return false
+
 		} else {
 			val, ok := v.Labels[key]
 			if !ok {
