@@ -155,7 +155,7 @@ func (s *MySuite) TestTimer(c *C) {
 	for _, stream := range streams {
 		switch variable.ProtoToString(stream.Variable) {
 		case "/test/timer-total-count":
-			c.Check(stream.Value[0].DoubleValue, Equals, 20.0)
+			c.Check((stream.Value[0].DoubleValue >= 20.0 && stream.Value[0].DoubleValue <= 25.0), Equals, true)
 		case "/test/timer-overall-sum":
 			c.Check(stream.Value[0].DoubleValue, Equals, 2.0)
 		default:

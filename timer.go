@@ -19,16 +19,16 @@ type Timer struct {
 }
 
 func GetLog(ctx context.Context) *oproto.OperationLog {
-	_, l := getContextWithLog(ctx)
+	_, l := GetContextWithLog(ctx)
 	return l
 }
 
 func LogContext(ctx context.Context) context.Context {
-	l, _ := getContextWithLog(ctx)
+	l, _ := GetContextWithLog(ctx)
 	return l
 }
 
-func getContextWithLog(ctx context.Context) (context.Context, *oproto.OperationLog) {
+func GetContextWithLog(ctx context.Context) (context.Context, *oproto.OperationLog) {
 	v := ctx.Value("openinstrument_log")
 	if v == nil {
 		log := &oproto.OperationLog{}
@@ -38,7 +38,7 @@ func getContextWithLog(ctx context.Context) (context.Context, *oproto.OperationL
 }
 
 func Logf(ctx context.Context, format string, args ...interface{}) context.Context {
-	ctx, l := getContextWithLog(ctx)
+	ctx, l := GetContextWithLog(ctx)
 	log.Output(2, fmt.Sprintf(format, args...))
 	l.Log = append(l.Log, &oproto.LogMessage{
 		Message:   fmt.Sprintf(format, args...),
@@ -84,7 +84,7 @@ func NewTimer(ctx context.Context, format string, args ...interface{}) *Timer {
 func (t *Timer) Stop() uint64 {
 	duration := uint64(time.Since(t.startTime).Nanoseconds())
 	if t.ctx != nil {
-		_, l := getContextWithLog(t.ctx)
+		_, l := GetContextWithLog(t.ctx)
 		l.Log = append(l.Log, &oproto.LogMessage{
 			Message:      fmt.Sprintf("%s: %s", t.message, time.Since(t.startTime).String()),
 			Timestamp:    uint64(t.startTime.UnixNano()),

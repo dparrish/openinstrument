@@ -23,7 +23,7 @@ import (
 
 const (
 	maxLogValues      uint32 = 10000
-	splitPointStreams uint32 = 1500
+	splitPointStreams uint32 = 2000
 	splitPointValues  uint32 = 5000000
 )
 
@@ -84,6 +84,16 @@ func (block *Block) EndKey() string {
 	block.protoLock.RLock()
 	defer block.protoLock.RUnlock()
 	return block.Block.EndKey
+}
+
+func (block *Block) Delete() error {
+	if err := os.Remove(block.Filename()); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err := os.Remove(block.logFilename()); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 func (block *Block) SetState(ctx context.Context, state oproto.Block_State) error {
@@ -161,12 +171,6 @@ func (block *Block) logFilename() string {
 
 func (block *Block) Filename() string {
 	return filepath.Join(block.dsPath, fmt.Sprintf("block.%s", block.Block.Id))
-}
-
-func (block *Block) IsCompacting() bool {
-	block.protoLock.RLock()
-	defer block.protoLock.RUnlock()
-	return block.Block.State == oproto.Block_COMPACTING
 }
 
 // Sort Block
@@ -261,37 +265,27 @@ func (block *Block) NumValues() uint32 {
 }
 
 func (block *Block) CompactRequired(ctx context.Context) bool {
-	block.logLock.RLock()
-	defer block.logLock.RUnlock()
-	if len(block.LogStreams) > 10000 {
-		openinstrument.Logf(ctx, "Block %s has %d (> %d) log streams, scheduling compaction", block, len(block.LogStreams), 10000)
-		return true
-	}
-	block.newStreamsLock.RLock()
-	defer block.newStreamsLock.RUnlock()
-	if len(block.NewStreams) > 10000 {
-		openinstrument.Logf(ctx, "Block %s has %d (> %d) unlogged streams, scheduling compaction", block, len(block.NewStreams), 10000)
+	if block.Block.LoggedStreams > 10000 {
+		openinstrument.Logf(ctx, "Block %s has %d log streams, compacting", block, block.Block.LoggedStreams)
 		return true
 	}
 	if block.Block.LoggedValues > maxLogValues {
-		openinstrument.Logf(ctx, "Block %s has %d (> %d) log values, scheduling compaction", block, block.Block.LoggedValues, maxLogValues)
+		openinstrument.Logf(ctx, "Block %s has %d log values, compacting", block, block.Block.LoggedValues)
 		return true
 	}
 	return false
 }
 
 func (block *Block) SplitRequired(ctx context.Context) bool {
-	ns := block.NumStreams()
-	if ns <= 1 {
+	if block.Block.IndexedStreams <= 1 {
 		return false
 	}
-	if ns > splitPointStreams {
-		openinstrument.Logf(ctx, "Block %s contains %d streams, split", block, ns)
+	if block.Block.IndexedStreams > splitPointStreams {
+		openinstrument.Logf(ctx, "Block %s has %d indexed streams, splitting", block, block.Block.IndexedStreams)
 		return true
 	}
-	nv := block.NumValues()
-	if nv >= splitPointValues {
-		openinstrument.Logf(ctx, "Block %s contains %d values, split", block, nv)
+	if block.Block.IndexedValues >= splitPointValues {
+		openinstrument.Logf(ctx, "Block %s has %d indexed values, splitting", block, block.Block.IndexedValues)
 		return true
 	}
 	return false
@@ -454,7 +448,7 @@ func (block *Block) Reader(ctx context.Context, v *variable.Variable) <-chan *op
 			if !cv.Match(v) {
 				continue
 			}
-			stream := block.readIndexedStream(ctx, index)
+			stream := block.getIndexedStream(ctx, index)
 			if stream != nil {
 				c <- stream
 			}
@@ -463,11 +457,37 @@ func (block *Block) Reader(ctx context.Context, v *variable.Variable) <-chan *op
 	return c
 }
 
-func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error) {
+func (block *Block) GetAllStreams(ctx context.Context) (<-chan *oproto.ValueStream, error) {
+	c := make(chan *oproto.ValueStream, 5000)
+	i, _ := block.GetIndexedStreams(ctx)
+	l, _ := block.GetLoggedStreams(ctx)
+	u, _ := block.GetUnloggedStreams(ctx)
+	go func() {
+		defer close(c)
+		if i != nil {
+			for stream := range i {
+				c <- stream
+			}
+		}
+		if u != nil {
+			for stream := range u {
+				c <- stream
+			}
+		}
+		if l != nil {
+			for stream := range l {
+				c <- stream
+			}
+		}
+	}()
+	return c, nil
+}
+
+func (block *Block) GetIndexedStreams(ctx context.Context) (<-chan *oproto.ValueStream, error) {
 	block.UpdateSize()
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
-		return nil, fmt.Errorf("Can't read old block file %s: %s\n", block.Filename(), err)
+		return nil, fmt.Errorf("Can't read block file %s: %s\n", block.Filename(), err)
 	}
 
 	n, err := file.Read(block.Block.Header)
@@ -483,7 +503,28 @@ func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error
 	}
 }
 
-func (block *Block) readIndexedStream(ctx context.Context, index *oproto.BlockHeaderIndex) *oproto.ValueStream {
+func (block *Block) GetLoggedStreams(ctx context.Context) (<-chan *oproto.ValueStream, error) {
+	file, err := protofile.Read(block.logFilename())
+	if err != nil {
+		return nil, fmt.Errorf("Can't read block log file %s: %s\n", block.logFilename(), err)
+	}
+	return file.ValueStreamReader(ctx, 5000), nil
+}
+
+func (block *Block) GetUnloggedStreams(ctx context.Context) (<-chan *oproto.ValueStream, error) {
+	c := make(chan *oproto.ValueStream)
+	go func() {
+		defer close(c)
+		block.newStreamsLock.Lock()
+		defer block.newStreamsLock.Unlock()
+		for _, stream := range block.NewStreams {
+			c <- stream
+		}
+	}()
+	return c, nil
+}
+
+func (block *Block) getIndexedStream(ctx context.Context, index *oproto.BlockHeaderIndex) *oproto.ValueStream {
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -588,7 +629,7 @@ func (block *Block) Compact(ctx context.Context) error {
 	}
 
 	// Append indexed streams
-	reader, err := block.Read(ctx)
+	reader, err := block.GetIndexedStreams(ctx)
 	if err != nil {
 		openinstrument.Logf(ctx, "Unable to read block: %s", err)
 	} else {

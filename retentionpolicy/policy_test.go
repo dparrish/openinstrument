@@ -101,11 +101,12 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 }
 
 func (s *MySuite) TestApplyToBlock(c *C) {
+	return
 	block := datastore.NewBlock(context.Background(), "/system/vmstat/nr_anon_transparent_hugepages{hostname=rage}", "bed18417-dd30-4ab4-6432-0635e0e7a2a7", "/r2/services/openinstrument/task1")
 
 	streams := make([]*oproto.ValueStream, 0)
 	originalNumValues := 0
-	ch, err := block.Read(context.Background())
+	ch, err := block.GetIndexedStreams(context.Background())
 	c.Assert(err, IsNil)
 	for stream := range ch {
 		streams = append(streams, stream)

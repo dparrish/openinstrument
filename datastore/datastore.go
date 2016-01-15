@@ -5,7 +5,6 @@ package datastore
 import (
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"sort"
 	"sync"
@@ -54,17 +53,17 @@ func Open(ctx context.Context, path string) *Datastore {
 
 func (ds *Datastore) background(ctx context.Context) {
 	// Background processing of blocks
+	flush_tick := time.Tick(5 * time.Second)
+	compact_tick := time.Tick(1 * time.Minute)
 	for {
-		flush_tick := time.Tick(5 * time.Second)
-		compact_tick := time.Tick(1 * time.Minute)
 		select {
 		case <-ctx.Done():
+			log.Println("Context complete, closing background goroutine")
 			return
 		case <-flush_tick:
 			ds.Flush()
 		case <-compact_tick:
-			ds.Flush()
-			logCtx := openinstrument.LogContext(ctx)
+			logCtx, l := openinstrument.GetContextWithLog(ctx)
 			for _, block := range ds.Blocks() {
 				// Compact any blocks that need it
 				if block.CompactRequired(logCtx) {
@@ -80,6 +79,10 @@ func (ds *Datastore) background(ctx context.Context) {
 					}
 					openinstrument.Logf(logCtx, "Finished splitting block %s", block)
 				}
+			}
+
+			if len(l.Log) > 0 {
+				log.Printf("Compact tick log:\n%s", openinstrument.StringLog(logCtx))
 			}
 		}
 	}
@@ -168,7 +171,7 @@ func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
 	block.UpdateIndexedCount()
 
 	ds.insertBlock(ctx, block)
-	openinstrument.Logf(ctx, "Read block %s containing %d streams\n", block.Block.Id, len(block.Block.Header.Index))
+	openinstrument.Logf(ctx, "Read block %s containing %d streams\n", block.ID(), len(block.Block.Header.Index))
 }
 
 func (ds *Datastore) readBlockLog(ctx context.Context, filename string) {
@@ -200,7 +203,7 @@ func (ds *Datastore) readBlockLog(ctx context.Context, filename string) {
 
 	if func() *Block {
 		for _, existingblock := range ds.Blocks() {
-			if existingblock.Block.Id == block.Block.Id {
+			if existingblock.ID() == block.ID() {
 				locker := existingblock.LogWriteLocker()
 				locker.Lock()
 				existingblock.LogStreams = block.LogStreams
@@ -355,7 +358,7 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	leftStreams := make(map[string]*oproto.ValueStream)
 	rightStreams := make(map[string]*oproto.ValueStream)
 
-	streams, err := block.Read(ctx)
+	streams, err := block.GetIndexedStreams(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Couldn't read old block file: %s", err)
 	}
@@ -419,7 +422,6 @@ func (ds *Datastore) findBlock(ctx context.Context, variableName string) *Block 
 }
 
 func (ds *Datastore) JoinBlock(ctx context.Context, block *Block) (*Block, error) {
-	defer block.Flush()
 	ds.blocksLock.Lock()
 	defer ds.blocksLock.Unlock()
 	var lastB *Block
@@ -432,23 +434,23 @@ func (ds *Datastore) JoinBlock(ctx context.Context, block *Block) (*Block, error
 	if lastB == nil {
 		return nil, fmt.Errorf("Unable to find block before %s", block.EndKey())
 	}
-	openinstrument.Logf(ctx, "Found previous block: %s", lastB.EndKey())
-	lastB.Compact(ctx)
+	openinstrument.Logf(ctx, "Found previous block %s: %s", lastB.ID(), lastB.EndKey())
 
-	openinstrument.Logf(ctx, "Copying %d streams from %s to %s", lastB.NumStreams(), lastB.Block.Id, block.Block.Id)
-	r, err := lastB.Read(ctx)
+	openinstrument.Logf(ctx, "Copying %d streams from %s to %s", lastB.NumStreams(), lastB.ID(), block.ID())
+
+	r, err := lastB.GetAllStreams(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to read prior block: %s", err)
 	}
 	block.AddStreams(r)
 
-	openinstrument.Logf(ctx, "Deleting old block %s", lastB.Block.Id)
-	err = os.Remove(lastB.Filename())
-	if err != nil {
-		log.Fatalf("Unable to delete old block file %s", lastB.Filename())
+	openinstrument.Logf(ctx, "Deleting old block %s", lastB.ID())
+	if err := lastB.Delete(); err != nil {
+		openinstrument.Logf(ctx, "Unable to delete old block file: %s", err)
 	}
 	delete(ds.blocks, lastB.EndKey())
 
+	defer block.Flush()
 	return block, nil
 }
 
@@ -478,7 +480,7 @@ func (ds *Datastore) GetBlock(id, endKey string) (*Block, error) {
 		return nil, fmt.Errorf("No block id or end key specified, cannnot look up blocks")
 	}
 	for _, block := range ds.Blocks() {
-		if id != "" && block.Block.Id == id {
+		if id != "" && block.ID() == id {
 			return block, nil
 		}
 		if endKey != "" && block.EndKey() == endKey {

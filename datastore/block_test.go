@@ -41,7 +41,7 @@ func (s *MySuite) TestRead(c *C) {
 	err := block.Write(context.Background(), streams)
 	c.Assert(err, Equals, nil)
 
-	reader, err := block.Read(context.Background())
+	reader, err := block.GetIndexedStreams(context.Background())
 	c.Assert(err, Equals, nil)
 	readStreams := 0
 	for range reader {
@@ -78,7 +78,7 @@ func (s *MySuite) TestWrite(c *C) {
 	err := block.Write(context.Background(), block.LogStreams)
 	c.Assert(err, Equals, nil)
 
-	reader, err := block.Read(context.Background())
+	reader, err := block.GetIndexedStreams(context.Background())
 	c.Assert(err, Equals, nil)
 	vs := <-reader
 	switch vs.Variable.Name {
@@ -131,7 +131,7 @@ func (s *MySuite) TestGetStreamForVariable(c *C) {
 		if cv.String() != "/test/bar7" {
 			continue
 		}
-		stream := block.readIndexedStream(context.Background(), index)
+		stream := block.getIndexedStream(context.Background(), index)
 		c.Assert(variable.ProtoToString(stream.Variable), Equals, "/test/bar7")
 		found = true
 		break
