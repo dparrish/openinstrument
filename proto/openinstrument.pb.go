@@ -208,20 +208,17 @@ func (x StreamAggregation_AggregateType) String() string {
 type RetentionPolicyItem_Target int32
 
 const (
-	RetentionPolicyItem_UNKNOWN RetentionPolicyItem_Target = 0
-	RetentionPolicyItem_KEEP    RetentionPolicyItem_Target = 1
-	RetentionPolicyItem_DROP    RetentionPolicyItem_Target = 2
+	RetentionPolicyItem_KEEP RetentionPolicyItem_Target = 0
+	RetentionPolicyItem_DROP RetentionPolicyItem_Target = 1
 )
 
 var RetentionPolicyItem_Target_name = map[int32]string{
-	0: "UNKNOWN",
-	1: "KEEP",
-	2: "DROP",
+	0: "KEEP",
+	1: "DROP",
 }
 var RetentionPolicyItem_Target_value = map[string]int32{
-	"UNKNOWN": 0,
-	"KEEP":    1,
-	"DROP":    2,
+	"KEEP": 0,
+	"DROP": 1,
 }
 
 func (x RetentionPolicyItem_Target) String() string {

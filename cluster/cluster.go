@@ -38,6 +38,59 @@ func (s semaphore) V(n int) {
 	}
 }
 
+func runSlowAddLoadtest(ctx context.Context) {
+	log.Println("Running ADD load test")
+
+	var sent, received int
+
+	go func() {
+		tick := time.Tick(1 * time.Second)
+		for {
+			select {
+			case <-tick:
+				log.Printf("Sent %d, received %d in the last second, latency %0.02fms", sent, received, 1.0/float64(received)*1000.0)
+				received = 0
+				sent = 0
+			}
+		}
+	}()
+	for {
+		conn, err := client.NewRpcClient(ctx, *connectAddress)
+		if err != nil {
+			log.Fatalf("Error connecting to %s: %s", *connectAddress, err)
+		}
+
+		in, out, err := conn.Add(ctx)
+		if err != nil {
+			log.Printf("Error starting Add RPC: %s", err)
+			return
+		}
+
+		v := variable.NewFromString("/test/var1{host=rage}").AsProto()
+		request := &oproto.AddRequest{
+			Stream: []*oproto.ValueStream{
+				{
+					Variable: v,
+					Value: []*oproto.Value{
+						{
+							Timestamp:   openinstrument.NowMs(),
+							DoubleValue: 1.0,
+						},
+					},
+				},
+			},
+		}
+		in <- request
+		close(in)
+		sent++
+		<-out
+		received++
+
+		conn.Close()
+	}
+	log.Println("Complete")
+}
+
 func runAddLoadtest(ctx context.Context, conn client.Client) {
 	log.Println("Running ADD load test")
 	in, out, err := conn.Add(ctx)
@@ -114,5 +167,7 @@ func main() {
 
 	case "add_loadtest":
 		runAddLoadtest(ctx, conn)
+	case "slow_add_loadtest":
+		runSlowAddLoadtest(ctx)
 	}
 }

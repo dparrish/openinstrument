@@ -117,7 +117,7 @@ func (c *RpcClient) Add(ctx context.Context) (chan<- *oproto.AddRequest, <-chan 
 			response, err := server_stream.Recv()
 			if err != nil {
 				if err != io.EOF {
-					log.Println(err)
+					//log.Println(err)
 					return
 				}
 				break

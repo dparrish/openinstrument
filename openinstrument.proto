@@ -221,9 +221,8 @@ message BlockHeader {
 
 message RetentionPolicyItem {
   enum Target {
-    UNKNOWN = 0;
-    KEEP = 1;
-    DROP = 2;
+    KEEP = 0;
+    DROP = 1;
   }
   repeated StreamVariable variable = 1;
   repeated string comment = 2;

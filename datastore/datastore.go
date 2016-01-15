@@ -55,14 +55,17 @@ func Open(ctx context.Context, path string) *Datastore {
 func (ds *Datastore) background(ctx context.Context) {
 	// Background processing of blocks
 	for {
-		tick := time.Tick(2 * time.Second)
+		flush_tick := time.Tick(5 * time.Second)
+		compact_tick := time.Tick(1 * time.Minute)
 		select {
 		case <-ctx.Done():
 			return
-		case <-tick:
+		case <-flush_tick:
+			ds.Flush()
+		case <-compact_tick:
+			ds.Flush()
 			logCtx := openinstrument.LogContext(ctx)
 			for _, block := range ds.Blocks() {
-				block.Flush()
 				// Compact any blocks that need it
 				if block.CompactRequired(logCtx) {
 					if err := block.Compact(logCtx); err != nil {
@@ -72,11 +75,10 @@ func (ds *Datastore) background(ctx context.Context) {
 
 				// Split any blocks that need it
 				if block.SplitRequired(logCtx) {
-					startTime := time.Now()
 					if _, _, err := ds.SplitBlock(logCtx, block); err != nil {
 						openinstrument.Logf(logCtx, "Error splitting block: %s\n", err)
 					}
-					openinstrument.Logf(logCtx, "Finished splitting of %s in %v", block, time.Since(startTime))
+					openinstrument.Logf(logCtx, "Finished splitting block %s", block)
 				}
 			}
 		}
@@ -137,7 +139,7 @@ func (ds *Datastore) readBlocks(ctx context.Context) bool {
 }
 
 func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
-	block := newBlock(ctx, "", BlockIDFromFilename(filename), ds.Path)
+	block := NewBlock(ctx, "", BlockIDFromFilename(filename), ds.Path)
 
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
@@ -170,7 +172,7 @@ func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
 }
 
 func (ds *Datastore) readBlockLog(ctx context.Context, filename string) {
-	block := newBlock(ctx, "", BlockIDFromFilename(filename), ds.Path)
+	block := NewBlock(ctx, "", BlockIDFromFilename(filename), ds.Path)
 
 	file, err := protofile.Read(block.logFilename())
 	if err != nil {
@@ -281,7 +283,7 @@ func (ds *Datastore) foreachBlockSerial(f func(*Block) error) <-chan error {
 }
 
 func (ds *Datastore) foreachBlockParallel(f func(*Block) error) error {
-	wg := &sync.WaitGroup{}
+	wg := new(sync.WaitGroup)
 	var ret error
 	ds.blocksLock.RLock()
 	defer ds.blocksLock.RUnlock()
@@ -320,18 +322,20 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	defer block.UpdateUnloggedCount()
 
 	keys := make(map[string]bool, 0)
-	for _, index := range block.Block.Header.Index {
-		keys[variable.ProtoToString(index.Variable)] = true
-	}
-	for _, stream := range block.GetLogStreams() {
-		keys[variable.ProtoToString(stream.Variable)] = true
-	}
-	locker := block.UnloggedReadLocker()
-	locker.Lock()
-	for _, stream := range block.NewStreams {
-		keys[variable.ProtoToString(stream.Variable)] = true
-	}
-	locker.Unlock()
+	func() {
+		for _, index := range block.Block.Header.Index {
+			keys[variable.ProtoToString(index.Variable)] = true
+		}
+		for _, stream := range block.GetLogStreams() {
+			keys[variable.ProtoToString(stream.Variable)] = true
+		}
+		locker := block.UnloggedReadLocker()
+		locker.Lock()
+		defer locker.Unlock()
+		for _, stream := range block.NewStreams {
+			keys[variable.ProtoToString(stream.Variable)] = true
+		}
+	}()
 	if len(keys) < 2 {
 		return nil, nil, fmt.Errorf("Could not split block %s: not enough streams", block)
 	}
@@ -347,7 +351,7 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	openinstrument.Logf(ctx, "Splitting at %d (%s)", splitpoint, sortedKeys[splitpoint])
 
 	// Read in the whole block
-	leftBlock := newBlock(ctx, sortedKeys[splitpoint-1], "", ds.Path)
+	leftBlock := NewBlock(ctx, sortedKeys[splitpoint-1], "", ds.Path)
 	leftStreams := make(map[string]*oproto.ValueStream)
 	rightStreams := make(map[string]*oproto.ValueStream)
 
@@ -356,25 +360,27 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 		return nil, nil, fmt.Errorf("Couldn't read old block file: %s", err)
 	}
 
-	locker = block.LogWriteLocker()
-	locker.Lock()
-
-	for stream := range streams {
-		varName := variable.ProtoToString(stream.Variable)
-		if varName <= leftBlock.EndKey() {
-			leftStreams[varName] = stream
-		} else {
-			rightStreams[varName] = stream
-		}
-	}
-
 	var leftError, rightError error
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
-	go func() { leftError = leftBlock.Write(ctx, leftStreams); wg.Done() }()
-	go func() { rightError = block.Write(ctx, rightStreams); wg.Done() }()
-	wg.Wait()
-	locker.Unlock()
+	func() {
+		locker := block.LogWriteLocker()
+		locker.Lock()
+		defer locker.Unlock()
+
+		for stream := range streams {
+			varName := variable.ProtoToString(stream.Variable)
+			if varName <= leftBlock.EndKey() {
+				leftStreams[varName] = stream
+			} else {
+				rightStreams[varName] = stream
+			}
+		}
+
+		wg := new(sync.WaitGroup)
+		wg.Add(2)
+		go func() { leftError = leftBlock.Write(ctx, leftStreams); wg.Done() }()
+		go func() { rightError = block.Write(ctx, rightStreams); wg.Done() }()
+		wg.Wait()
+	}()
 
 	if leftError != nil {
 		return nil, nil, fmt.Errorf("Error writing left block: %s", leftError)
@@ -384,11 +390,11 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	}
 
 	ds.insertBlock(ctx, leftBlock)
-	openinstrument.Logf(ctx, "Split complete, left contains %d streams, right contains %d", len(leftStreams), len(rightStreams))
-
 	defer leftBlock.UpdateIndexedCount()
 	defer leftBlock.UpdateLoggedCount()
 	defer leftBlock.UpdateUnloggedCount()
+
+	openinstrument.Logf(ctx, "Split complete, left contains %d streams, right contains %d", len(leftStreams), len(rightStreams))
 	return leftBlock, block, nil
 }
 
@@ -406,9 +412,9 @@ func (ds *Datastore) findBlock(ctx context.Context, variableName string) *Block 
 	}
 	ds.blocksLock.RUnlock()
 	// Create a new block
-	block := newBlock(ctx, variableName, "", ds.Path)
+	block := NewBlock(ctx, variableName, "", ds.Path)
 	ds.insertBlock(ctx, block)
-	log.Printf("Creating new block for %s\n", variableName)
+	openinstrument.Logf(ctx, "Creating new block for %s\n", variableName)
 	return block
 }
 
@@ -427,10 +433,7 @@ func (ds *Datastore) JoinBlock(ctx context.Context, block *Block) (*Block, error
 		return nil, fmt.Errorf("Unable to find block before %s", block.EndKey())
 	}
 	openinstrument.Logf(ctx, "Found previous block: %s", lastB.EndKey())
-
-	openinstrument.Logf(ctx, "Compacting old block")
 	lastB.Compact(ctx)
-	openinstrument.Logf(ctx, "Done compacting old blocks")
 
 	openinstrument.Logf(ctx, "Copying %d streams from %s to %s", lastB.NumStreams(), lastB.Block.Id, block.Block.Id)
 	r, err := lastB.Read(ctx)

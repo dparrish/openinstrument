@@ -19,45 +19,82 @@ func New(inputPolicy *oproto.RetentionPolicy) *RetentionPolicy {
 	return policy
 }
 
-func (policy *RetentionPolicy) Apply(itemVar *variable.Variable, input <-chan *oproto.Value) <-chan *oproto.Value {
-	output := make(chan *oproto.Value, 1000)
+func (policy *RetentionPolicy) Apply(input *oproto.ValueStream) *oproto.ValueStream {
+	itemVar := variable.NewFromProto(input.Variable)
 	matchingPolicies := make([]*oproto.RetentionPolicyItem, 0)
-	for _, p := range policy.policy.Policy {
-		if doesVariableMatch(itemVar, p.Variable) {
-			matchingPolicies = append(matchingPolicies, p)
+	for _, policy := range policy.policy.Policy {
+		if doesVariableMatch(itemVar, policy.Variable) {
+			matchingPolicies = append(matchingPolicies, policy)
 		}
 	}
 	if len(matchingPolicies) == 0 {
 		log.Printf("No matching policies for variable %s", itemVar)
 	}
 
-	go func() {
-		for value := range input {
-			if len(matchingPolicies) == 0 {
-				// No matching policies, drop everything
-				continue
-			}
+	output := &oproto.ValueStream{
+		Variable: input.Variable,
+		Value:    []*oproto.Value{},
+	}
 
-			// Find first matching policy
-			p := findFirstMatchingPolicy(value, matchingPolicies)
-			if p == nil {
-				log.Printf("No matching policies for variable, dropping value")
-				continue
-			}
-			log.Printf("Found matching policy %s", p)
-			if p.Policy == oproto.RetentionPolicyItem_DROP {
+	for _, value := range input.Value {
+		// Find first matching policy
+		if policy := findFirstMatchingPolicy(value, matchingPolicies); policy != nil {
+			if policy.Policy == oproto.RetentionPolicyItem_DROP {
 				// Matching policy is DROP, so don't output this value
 				continue
 			}
 
-			output <- value
+			/*
+				for _, mutation := range policy.Mutation {
+					//log.Printf("Applying mutation %s", mutation)
+					var outStream &oproto.ValueStream
+					switch mutation.Type {
+					case oproto.StreamMutation_MEAN:
+						outStream = mutations.Mean(stream)
+					case oproto.StreamMutation_INTERPOLATE:
+						outStream = mutations.Interpolate(uint64(mutation.Param), stream)
+					case oproto.StreamMutation_MIN:
+						outStream = mutations.Min(uint64(mutation.Param), stream)
+					case oproto.StreamMutation_MAX:
+						outStream = mutations.Max(uint64(mutation.Param), stream)
+					case oproto.StreamMutation_FIRST:
+						outStream = mutations.First(uint64(mutation.Param), stream)
+					case oproto.StreamMutation_LAST:
+						outStream = mutations.Last(uint64(mutation.Param), stream)
+					case oproto.StreamMutation_RATE:
+						outStream = mutations.Rate(stream)
+					case oproto.StreamMutation_ROOT:
+						outStream = mutations.Root(mutation.Param, stream)
+					case oproto.StreamMutation_POWER:
+						outStream = mutations.Power(mutation.Param, stream)
+					case oproto.StreamMutation_ADD:
+						outStream = mutations.Add(mutation.Param, stream)
+					case oproto.StreamMutation_MULTIPLY:
+						outStream = mutations.Multiply(mutation.Param, stream)
+					case oproto.StreamMutation_RATE_SIGNED:
+						outStream = mutations.SignedRate(stream)
+					case oproto.StreamMutation_MOVING_AVERAGE:
+						outStream = mutations.MovingAverage(uint64(mutation.Param), stream)
+					}
+					if outStream == nil {
+						log.Printf("No stream returned from mutation")
+						continue
+					}
+					outStream.Variable = stream.Variable
+				}
+
+				output.Value = append(output.Value, value)
+			*/
+
 		}
-		close(output)
-	}()
+	}
 	return output
 }
 
 func doesVariableMatch(itemVar *variable.Variable, policyVars []*oproto.StreamVariable) bool {
+	if len(policyVars) == 0 {
+		return true
+	}
 	for _, v := range policyVars {
 		policyVar := variable.NewFromProto(v)
 		if itemVar.Match(policyVar) {
@@ -76,6 +113,10 @@ func findFirstMatchingPolicy(value *oproto.Value, policies []*oproto.RetentionPo
 	}
 	valueEndAge := now - value.EndTimestamp
 	for _, item := range policies {
+		if len(item.Variable) == 0 {
+			// No variables supplied, this matches everything
+			return item
+		}
 		for _, i := range item.Variable {
 			// Look for policies that match the variable age
 			v := variable.NewFromProto(i)

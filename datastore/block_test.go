@@ -25,7 +25,7 @@ func (s *MySuite) SetUpSuite(c *C) {
 }
 
 func (s *MySuite) TestRead(c *C) {
-	block := newBlock("/test/foox", "", s.dataDir)
+	block := NewBlock(context.Background(), "/test/foox", "", s.dataDir)
 	streams := make(map[string]*oproto.ValueStream)
 	for i := 0; i < 1000; i++ {
 		key := fmt.Sprintf("/test/foo%d", i)
@@ -38,7 +38,7 @@ func (s *MySuite) TestRead(c *C) {
 		}
 	}
 
-	err := block.Write(streams)
+	err := block.Write(context.Background(), streams)
 	c.Assert(err, Equals, nil)
 
 	reader, err := block.Read(context.Background())
@@ -51,7 +51,7 @@ func (s *MySuite) TestRead(c *C) {
 }
 
 func (s *MySuite) TestWrite(c *C) {
-	block := newBlock("/test/foo", "", s.dataDir)
+	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
 	block.NewStreams = append(block.NewStreams, &oproto.ValueStream{
 		Variable: &oproto.StreamVariable{Name: "/test/foo"},
 		Value: []*oproto.Value{
@@ -75,7 +75,7 @@ func (s *MySuite) TestWrite(c *C) {
 			{Timestamp: 6, DoubleValue: 1.6},
 		},
 	}
-	err := block.Write(block.LogStreams)
+	err := block.Write(context.Background(), block.LogStreams)
 	c.Assert(err, Equals, nil)
 
 	reader, err := block.Read(context.Background())
@@ -95,49 +95,8 @@ func (s *MySuite) TestWrite(c *C) {
 	}
 }
 
-func (s *MySuite) TestNumStreams(c *C) {
-	block := newBlock("/test/foo", "", s.dataDir)
-	block.NewStreams = append(block.NewStreams, &oproto.ValueStream{
-		Variable: &oproto.StreamVariable{Name: "/test/foo"},
-		Value: []*oproto.Value{
-			{DoubleValue: 0.0},
-			{DoubleValue: 1.1},
-		},
-	})
-	block.LogStreams["/test/bar"] = &oproto.ValueStream{
-		Variable: &oproto.StreamVariable{Name: "/test/bar"},
-		Value: []*oproto.Value{
-			{DoubleValue: 1.1},
-			{DoubleValue: 1.2},
-			{DoubleValue: 1.3},
-		},
-	}
-	c.Assert(block.NumStreams(), Equals, uint32(2))
-}
-
-func (s *MySuite) TestNumValues(c *C) {
-	block := newBlock("/test/foo", "", s.dataDir)
-	block.NewStreams = append(block.NewStreams, &oproto.ValueStream{
-		Variable: &oproto.StreamVariable{Name: "/test/foo"},
-		Value: []*oproto.Value{
-			{DoubleValue: 0.0},
-			{DoubleValue: 1.1},
-		},
-	})
-	block.LogStreams["/test/bar"] = &oproto.ValueStream{
-		Variable: &oproto.StreamVariable{Name: "/test/bar"},
-		Value: []*oproto.Value{
-			{DoubleValue: 1.2},
-			{DoubleValue: 1.2},
-			{DoubleValue: 1.2},
-		},
-	}
-	c.Assert(block.NumLogValues(), Equals, uint32(3))
-	c.Assert(block.NumValues(), Equals, uint32(5))
-}
-
 func (s *MySuite) TestCompact(c *C) {
-	block := newBlock("/test/foo", "", s.dataDir)
+	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
 	for v := 0; v < 10; v++ {
 		varName := fmt.Sprintf("/test/bar%d", v)
 		block.LogStreams[varName] = &oproto.ValueStream{
@@ -153,7 +112,7 @@ func (s *MySuite) TestCompact(c *C) {
 }
 
 func (s *MySuite) TestGetStreamForVariable(c *C) {
-	block := newBlock("/test/foo", "", s.dataDir)
+	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
 	for v := 0; v < 10; v++ {
 		varName := fmt.Sprintf("/test/bar%d", v)
 		block.LogStreams[varName] = &oproto.ValueStream{
@@ -172,7 +131,7 @@ func (s *MySuite) TestGetStreamForVariable(c *C) {
 		if cv.String() != "/test/bar7" {
 			continue
 		}
-		stream := block.GetStreamForVariable(index)
+		stream := block.readIndexedStream(context.Background(), index)
 		c.Assert(variable.ProtoToString(stream.Variable), Equals, "/test/bar7")
 		found = true
 		break
@@ -181,7 +140,7 @@ func (s *MySuite) TestGetStreamForVariable(c *C) {
 }
 
 func (s *MySuite) BenchmarkCompact(c *C) {
-	block := newBlock("/test/foo", "", s.dataDir)
+	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
 	for v := 0; v < 10; v++ {
 		varName := fmt.Sprintf("/test/bar%d", v)
 		block.LogStreams[varName] = &oproto.ValueStream{

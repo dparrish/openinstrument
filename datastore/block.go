@@ -48,7 +48,7 @@ type Block struct {
 	size uint32
 }
 
-func newBlock(ctx context.Context, endKey, id, dsPath string) *Block {
+func NewBlock(ctx context.Context, endKey, id, dsPath string) *Block {
 	if id == "" {
 		u, err := uuid.NewV4()
 		if err != nil {
@@ -404,9 +404,6 @@ func (block *Block) Write(ctx context.Context, streams map[string]*oproto.ValueS
 
 func (block *Block) Reader(ctx context.Context, v *variable.Variable) <-chan *oproto.ValueStream {
 	c := make(chan *oproto.ValueStream)
-	if v.String() > block.EndKey() {
-		return nil
-	}
 
 	maybeReturnStreams := func(stream *oproto.ValueStream) {
 		if stream == nil {
@@ -457,7 +454,7 @@ func (block *Block) Reader(ctx context.Context, v *variable.Variable) <-chan *op
 			if !cv.Match(v) {
 				continue
 			}
-			stream := block.GetStreamForVariable(ctx, index)
+			stream := block.readIndexedStream(ctx, index)
 			if stream != nil {
 				c <- stream
 			}
@@ -486,7 +483,7 @@ func (block *Block) Read(ctx context.Context) (<-chan *oproto.ValueStream, error
 	}
 }
 
-func (block *Block) GetStreamForVariable(ctx context.Context, index *oproto.BlockHeaderIndex) *oproto.ValueStream {
+func (block *Block) readIndexedStream(ctx context.Context, index *oproto.BlockHeaderIndex) *oproto.ValueStream {
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
 		if !os.IsNotExist(err) {

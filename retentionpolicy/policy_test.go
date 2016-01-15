@@ -4,9 +4,12 @@ import (
 	"log"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/golang/protobuf/proto"
 
 	"github.com/dparrish/openinstrument"
+	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/variable"
 
@@ -34,15 +37,16 @@ func (s *MySuite) TestDefaultDropPolicy(c *C) {
 	policy := New(policyProto)
 	log.Println(policyProto)
 
-	input := make(chan *oproto.Value)
-	output := policy.Apply(variable.NewFromString("/test/foo/bar"), input)
-
-	for i := 0; i < 10; i++ {
-		input <- &oproto.Value{Timestamp: uint64(i), DoubleValue: 1.1}
+	input := &oproto.ValueStream{
+		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
+		Value:    []*oproto.Value{},
 	}
-	close(input)
+	for i := 0; i < 10; i++ {
+		input.Value = append(input.Value, &oproto.Value{Timestamp: uint64(i), DoubleValue: 1.1})
+	}
+	output := policy.Apply(input)
 
-	for value := range output {
+	for _, value := range output.Value {
 		log.Printf("Got output when none was expected: %s", value)
 		c.Fail()
 	}
@@ -68,22 +72,23 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
 	policy := New(policyProto)
 
-	input := make(chan *oproto.Value)
-	output := policy.Apply(variable.NewFromString("/test/foo/bar"), input)
-	c.Assert(output, NotNil)
-
+	input := &oproto.ValueStream{
+		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
+		Value:    []*oproto.Value{},
+	}
 	now := openinstrument.NowMs()
 	for i := 1; i <= 10; i++ {
-		input <- &oproto.Value{
+		input.Value = append(input.Value, &oproto.Value{
 			Timestamp:    now - uint64(98-3*i),
 			EndTimestamp: now - uint64(100-3*i),
 			DoubleValue:  1.1,
-		}
+		})
 	}
-	close(input)
+
+	output := policy.Apply(input)
 
 	count := 0
-	for value := range output {
+	for _, value := range output.Value {
 		age := now - value.Timestamp
 		if age < 75 || age > 91 {
 			log.Printf("Got value outside expected age (%d)", age)
@@ -93,4 +98,49 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 		count++
 	}
 	c.Check(count, Equals, 5)
+}
+
+func (s *MySuite) TestApplyToBlock(c *C) {
+	block := datastore.NewBlock(context.Background(), "/system/vmstat/nr_anon_transparent_hugepages{hostname=rage}", "bed18417-dd30-4ab4-6432-0635e0e7a2a7", "/r2/services/openinstrument/task1")
+
+	streams := make([]*oproto.ValueStream, 0)
+	originalNumValues := 0
+	ch, err := block.Read(context.Background())
+	c.Assert(err, IsNil)
+	for stream := range ch {
+		streams = append(streams, stream)
+		originalNumValues += len(stream.Value)
+	}
+	log.Printf("Read %d streams containing %d values", len(streams), originalNumValues)
+
+	policyTxt := `
+			interval: 1
+			policy {
+				comment: "Keep everything"
+				variable {
+					name: "*"
+				}
+				mutation {
+					type: MAX
+					sample_frequency: 300000
+				}
+			}
+			policy {
+				comment: "Throw everything away"
+				policy: DROP
+			}
+		`
+	policyProto := &oproto.RetentionPolicy{}
+	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
+	policy := New(policyProto)
+
+	numValues := 0
+	for _, stream := range streams {
+		for range policy.Apply(stream).Value {
+			numValues++
+		}
+	}
+	log.Printf("After policy application, there are %d values left", numValues)
+
+	c.Check(numValues, Equals, originalNumValues)
 }

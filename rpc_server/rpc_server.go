@@ -85,8 +85,6 @@ func (s *server) Get(request *oproto.GetRequest, server oproto.Store_GetServer) 
 }
 
 func (s *server) Add(server oproto.Store_AddServer) error {
-	ctx := openinstrument.LogContext(server.Context())
-	timer := openinstrument.NewTimer(ctx, "Add request")
 	wg := new(sync.WaitGroup)
 	for {
 		request, err := server.Recv()
@@ -114,8 +112,6 @@ func (s *server) Add(server oproto.Store_AddServer) error {
 		}(request)
 	}
 	wg.Wait()
-	timer.Stop()
-	log.Printf("Timers: %s", openinstrument.StringLog(ctx))
 	return nil
 }
 
