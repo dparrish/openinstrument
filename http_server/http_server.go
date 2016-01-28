@@ -88,7 +88,7 @@ func Args(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, r
 }
 
 func GetConfig(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
-	returnResponse(w, req, store_config.Config)
+	returnResponse(w, req, store_config.Get().GetClusterConfig(ctx))
 }
 
 func GetBlocks(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {

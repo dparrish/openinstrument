@@ -1,8 +1,11 @@
 package openinstrument
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -29,4 +32,27 @@ func ReadDirNames(directory string) ([]string, error) {
 
 func ProtoText(msg proto.Message) string {
 	return proto.MarshalTextString(msg)
+}
+
+func SafeWriteFile(filename string, msg proto.Message) error {
+	f, err := ioutil.TempFile(filepath.Dir(filename), "tmpfile")
+	if err != nil {
+		return fmt.Errorf("can't create temporary file: %s", err)
+	}
+	w := bufio.NewWriter(f)
+	if err := proto.MarshalText(w, msg); err != nil {
+		f.Close()
+		os.Remove(f.Name())
+		return fmt.Errorf("marshal failed: %s", f.Name(), err)
+	}
+	w.Flush()
+	f.Sync()
+	f.Close()
+	f.Sync()
+	if err := os.Rename(f.Name(), filename); err != nil {
+		os.Remove(f.Name())
+		return fmt.Errorf("rename failed: %s", err)
+	}
+	f.Sync()
+	return nil
 }

@@ -1,0 +1,76 @@
+server: <
+  address: "192.168.1.1:8022"
+  state: RUN
+  name: "server1:8022"
+>
+server: <
+  address: "192.168.1.1:8122"
+  state: RUN
+  name: "server1:8122"
+>
+server: <
+  address: "192.168.1.1:8222"
+  state: RUN
+  name: "server1:8222"
+>
+retention_policy: <
+  policy: <
+    variable: <
+      name: "/openinstrument/process/cpuset"
+    >
+    comment: "We don't use cpusets, always drop this variable"
+    policy: DROP
+  >
+  policy: <
+    variable: <
+      name: "*"
+      label: <
+        key: "retain"
+        value: "forever"
+      >
+    >
+    comment: "Keep everything with the label retain = forever at the original resolution."
+  >
+  policy: <
+    variable: <
+      name: "/openinstrument/process/os-name[157680000000:604800000]"
+    >
+    variable: <
+      name: "/openinstrument/process/os-arch[157680000000:604800000]"
+    >
+    variable: <
+      name: "/openinstrument/process/os-version[157680000000:604800000]"
+    >
+    variable: <
+      name: "/openinstrument/process/nodename[157680000000:604800000]"
+    >
+    comment: "These strings almost never change, so only keep daily values after a week"
+    mutation: <
+      sample_frequency: 86400000
+    >
+  >
+  policy: <
+    variable: <
+      name: "*[2419200000]"
+    >
+    comment: "Keep everything for 28 days at full resolution."
+    comment: "Assuming a poll every 5 minutes, this will store 6912 data points per variable."
+    comment: "using a total of 126k of storage."
+  >
+  policy: <
+    variable: <
+      name: "*[157680000000:2419200000]"
+    >
+    comment: "Keep everything beteen 28 days and 5 years at 1 hour resolution."
+    comment: "This will keep in 43800 data points for each variable."
+    comment: "Assuming each value is a double, this will use around 684k per variable for 5 years of history."
+    comment: "With run-length encoding, this will be much lower for variables that don't change frequently."
+    mutation: <
+      sample_frequency: 3600000
+    >
+  >
+  policy: <
+    policy: DROP
+  >
+  interval: 3600
+>

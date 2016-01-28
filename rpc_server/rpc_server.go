@@ -174,62 +174,72 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 }
 
 func (s *server) GetCluster(ctx context.Context, request *oproto.GetClusterRequest) (*oproto.GetClusterResponse, error) {
-	return &oproto.GetClusterResponse{Config: store_config.Config}, nil
+	cs := store_config.Get()
+	config := cs.GetClusterConfig(ctx)
+	return &oproto.GetClusterResponse{Config: config}, nil
 }
 
 func (s *server) UpdateRetentionPolicy(ctx context.Context, request *oproto.UpdateRetentionPolicyRequest) (*oproto.UpdateRetentionPolicyResponse, error) {
-	if store_config.Config.RetentionPolicy == nil {
-		store_config.Config.RetentionPolicy = &oproto.RetentionPolicy{}
+	cs := store_config.Get()
+	policy, err := cs.GetRetentionPolicy(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching retention policy: %s", err)
 	}
 
 	switch request.Op {
 	case oproto.UpdateRetentionPolicyRequest_APPEND:
-		store_config.Config.RetentionPolicy.Policy = append(store_config.Config.RetentionPolicy.Policy, request.Item)
+		policy.Policy = append(policy.Policy, request.Item)
 
 	case oproto.UpdateRetentionPolicyRequest_INSERT:
-		if request.Position >= uint32(len(store_config.Config.RetentionPolicy.Policy)) {
+		if request.Position >= uint32(len(policy.Policy)) {
 			return nil, fmt.Errorf("Invalid position for insert")
 		}
 		i := []*oproto.RetentionPolicyItem{request.Item}
-		i = append(i, store_config.Config.RetentionPolicy.Policy[request.Position:]...)
-		store_config.Config.RetentionPolicy.Policy = append(store_config.Config.RetentionPolicy.Policy[:request.Position], i...)
+		i = append(i, policy.Policy[request.Position:]...)
+		policy.Policy = append(policy.Policy[:request.Position], i...)
 
 	case oproto.UpdateRetentionPolicyRequest_REMOVE:
-		if request.Position >= uint32(len(store_config.Config.RetentionPolicy.Policy)) {
+		if request.Position >= uint32(len(policy.Policy)) {
 			return nil, fmt.Errorf("Invalid position for remove")
 		}
-		store_config.Config.RetentionPolicy.Policy = append(store_config.Config.RetentionPolicy.Policy[:request.Position], store_config.Config.RetentionPolicy.Policy[request.Position+1:]...)
+		policy.Policy = append(policy.Policy[:request.Position], policy.Policy[request.Position+1:]...)
 
 	default:
 		return nil, fmt.Errorf("Invalid operation")
 	}
 
-	return &oproto.UpdateRetentionPolicyResponse{store_config.Config.RetentionPolicy}, nil
+	err = cs.UpdateRetentionPolicy(ctx, policy)
+	if err != nil {
+		return nil, fmt.Errorf("Error updating retention policy: %s", err)
+	}
+	return &oproto.UpdateRetentionPolicyResponse{&policy}, nil
 }
 
 func (s *server) WatchCluster(request *oproto.WatchClusterRequest, server oproto.Store_WatchClusterServer) error {
-	sendConfig := func(conf *oproto.ClusterConfig) {
-		c := &oproto.ClusterConfig{
-			Server:          conf.GetServer(),
-			RetentionPolicy: conf.GetRetentionPolicy(),
-		}
-		server.Send(&oproto.WatchClusterResponse{
-			Config: c,
-		})
-	}
-	watchConfig := store_config.SubscribeClusterChanges()
+	/*
+			sendConfig := func(conf *oproto.ClusterConfig) {
+				c := &oproto.ClusterConfig{
+					Server:          conf.GetServer(),
+					RetentionPolicy: conf.GetRetentionPolicy(),
+				}
+				server.Send(&oproto.WatchClusterResponse{
+					Config: c,
+				})
+			}
+			watchConfig := store_config.SubscribeClusterChanges()
 
-loop:
-	for {
-		select {
-		case <-server.Context().Done():
-			break loop
-		case conf := <-watchConfig:
-			sendConfig(conf)
-		}
-	}
+		loop:
+			for {
+				select {
+				case <-server.Context().Done():
+					break loop
+				case conf := <-watchConfig:
+					sendConfig(conf)
+				}
+			}
 
-	store_config.UnsubscribeClusterChanges(watchConfig)
+			store_config.UnsubscribeClusterChanges(watchConfig)
+	*/
 	return nil
 }
 

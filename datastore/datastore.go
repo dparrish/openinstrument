@@ -244,7 +244,10 @@ func (ds *Datastore) Writer(ctx context.Context) chan<- *oproto.ValueStream {
 			// Write this stream
 			varName := variable.ProtoToString(stream.Variable)
 			if block := ds.findBlock(ctx, varName); block != nil {
+				//openinstrument.Logf(ctx, "Writing stream for variable %s to block %s", varName, block.ID())
 				block.AddStream(stream)
+			} else {
+				openinstrument.Logf(ctx, "Unable to find block to write variable %s", varName)
 			}
 		}
 	}()

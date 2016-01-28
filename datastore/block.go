@@ -14,6 +14,7 @@ import (
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
+	"github.com/dparrish/openinstrument/retentionpolicy"
 	"github.com/dparrish/openinstrument/rle"
 	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/value"
@@ -69,7 +70,7 @@ func NewBlock(ctx context.Context, endKey, id, dsPath string) *Block {
 			Id:     id,
 			EndKey: endKey,
 			State:  oproto.Block_UNKNOWN,
-			Node:   store_config.ThisServer().Name,
+			Node:   store_config.Get().GetTaskName(),
 		},
 	}
 }
@@ -99,9 +100,9 @@ func (block *Block) Delete() error {
 func (block *Block) SetState(ctx context.Context, state oproto.Block_State) error {
 	block.protoLock.Lock()
 	defer block.protoLock.Unlock()
-	openinstrument.Logf(ctx, "Updating cluster block %s to state %s", block.Block.Id, state.String())
+	//openinstrument.Logf(ctx, "Updating cluster block %s to state %s", block.Block.Id, state.String())
 	block.Block.State = state
-	return store_config.UpdateBlock(context.Background(), block.Block)
+	return store_config.Get().UpdateBlock(context.Background(), *block.Block)
 }
 
 func (block *Block) GetLogStreams() map[string]*oproto.ValueStream {
@@ -613,6 +614,17 @@ func (block *Block) Compact(ctx context.Context) error {
 
 	streams := block.LogStreams
 	openinstrument.Logf(ctx, "Block log contains %d streams", len(streams))
+	if len(streams) == 0 {
+		return nil
+	}
+
+	// Apply the retention policy during compaction
+	p, err := store_config.Get().GetRetentionPolicy(ctx)
+	if err != nil {
+		return fmt.Errorf("Error getting retention policy from config store: %s", err)
+	}
+	policy := retentionpolicy.New(&p)
+	endKey := ""
 
 	appendValues := func(stream *oproto.ValueStream) {
 		if stream.Variable == nil {
@@ -620,11 +632,19 @@ func (block *Block) Compact(ctx context.Context) error {
 			return
 		}
 		varName := variable.ProtoToString(stream.Variable)
+		out := policy.Apply(stream)
+		if len(out.Value) == 0 {
+			openinstrument.Logf(ctx, "Dropping stream for variable %s", varName)
+			return
+		}
 		outstream, found := streams[varName]
 		if found {
 			outstream.Value = append(outstream.Value, stream.Value...)
 		} else {
 			streams[varName] = stream
+		}
+		if varName > endKey {
+			endKey = varName
 		}
 	}
 
@@ -647,6 +667,9 @@ func (block *Block) Compact(ctx context.Context) error {
 		openinstrument.Logf(ctx, "Compaction added %d unlogged streams, total: %d streams", len(block.NewStreams), len(streams))
 	}
 
+	// The end key may have changed if streams have been dropped
+	block.Block.EndKey = endKey
+
 	if err = block.Write(ctx, streams); err != nil {
 		openinstrument.Logf(ctx, "Error writing: %s", err)
 		return err
@@ -660,6 +683,7 @@ func (block *Block) Compact(ctx context.Context) error {
 
 	block.compactEndTime = time.Now()
 	block.Block.State = oproto.Block_LIVE
+	block.UpdateSize()
 	openinstrument.Logf(ctx, "Finished compaction of %s in %v", block, time.Since(startTime))
 
 	return nil

@@ -96,16 +96,16 @@ func (policy *RetentionPolicy) Apply(input *oproto.ValueStream) *oproto.ValueStr
 
 func doesVariableMatch(itemVar *variable.Variable, policyVars []*oproto.StreamVariable) bool {
 	if len(policyVars) == 0 {
-		log.Printf("Stream variable %s matches default policy", itemVar.String())
+		//log.Printf("Stream variable %s matches default policy", itemVar.String())
 		return true
 	}
 	for _, v := range policyVars {
 		policyVar := variable.NewFromProto(v)
 		if itemVar.Match(policyVar) {
-			log.Printf("Stream variable %s matches policy variable %s", itemVar.String(), policyVar.String())
+			//log.Printf("Stream variable %s matches policy variable %s", itemVar.String(), policyVar.String())
 			return true
 		}
-		log.Printf("Stream variable %s doesn't match policy variable %s", itemVar.String(), policyVar.String())
+		//log.Printf("Stream variable %s doesn't match policy variable %s", itemVar.String(), policyVar.String())
 	}
 	return false
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 
 	"golang.org/x/net/context"
@@ -19,6 +20,7 @@ import (
 
 var (
 	storePath = flag.String("datastore", "/store", "Path to the data store files")
+	taskName  = flag.String("name", "", "Name of the task. Must be unique across the cluster. e.g. \"hostname:port\"")
 )
 
 func main() {
@@ -27,17 +29,29 @@ func main() {
 	flag.Parse()
 	runtime.SetBlockProfileRate(1)
 
-	if err := store_config.Init(context.Background()); err != nil {
-		log.Fatal(err)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	if *taskName == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			log.Fatalf("Unable to get hostname, set --name: %s", err)
+		}
+		*taskName = hostname
 	}
 
+	cs := store_config.NewLocalConfigStore(filepath.Join(*storePath, "config.txt"), *taskName)
+	if err := cs.Start(ctx); err != nil {
+		log.Fatalf("Error starting config store: %s", err)
+	}
+	store_config.Set(cs)
+
 	log.Printf("Opening store")
-	ds := datastore.Open(context.Background(), *storePath)
+	ds := datastore.Open(ctx, *storePath)
 	log.Printf("Finished opening store, serving")
 
 	go rpc_server.Serve(ds)
 	go http_server.Serve(ds)
-	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_RUN)
+	cs.UpdateThisState(ctx, oproto.ClusterMember_RUN)
 
 	shutdown := make(chan struct{})
 	c := make(chan os.Signal, 1)
@@ -51,13 +65,14 @@ func main() {
 	<-shutdown
 
 	// Drain server
-	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_DRAIN)
+	cs.UpdateThisState(ctx, oproto.ClusterMember_DRAIN)
 	// TODO(drain)
 
 	// Shut down server
-	store_config.UpdateThisState(context.Background(), oproto.ClusterMember_SHUTDOWN)
+	cs.UpdateThisState(ctx, oproto.ClusterMember_SHUTDOWN)
 
-	store_config.Shutdown()
+	cs.Stop()
+	cancel()
 }
 
 // Live updating task information
