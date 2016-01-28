@@ -327,37 +327,18 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	defer block.UpdateLoggedCount()
 	defer block.UpdateUnloggedCount()
 
-	keys := make(map[string]bool, 0)
-	func() {
-		for _, index := range block.Block.Header.Index {
-			keys[variable.ProtoToString(index.Variable)] = true
-		}
-		for _, stream := range block.GetLogStreams() {
-			keys[variable.ProtoToString(stream.Variable)] = true
-		}
-		locker := block.UnloggedReadLocker()
-		locker.Lock()
-		defer locker.Unlock()
-		for _, stream := range block.NewStreams {
-			keys[variable.ProtoToString(stream.Variable)] = true
-		}
-	}()
-	if len(keys) < 2 {
-		return nil, nil, fmt.Errorf("Could not split block %s: not enough streams", block)
-	}
 	// Compact the block before continuing, to make sure everything is flushed to disk
 	block.Compact(ctx)
-	var sortedKeys []string
-	for key := range keys {
-		sortedKeys = append(sortedKeys, key)
+
+	// Work out the optimal split point
+	splitPoint, leftEndKey := block.GetOptimalSplitPoint(ctx)
+	if splitPoint == 0 {
+		return nil, nil, fmt.Errorf("Could not split block %s: not enough streams", block)
 	}
-	sort.Strings(sortedKeys)
-	openinstrument.Logf(ctx, "There are %d streams in the old block", len(sortedKeys))
-	splitpoint := len(sortedKeys) / 2
-	openinstrument.Logf(ctx, "Splitting at %d (%s)", splitpoint, sortedKeys[splitpoint])
+	openinstrument.Logf(ctx, "Calculated optimal split point at %d (%s)", splitPoint, leftEndKey)
 
 	// Read in the whole block
-	leftBlock := NewBlock(ctx, sortedKeys[splitpoint-1], "", ds.Path)
+	leftBlock := NewBlock(ctx, leftEndKey, "", ds.Path)
 	leftStreams := make(map[string]*oproto.ValueStream)
 	rightStreams := make(map[string]*oproto.ValueStream)
 

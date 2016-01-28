@@ -2,11 +2,13 @@ package datastore
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"golang.org/x/net/context"
 
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/variable"
 	. "gopkg.in/check.v1"
 )
@@ -22,6 +24,9 @@ var _ = Suite(&MySuite{})
 
 func (s *MySuite) SetUpSuite(c *C) {
 	s.dataDir = c.MkDir()
+	cs := store_config.NewLocalConfigStore(filepath.Join(s.dataDir, "config.txt"), "test")
+	cs.Start(context.Background())
+	store_config.Set(cs)
 }
 
 func (s *MySuite) TestRead(c *C) {
@@ -111,6 +116,24 @@ func (s *MySuite) TestCompact(c *C) {
 	c.Assert(block.Compact(context.Background()), IsNil)
 }
 
+func (s *MySuite) BenchmarkCompact(c *C) {
+	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
+	for v := 0; v < 10; v++ {
+		varName := fmt.Sprintf("/test/bar%d", v)
+		block.LogStreams[varName] = &oproto.ValueStream{
+			Variable: &oproto.StreamVariable{Name: varName},
+			Value:    []*oproto.Value{},
+		}
+		for i := 0; i < 100000; i++ {
+			block.LogStreams[varName].Value = append(block.LogStreams[varName].Value,
+				&oproto.Value{DoubleValue: float64(i)})
+		}
+	}
+	for run := 0; run < c.N; run++ {
+		block.Compact(context.Background())
+	}
+}
+
 func (s *MySuite) TestGetStreamForVariable(c *C) {
 	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
 	for v := 0; v < 10; v++ {
@@ -139,20 +162,21 @@ func (s *MySuite) TestGetStreamForVariable(c *C) {
 	c.Assert(found, Equals, true)
 }
 
-func (s *MySuite) BenchmarkCompact(c *C) {
-	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir)
-	for v := 0; v < 10; v++ {
-		varName := fmt.Sprintf("/test/bar%d", v)
+func (s *MySuite) TestGetOptimalSplitPoint(c *C) {
+	block := NewBlock(context.Background(), "/test/foo{host=z}", "", s.dataDir)
+	for i := 'a'; i <= 'z'; i++ {
+		varName := fmt.Sprintf("/test/foo{host=%c}", i)
+		v := []*oproto.Value{}
+		for j := 'a'; j <= i; j++ {
+			v = append(v, &oproto.Value{DoubleValue: float64(i)})
+		}
 		block.LogStreams[varName] = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: varName},
-			Value:    []*oproto.Value{},
-		}
-		for i := 0; i < 100000; i++ {
-			block.LogStreams[varName].Value = append(block.LogStreams[varName].Value,
-				&oproto.Value{DoubleValue: float64(i)})
+			Value:    v,
 		}
 	}
-	for run := 0; run < c.N; run++ {
-		block.Compact(context.Background())
-	}
+
+	splitPoint, leftBlockEnd := block.GetOptimalSplitPoint(context.Background())
+	c.Check(splitPoint, Equals, 18)
+	c.Check(leftBlockEnd, Equals, "/test/foo{host=r}")
 }

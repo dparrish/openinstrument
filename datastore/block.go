@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -690,6 +691,91 @@ func (block *Block) Compact(ctx context.Context) error {
 	openinstrument.Logf(ctx, "Finished compaction of %s in %v", block, time.Since(startTime))
 
 	return nil
+}
+
+func (block *Block) GetOptimalSplitPoint(ctx context.Context) (int, string) {
+	keys := make(map[string]int, 0)
+	func() {
+		for _, index := range block.Block.Header.Index {
+			keys[variable.ProtoToString(index.Variable)] = int(index.NumValues)
+		}
+		for _, stream := range block.GetLogStreams() {
+			v := variable.ProtoToString(stream.Variable)
+			_, ok := keys[v]
+			if !ok {
+				keys[v] = len(stream.Value)
+			} else {
+				keys[v] += len(stream.Value)
+			}
+		}
+		block.newStreamsLock.RLocker().Lock()
+		defer block.newStreamsLock.RLocker().Unlock()
+		for _, stream := range block.NewStreams {
+			v := variable.ProtoToString(stream.Variable)
+			_, ok := keys[v]
+			if !ok {
+				keys[v] = len(stream.Value)
+			} else {
+				keys[v] += len(stream.Value)
+			}
+		}
+	}()
+	if len(keys) < 2 {
+		return 0, ""
+	}
+	var sortedKeys []string
+	for key := range keys {
+		sortedKeys = append(sortedKeys, key)
+	}
+	sort.Strings(sortedKeys)
+
+	// Look for the split point where there are closest to an equal number of values on both sides
+	moved := 0
+	lastDifference := 0
+	splitPoint := len(sortedKeys) / 2
+	for {
+		leftEndKey := sortedKeys[splitPoint-1]
+		leftCount := 0
+		rightCount := 0
+		for _, key := range sortedKeys {
+			if key <= leftEndKey {
+				leftCount += keys[key]
+			} else {
+				rightCount += keys[key]
+			}
+		}
+		difference := rightCount - leftCount
+		if splitPoint == 1 || splitPoint == len(keys)-1 {
+			// Can't move any further
+			break
+		}
+		if difference == 0 {
+			// Exact split
+			break
+		}
+		if lastDifference != 0 && math.Abs(float64(lastDifference)) < math.Abs(float64(difference)) {
+			// Last position was closer
+			if moved < 0 {
+				// The position directly to the right is the best
+				splitPoint++
+				break
+			} else {
+				// The position directly to the left is the best
+				splitPoint--
+				break
+			}
+		}
+		if difference < 0 {
+			splitPoint--
+			moved = -1
+			lastDifference = difference
+		} else {
+			splitPoint++
+			moved = 1
+			lastDifference = difference
+		}
+	}
+	return splitPoint, sortedKeys[splitPoint-1]
 }
 
 // Sorter for oproto.Block
