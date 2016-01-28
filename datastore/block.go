@@ -388,6 +388,7 @@ func (block *Block) Write(ctx context.Context, streams map[string]*oproto.ValueS
 	block.UpdateIndexedCount()
 
 	openinstrument.Logf(ctx, "Wrote %d streams / %d values to %s", len(streams), outValues, newfilename)
+	openinstrument.Logf(ctx, "Block log contains %d stream", len(block.Block.Header.Index))
 
 	// Rename the temporary file into place
 	if err := os.Rename(newfilename, block.Filename()); err != nil {
@@ -612,11 +613,7 @@ func (block *Block) Compact(ctx context.Context) error {
 	block.logLock.Lock()
 	defer block.logLock.Unlock()
 
-	streams := block.LogStreams
-	openinstrument.Logf(ctx, "Block log contains %d streams", len(streams))
-	if len(streams) == 0 {
-		return nil
-	}
+	streams := make(map[string]*oproto.ValueStream, 0)
 
 	// Apply the retention policy during compaction
 	p, err := store_config.Get().GetRetentionPolicy(ctx)
@@ -634,7 +631,7 @@ func (block *Block) Compact(ctx context.Context) error {
 		varName := variable.ProtoToString(stream.Variable)
 		out := policy.Apply(stream)
 		if len(out.Value) == 0 {
-			openinstrument.Logf(ctx, "Dropping stream for variable %s", varName)
+			//openinstrument.Logf(ctx, "Dropping stream for variable %s", varName)
 			return
 		}
 		outstream, found := streams[varName]
@@ -647,6 +644,12 @@ func (block *Block) Compact(ctx context.Context) error {
 			endKey = varName
 		}
 	}
+
+	// Append logged streams
+	for _, stream := range block.LogStreams {
+		appendValues(stream)
+	}
+	openinstrument.Logf(ctx, "Block log contains %d streams", len(streams))
 
 	// Append indexed streams
 	reader, err := block.GetIndexedStreams(ctx)

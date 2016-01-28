@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 .*.sw?
 query/LR1_conflicts.txt
+policy.txt
