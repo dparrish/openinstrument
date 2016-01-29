@@ -2,6 +2,7 @@ package store_config
 
 import (
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,7 +23,9 @@ type MySuite struct {
 var _ = Suite(&MySuite{})
 
 func (s *MySuite) SetUpTest(c *C) {
-	s.tmpdir = os.TempDir()
+	var err error
+	s.tmpdir, err = ioutil.TempDir(os.TempDir(), "openinstrument-test")
+	c.Assert(err, IsNil)
 
 	// Make a temporary config file for each test
 	func() {
