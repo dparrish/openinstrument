@@ -88,7 +88,6 @@ func runSlowAddLoadtest(ctx context.Context) {
 
 		conn.Close()
 	}
-	log.Println("Complete")
 }
 
 func runAddLoadtest(ctx context.Context, conn client.Client) {
@@ -142,7 +141,6 @@ func runAddLoadtest(ctx context.Context, conn client.Client) {
 		in <- request
 		sent++
 	}
-	log.Println("Complete")
 }
 
 func main() {

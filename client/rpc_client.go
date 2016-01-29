@@ -49,7 +49,6 @@ func (c *RpcClient) watchCluster(ctx context.Context) {
 			log.Fatalf("Error watching cluster: %s", err)
 			return
 		}
-		resp = resp
 		log.Printf("Got cluster update: %s", resp)
 	}
 }

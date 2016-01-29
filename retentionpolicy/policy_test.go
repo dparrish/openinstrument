@@ -1,4 +1,4 @@
-package retentionpolicy
+package retentionpolicy_test
 
 import (
 	"log"
@@ -11,6 +11,7 @@ import (
 	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/retentionpolicy"
 	"github.com/dparrish/openinstrument/variable"
 
 	. "gopkg.in/check.v1"
@@ -33,7 +34,7 @@ func (s *MySuite) TestDefaultDropPolicy(c *C) {
 	`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := New(policyProto)
+	policy := retentionpolicy.New(policyProto)
 
 	input := &oproto.ValueStream{
 		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
@@ -69,7 +70,7 @@ func (s *MySuite) TestDropByValue(c *C) {
 	`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := New(policyProto)
+	policy := retentionpolicy.New(policyProto)
 	//log.Println(policyProto)
 
 	// Device not matching regexp is kept
@@ -105,7 +106,7 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 		`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := New(policyProto)
+	policy := retentionpolicy.New(policyProto)
 
 	input := &oproto.ValueStream{
 		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
@@ -168,7 +169,7 @@ func (s *MySuite) TestApplyToBlock(c *C) {
 		`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := New(policyProto)
+	policy := retentionpolicy.New(policyProto)
 
 	numValues := 0
 	for _, stream := range streams {

@@ -218,7 +218,7 @@ func (s *LocalConfigStore) UnsubscribeChanges(watcher ConfigStoreWatcher) error 
 	for i, wat := range s.watchers {
 		if wat == w {
 			s.watchers = append(s.watchers[:i], s.watchers[i+1:]...)
-			log.Printf("Watchers: %s", s.watchers)
+			log.Printf("Watchers: %v", s.watchers)
 			return nil
 		}
 	}
