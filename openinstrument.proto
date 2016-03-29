@@ -13,14 +13,8 @@ message OperationLog {
 }
 
 message StreamVariable {
-  enum ValueType {
-    UNKNOWN = 0;
-    GAUGE = 1;
-    RATE = 2;
-  }
   string name = 1;
   map<string, string> label = 2;
-  ValueType type = 3;
 
   // Milliseconds since epoch, or if negative, milliseconds before now.
 	int64 min_timestamp = 4;
@@ -125,10 +119,6 @@ message Value {
 message ValueStream {
   StreamVariable variable = 2;
   repeated Value value = 4;
-
-  // An optional set of mutations that have been applied to this stream.
-  // If the stream contains the raw data, this should be empty.
-  repeated StreamMutation mutation = 5;
 }
 
 // Queries return a stream for every input variable / mutation / aggregation
@@ -138,87 +128,6 @@ message Query {
 	repeated StreamAggregation aggregation = 3;
 
   repeated double constant = 4;
-}
-
-message GetRequest {
-	Query query = 1;
-
-	// deprecated
-  StreamVariable variable = 9 [deprecated=true];
-
-  // If mutations or aggregations are supplied, the GetResponse will have a separate stream for each change requested.
-  repeated StreamMutation mutation = 6 [deprecated=true];
-  repeated StreamAggregation aggregation = 7 [deprecated=true];
-
-  // Limit to how many variables can be returned in a standard GetRequest. This can be overridden if required.
-  uint32 max_variables = 8;
-
-  // This request has been forwarded by another store server and should not be forwarded again.
-  // This shouldn't happen but is here as a failsafe.
-  bool forwarded = 10;
-
-  // Limit the number of values that can be returned for each variable.
-  uint32 max_values = 11;
-}
-
-message GetResponse {
-  bool success = 1;
-  string errormessage = 2;
-
-  // Contains a separate stream for every mutation requested in GetRequest, in the same order. If no mutations are
-  // requested, the response will contain a single stream of the raw data.
-  repeated ValueStream stream = 3;
-  repeated LogMessage timer = 4;
-}
-
-message AddRequest {
-  repeated ValueStream stream = 1;
-
-  // This request has been forwarded by another store server and should not be forwarded again.
-  // This shouldn't happen but is here as a failsafe.
-  bool forwarded = 2;
-}
-
-message AddResponse {
-  bool success = 1;
-  string errormessage = 2;
-  repeated LogMessage timer = 3;
-	uint32 streams = 4;
-	uint32 values = 5;
-}
-
-message ListRequest {
-  StreamVariable prefix = 3;
-
-  // Limit to how many variables can be returned in a standard ListRequest. This can be overridden if required.
-  uint32 max_variables = 2;
-}
-
-message ListResponse {
-  bool success = 1;
-  string errormessage = 2;
-
-  // Although this uses the ValueStream for returning a list of variables, the expectation is that the value field is
-  // empty.
-  repeated ValueStream stream = 3;
-  repeated StreamVariable variable = 4;
-  repeated LogMessage timer = 5;
-}
-
-message BlockHeaderIndex {
-  StreamVariable variable = 1;
-  fixed64 offset = 2;
-  fixed32 num_values = 3;
-  fixed64 min_timestamp = 4;
-  fixed64 max_timestamp = 5;
-}
-
-message BlockHeader {
-  uint32 version = 6;
-  uint64 start_timestamp = 1;
-  uint64 end_timestamp = 2;
-  repeated BlockHeaderIndex index = 5;
-  string end_key = 7;
 }
 
 message RetentionPolicyItem {
@@ -290,6 +199,73 @@ message Block {
 
 	// Bytes
 	uint32 size = 18;
+}
+
+message BlockHeaderIndex {
+  StreamVariable variable = 1;
+  fixed64 offset = 2;
+  fixed32 num_values = 3;
+  fixed64 min_timestamp = 4;
+  fixed64 max_timestamp = 5;
+}
+
+message BlockHeader {
+  uint32 version = 6;
+  uint64 start_timestamp = 1;
+  uint64 end_timestamp = 2;
+  repeated BlockHeaderIndex index = 5;
+  string end_key = 7;
+}
+
+
+message GetRequest {
+	Query query = 1;
+
+  // Limit to how many variables can be returned in a standard GetRequest. This can be overridden if required.
+  uint32 max_variables = 2;
+
+  // Limit the number of values that can be returned for each variable.
+  uint32 max_values = 3;
+}
+
+message GetResponse {
+  bool success = 1;
+  string errormessage = 2;
+
+  // Contains a separate stream for every mutation requested in GetRequest, in the same order. If no mutations are
+  // requested, the response will contain a single stream of the raw data.
+  repeated ValueStream stream = 3;
+  repeated LogMessage timer = 4;
+}
+
+message AddRequest {
+  repeated ValueStream stream = 1;
+}
+
+message AddResponse {
+  bool success = 1;
+  string errormessage = 2;
+  repeated LogMessage timer = 3;
+	uint32 streams = 4;
+	uint32 values = 5;
+}
+
+message ListRequest {
+  StreamVariable prefix = 1;
+
+  // Limit to how many variables can be returned in a standard ListRequest. This can be overridden if required.
+  uint32 max_variables = 2;
+}
+
+message ListResponse {
+  bool success = 1;
+  string errormessage = 2;
+
+  // Although this uses the ValueStream for returning a list of variables, the expectation is that the value field is
+  // empty.
+  repeated ValueStream stream = 3;
+  repeated StreamVariable variable = 4;
+  repeated LogMessage timer = 5;
 }
 
 message LookupBlockRequest {
