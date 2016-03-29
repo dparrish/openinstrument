@@ -7,8 +7,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/dparrish/openinstrument/aggregations"
+	. "github.com/dparrish/openinstrument/aggregations"
 	"github.com/dparrish/openinstrument/datastore"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 
 	oproto "github.com/dparrish/openinstrument/proto"
@@ -34,7 +35,7 @@ func (s *MySuite) TestCartesianProduct(c *C) {
 		{"job=a", "job=b"},
 		{"other=x", "other=y"},
 	}
-	output := aggregations.CartesianProduct(input)
+	output := CartesianProduct(input)
 	c.Assert(len(output), Equals, 2*2*2)
 	c.Check(output[0], DeepEquals, []string{"host=a", "job=a", "other=x"})
 	c.Check(output[len(output)-1], DeepEquals, []string{"host=b", "job=b", "other=y"})
@@ -46,7 +47,7 @@ func (s *MySuite) TestCartesianProductToVariable(c *C) {
 		{"job=a", "job=b"},
 		{"other=x", "other=y"},
 	}
-	output := aggregations.CartesianProductToVariable(aggregations.CartesianProduct(input))
+	output := CartesianProductToVariable(CartesianProduct(input))
 	c.Assert(len(output), Equals, 2*2*2)
 	c.Check(output[0].String(), Equals, "{host=a,job=a,other=x}")
 	c.Check(output[len(output)-1].String(), Equals, "{host=b,job=b,other=y}")
@@ -54,7 +55,7 @@ func (s *MySuite) TestCartesianProductToVariable(c *C) {
 
 func checkValue(c *C, value *oproto.Value, expectedTimestamp uint64, expectedValue float64) {
 	c.Assert(value, Not(IsNil))
-	c.Check(value.DoubleValue, Equals, expectedValue)
+	c.Check(value.GetDouble(), Equals, expectedValue)
 	c.Check(int(value.Timestamp), Equals, int(expectedTimestamp))
 }
 
@@ -63,7 +64,7 @@ func (s *MySuite) TestMean(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
-	output := aggregations.Mean(nil, input)
+	output := Mean(nil, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 1)
 	stream := output[0]
@@ -89,7 +90,7 @@ func (s *MySuite) TestMeanBy(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=foo,other=y}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=bar,other=z}")),
 	}
-	output := aggregations.Mean([]string{"host"}, input)
+	output := Mean([]string{"host"}, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 2)
 	// Check that there are two output streams, as there are two distinct hosts
@@ -134,7 +135,7 @@ func (s *MySuite) TestMeanByJob(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=foo,other=y}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=bar,other=z}")),
 	}
-	output := aggregations.Mean([]string{"job"}, input)
+	output := Mean([]string{"job"}, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 2)
 	// Check that there are two output streams, as there are two distinct hosts
@@ -191,7 +192,7 @@ func (s *MySuite) TestMeanByTwoLabels(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=foo,other=y}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b,job=bar,other=z}")),
 	}
-	output := aggregations.Mean([]string{"host", "job"}, input)
+	output := Mean([]string{"host", "job"}, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 4)
 	// Check that there are 4 output streams with the correct number of output labels
@@ -204,7 +205,7 @@ func (s *MySuite) TestOffsetMean(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=a}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=b}")),
 	}
-	output := aggregations.Mean(nil, input)
+	output := Mean(nil, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 1)
 	stream := output[0]
@@ -228,7 +229,7 @@ func (s *MySuite) TestMin(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
-	output := aggregations.Min(nil, input)
+	output := Min(nil, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 1)
 	stream := output[0]
@@ -252,7 +253,7 @@ func (s *MySuite) TestMax(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
-	output := aggregations.Max(nil, input)
+	output := Max(nil, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 1)
 	stream := output[0]
@@ -276,7 +277,7 @@ func (s *MySuite) TestSum(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
-	output := aggregations.Sum(nil, input)
+	output := Sum(nil, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 1)
 	stream := output[0]
@@ -300,7 +301,7 @@ func (s *MySuite) TestStdDev(c *C) {
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=a}")),
 		<-s.store.Reader(context.Background(), variable.NewFromString("/test{host=b}")),
 	}
-	output := aggregations.StdDev(nil, input)
+	output := StdDev(nil, input)
 	c.Assert(output, Not(IsNil))
 	c.Assert(len(output), Equals, 1)
 	stream := output[0]
@@ -331,17 +332,17 @@ func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-
 			stream = &oproto.ValueStream{
 				Variable: v.AsProto(),
 				Value: []*oproto.Value{
-					{Timestamp: uint64(60 * 0), DoubleValue: float64(20 * 1)},
-					{Timestamp: uint64(60 * 1), DoubleValue: float64(20 * 2)},
-					{Timestamp: uint64(60 * 2), DoubleValue: float64(20 * 3)},
-					{Timestamp: uint64(60 * 3), DoubleValue: float64(20 * 4)},
-					{Timestamp: uint64(60 * 4), DoubleValue: float64(20 * 5)},
-					{Timestamp: uint64(60 * 5), DoubleValue: float64(20 * 6)},
-					{Timestamp: uint64(60 * 6), DoubleValue: float64(20 * 7)},
-					{Timestamp: uint64(60 * 7), DoubleValue: float64(20 * 8)},
-					{Timestamp: uint64(60 * 8), DoubleValue: float64(20 * 9)},
-					{Timestamp: uint64(60 * 9), DoubleValue: float64(20 * 10)},
-					{Timestamp: uint64(60 * 10), DoubleValue: float64(20 * 11)},
+					value.NewDouble(uint64(60*0), float64(20*1)),
+					value.NewDouble(uint64(60*1), float64(20*2)),
+					value.NewDouble(uint64(60*2), float64(20*3)),
+					value.NewDouble(uint64(60*3), float64(20*4)),
+					value.NewDouble(uint64(60*4), float64(20*5)),
+					value.NewDouble(uint64(60*5), float64(20*6)),
+					value.NewDouble(uint64(60*6), float64(20*7)),
+					value.NewDouble(uint64(60*7), float64(20*8)),
+					value.NewDouble(uint64(60*8), float64(20*9)),
+					value.NewDouble(uint64(60*9), float64(20*10)),
+					value.NewDouble(uint64(60*10), float64(20*11)),
 				},
 			}
 			if v.Labels["host"] == "a" {
@@ -358,23 +359,23 @@ func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-
 			stream = &oproto.ValueStream{
 				Variable: v.AsProto(),
 				Value: []*oproto.Value{
-					{Timestamp: uint64(60 * 0), DoubleValue: float64(20 * 1)},
-					{Timestamp: uint64(60 * 1), DoubleValue: float64(20 * 2)},
-					{Timestamp: uint64(60 * 2), DoubleValue: float64(20 * 3)},
-					{Timestamp: uint64(60 * 3), DoubleValue: float64(20 * 4)},
-					{Timestamp: uint64(60 * 4), DoubleValue: float64(20 * 5)},
-					{Timestamp: uint64(60 * 5), DoubleValue: float64(20 * 6)},
-					{Timestamp: uint64(60 * 6), DoubleValue: float64(20 * 7)},
-					{Timestamp: uint64(60 * 7), DoubleValue: float64(20 * 8)},
-					{Timestamp: uint64(60 * 8), DoubleValue: float64(20 * 9)},
-					{Timestamp: uint64(60 * 9), DoubleValue: float64(20 * 10)},
-					{Timestamp: uint64(60 * 10), DoubleValue: float64(20 * 11)},
+					value.NewDouble(uint64(60*0), float64(20*1)),
+					value.NewDouble(uint64(60*1), float64(20*2)),
+					value.NewDouble(uint64(60*2), float64(20*3)),
+					value.NewDouble(uint64(60*3), float64(20*4)),
+					value.NewDouble(uint64(60*4), float64(20*5)),
+					value.NewDouble(uint64(60*5), float64(20*6)),
+					value.NewDouble(uint64(60*6), float64(20*7)),
+					value.NewDouble(uint64(60*7), float64(20*8)),
+					value.NewDouble(uint64(60*8), float64(20*9)),
+					value.NewDouble(uint64(60*9), float64(20*10)),
+					value.NewDouble(uint64(60*10), float64(20*11)),
 				},
 			}
 		}
 		if v.Labels["host"] == "b" {
 			for _, value := range stream.Value {
-				value.DoubleValue *= 2
+				value.Value.(*oproto.Value_Double).Double *= 2
 			}
 		}
 		c <- stream

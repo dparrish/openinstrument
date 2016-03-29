@@ -65,7 +65,7 @@ func returnResponse(w http.ResponseWriter, req *http.Request, response proto.Mes
 	return nil
 }
 
-func Add(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func Add(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	var request oproto.AddRequest
 	var response oproto.AddResponse
 	if parseRequest(w, req, &request) != nil {
@@ -83,15 +83,15 @@ func Add(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, re
 }
 
 // Argument server.
-func Args(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func Args(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, os.Args[1:])
 }
 
-func GetConfig(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
-	returnResponse(w, req, store_config.Get().GetClusterConfig(ctx))
+func GetConfig(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+	returnResponse(w, req, config.GetClusterConfig(ctx))
 }
 
-func GetBlocks(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func GetBlocks(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	b := []*oproto.Block{}
 	for _, block := range ds.Blocks() {
 		b = append(b, block.ToProto())
@@ -102,7 +102,7 @@ func GetBlocks(ctx context.Context, ds *datastore.Datastore, w http.ResponseWrit
 	w.Write(out)
 }
 
-func InspectVariable(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func InspectVariable(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	t, err := template.ParseFiles(fmt.Sprintf("%s/inspect_variable.html", *templatePath))
 	if err != nil {
 		openinstrument.Logf(ctx, "Couldn't find template file: %s", err)
@@ -149,7 +149,7 @@ func InspectVariable(ctx context.Context, ds *datastore.Datastore, w http.Respon
 	}
 }
 
-func Query(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func Query(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	query := req.FormValue("q")
 	showValues := req.FormValue("v") == "1"
 	type Result struct {
@@ -192,13 +192,13 @@ func Query(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, 
 			// Latest value only
 			if len(stream.Value) > 0 {
 				v := stream.Value[len(stream.Value)-1]
-				r.Values = append(r.Values, []interface{}{v.Timestamp, v.DoubleValue})
+				r.Values = append(r.Values, []interface{}{v.Timestamp, v.Value})
 			}
 		} else {
 			// All values over a specific time period
 			for _, v := range stream.Value {
 				if requestVariable.MinTimestamp == 0 || requestVariable.MinTimestamp > int64(v.Timestamp) {
-					r.Values = append(r.Values, []interface{}{v.Timestamp, v.DoubleValue})
+					r.Values = append(r.Values, []interface{}{v.Timestamp, v.GetDouble()})
 				}
 			}
 		}
@@ -215,7 +215,7 @@ func Query(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, 
 	w.Write(b)
 }
 
-func PprofAlloc(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func PprofAlloc(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/heap", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", "-alloc_space", url).Output()
 	if err != nil {
@@ -228,7 +228,7 @@ func PprofAlloc(ctx context.Context, ds *datastore.Datastore, w http.ResponseWri
 	w.Write(out)
 }
 
-func PprofInuse(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func PprofInuse(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/heap", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
 	if err != nil {
@@ -241,7 +241,7 @@ func PprofInuse(ctx context.Context, ds *datastore.Datastore, w http.ResponseWri
 	w.Write(out)
 }
 
-func PprofProfile(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func PprofProfile(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/profile", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
 	if err != nil {
@@ -254,7 +254,7 @@ func PprofProfile(ctx context.Context, ds *datastore.Datastore, w http.ResponseW
 	w.Write(out)
 }
 
-func PprofBlock(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func PprofBlock(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/block", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
 	if err != nil {
@@ -267,7 +267,7 @@ func PprofBlock(ctx context.Context, ds *datastore.Datastore, w http.ResponseWri
 	w.Write(out)
 }
 
-func PprofGoroutine(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func PprofGoroutine(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	url := fmt.Sprintf("http://%s:%d/debug/pprof/goroutine", *address, *port)
 	out, err := exec.Command("/home/dparrish/.gvm/gos/go1.5.1/bin/go", "tool", "pprof", "-svg", url).Output()
 	if err != nil {
@@ -280,7 +280,7 @@ func PprofGoroutine(ctx context.Context, ds *datastore.Datastore, w http.Respons
 	w.Write(out)
 }
 
-func ListVariables(ctx context.Context, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
+func ListVariables(ctx context.Context, config store_config.ConfigStore, ds *datastore.Datastore, w http.ResponseWriter, req *http.Request) {
 	prefix := req.FormValue("p")
 	if prefix == "" {
 		prefix = "/*"
@@ -310,15 +310,15 @@ func ListVariables(ctx context.Context, ds *datastore.Datastore, w http.Response
 	w.Write(out)
 }
 
-func Serve(ds *datastore.Datastore) {
+func Serve(ds *datastore.Datastore, config store_config.ConfigStore) {
 	sock, e := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
 	if e != nil {
 		log.Fatalf("Can't listen on %s: %s", net.JoinHostPort(*address, strconv.Itoa(*port)), e)
 	}
 	log.Printf("Serving HTTP on %v", sock.Addr().String())
 	ctx := context.Background()
-	hf := func(f func(context.Context, *datastore.Datastore, http.ResponseWriter, *http.Request)) http.HandlerFunc {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { f(ctx, ds, w, r) })
+	hf := func(f func(context.Context, store_config.ConfigStore, *datastore.Datastore, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { f(ctx, config, ds, w, r) })
 	}
 	http.Handle("/add", hf(Add))
 	http.Handle("/args", hf(Args))

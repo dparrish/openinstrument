@@ -46,11 +46,11 @@ func main() {
 	store_config.Set(cs)
 
 	log.Printf("Opening store")
-	ds := datastore.Open(ctx, *storePath)
+	ds := datastore.Open(ctx, *storePath, cs)
 	log.Printf("Finished opening store, serving")
 
-	go rpc_server.Serve(ds)
-	go http_server.Serve(ds)
+	go rpc_server.Serve(ds, cs)
+	go http_server.Serve(ds, cs)
 	cs.UpdateThisState(ctx, oproto.ClusterMember_RUN)
 
 	shutdown := make(chan struct{})

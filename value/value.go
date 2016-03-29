@@ -32,3 +32,17 @@ func (vs *valuesSorter) Swap(i, j int) {
 func (vs *valuesSorter) Less(i, j int) bool {
 	return vs.by(vs.values[i], vs.values[j])
 }
+
+func NewDouble(timestamp uint64, val float64) *oproto.Value {
+	return &oproto.Value{
+		Value:     &oproto.Value_Double{val},
+		Timestamp: timestamp,
+	}
+}
+
+func NewString(timestamp uint64, val string) *oproto.Value {
+	return &oproto.Value{
+		Value:     &oproto.Value_String_{val},
+		Timestamp: timestamp,
+	}
+}

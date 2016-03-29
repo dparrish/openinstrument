@@ -68,10 +68,11 @@ func main() {
 			variable := variable.NewFromProto(stream.Variable).String()
 			for _, value := range stream.Value {
 				fmt.Printf("%s\t%s\t", variable, time.Unix(int64(value.Timestamp/1000), 0))
-				if value.StringValue == "" {
-					fmt.Printf("%f\n", value.DoubleValue)
-				} else {
-					fmt.Printf("%s\n", value.StringValue)
+				switch v := value.Value.(type) {
+				case *oproto.Value_String_:
+					fmt.Printf("%s\n", v.String_)
+				case *oproto.Value_Double:
+					fmt.Printf("%f\n", v.Double)
 				}
 			}
 		}

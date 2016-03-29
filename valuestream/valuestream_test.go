@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 	. "gopkg.in/check.v1"
 )
@@ -37,22 +38,22 @@ func (s *MySuite) TestMerge(c *C) {
 		&oproto.ValueStream{
 			Variable: variable.NewFromString("/test{host=a}").AsProto(),
 			Value: []*oproto.Value{
-				&oproto.Value{Timestamp: 1, DoubleValue: 1.0},
-				&oproto.Value{Timestamp: 4, DoubleValue: 4.0},
+				value.NewDouble(1, 1.0),
+				value.NewDouble(4, 4.0),
 			},
 		},
 		&oproto.ValueStream{
 			Variable: variable.NewFromString("/test{host=b}").AsProto(),
 			Value: []*oproto.Value{
-				&oproto.Value{Timestamp: 2, DoubleValue: 2.0},
-				&oproto.Value{Timestamp: 5, DoubleValue: 5.0},
+				value.NewDouble(2, 2.0),
+				value.NewDouble(5, 5.0),
 			},
 		},
 		&oproto.ValueStream{
 			Variable: variable.NewFromString("/test{host=c}").AsProto(),
 			Value: []*oproto.Value{
-				&oproto.Value{Timestamp: 3, DoubleValue: 3.0},
-				&oproto.Value{Timestamp: 6, DoubleValue: 6.0},
+				value.NewDouble(3, 3.0),
+				value.NewDouble(6, 6.0),
 			},
 		},
 	}
@@ -68,22 +69,22 @@ func (s *MySuite) TestMergeBy(c *C) {
 		&oproto.ValueStream{
 			Variable: variable.NewFromString("/test{host=a,other=x}").AsProto(),
 			Value: []*oproto.Value{
-				&oproto.Value{Timestamp: 1, DoubleValue: 1.0},
-				&oproto.Value{Timestamp: 4, DoubleValue: 4.0},
+				value.NewDouble(1, 1.0),
+				value.NewDouble(4, 4.0),
 			},
 		},
 		&oproto.ValueStream{
 			Variable: variable.NewFromString("/test{host=b,other=y}").AsProto(),
 			Value: []*oproto.Value{
-				&oproto.Value{Timestamp: 2, DoubleValue: 2.0},
-				&oproto.Value{Timestamp: 5, DoubleValue: 5.0},
+				value.NewDouble(2, 2.0),
+				value.NewDouble(5, 5.0),
 			},
 		},
 		&oproto.ValueStream{
 			Variable: variable.NewFromString("/test{host=a,other=z}").AsProto(),
 			Value: []*oproto.Value{
-				&oproto.Value{Timestamp: 3, DoubleValue: 3.0},
-				&oproto.Value{Timestamp: 6, DoubleValue: 6.0},
+				value.NewDouble(3, 3.0),
+				value.NewDouble(6, 6.0),
 			},
 		},
 	}
@@ -115,11 +116,11 @@ func (s *MySuite) TestToChan(c *C) {
 		Value: make([]*oproto.Value, 0),
 	}
 	for i := 0; i < 10; i++ {
-		stream.Value = append(stream.Value, &oproto.Value{DoubleValue: float64(i)})
+		stream.Value = append(stream.Value, value.NewDouble(0, float64(i)))
 	}
 	output := ToChan(stream)
 	for i := 0; i < 10; i++ {
 		v := <-output
-		c.Check(v.DoubleValue, Equals, float64(i))
+		c.Check(v.GetDouble(), Equals, float64(i))
 	}
 }

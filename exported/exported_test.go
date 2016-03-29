@@ -56,7 +56,7 @@ func (s *MySuite) TestInteger(c *C) {
 	streams := e.GetStreams()
 	c.Assert(len(streams), Equals, 1)
 	c.Check(variable.ProtoToString(streams[0].Variable), Equals, "/test/integer")
-	c.Check(streams[0].Value[0].DoubleValue, Equals, 100.0)
+	c.Check(streams[0].Value[0].GetDouble(), Equals, 100.0)
 	cancel()
 	<-ctx.Done()
 }
@@ -71,7 +71,7 @@ func (s *MySuite) TestFloat(c *C) {
 	streams := e.GetStreams()
 	c.Assert(len(streams), Equals, 1)
 	c.Check(variable.ProtoToString(streams[0].Variable), Equals, "/test/float")
-	c.Check(streams[0].Value[0].DoubleValue, Equals, 100.0)
+	c.Check(streams[0].Value[0].GetDouble(), Equals, 100.0)
 	cancel()
 	<-ctx.Done()
 }
@@ -95,11 +95,11 @@ func (s *MySuite) TestRatio(c *C) {
 	for _, stream := range streams {
 		switch variable.ProtoToString(stream.Variable) {
 		case "/test/ratio-success":
-			c.Check(stream.Value[0].DoubleValue, Equals, 10.0)
+			c.Check(stream.Value[0].GetDouble(), Equals, 10.0)
 		case "/test/ratio-failure":
-			c.Check(stream.Value[0].DoubleValue, Equals, 5.0)
+			c.Check(stream.Value[0].GetDouble(), Equals, 5.0)
 		case "/test/ratio-total":
-			c.Check(stream.Value[0].DoubleValue, Equals, 15.0)
+			c.Check(stream.Value[0].GetDouble(), Equals, 15.0)
 		default:
 			fmt.Printf("Invalid variable %s", variable.ProtoToString(stream.Variable))
 			c.Fail()
@@ -124,9 +124,9 @@ func (s *MySuite) TestAverage(c *C) {
 	for _, stream := range streams {
 		switch variable.ProtoToString(stream.Variable) {
 		case "/test/average-total-count":
-			c.Check(stream.Value[0].DoubleValue, Equals, 300.0)
+			c.Check(stream.Value[0].GetDouble(), Equals, 300.0)
 		case "/test/average-overall-sum":
-			c.Check(stream.Value[0].DoubleValue, Equals, 3.0)
+			c.Check(stream.Value[0].GetDouble(), Equals, 3.0)
 		default:
 			fmt.Printf("Invalid variable %s", variable.ProtoToString(stream.Variable))
 			c.Fail()
@@ -155,9 +155,9 @@ func (s *MySuite) TestTimer(c *C) {
 	for _, stream := range streams {
 		switch variable.ProtoToString(stream.Variable) {
 		case "/test/timer-total-count":
-			c.Check((stream.Value[0].DoubleValue >= 20.0 && stream.Value[0].DoubleValue <= 25.0), Equals, true)
+			c.Check((stream.Value[0].GetDouble() >= 20.0 && stream.Value[0].GetDouble() <= 25.0), Equals, true)
 		case "/test/timer-overall-sum":
-			c.Check(stream.Value[0].DoubleValue, Equals, 2.0)
+			c.Check(stream.Value[0].GetDouble(), Equals, 2.0)
 		default:
 			fmt.Printf("Invalid variable %s", variable.ProtoToString(stream.Variable))
 			c.Fail()
@@ -177,8 +177,8 @@ func (s *MySuite) TestString(c *C) {
 	streams := e.GetStreams()
 	c.Assert(len(streams), Equals, 1)
 	c.Check(variable.ProtoToString(streams[0].Variable), Equals, "/test/string")
-	c.Check(streams[0].Value[0].DoubleValue, Equals, 0.0)
-	c.Check(streams[0].Value[0].StringValue, Equals, "Testing")
+	c.Check(streams[0].Value[0].GetDouble(), Equals, 0.0)
+	c.Check(streams[0].Value[0].GetString_(), Equals, "Testing")
 	cancel()
 	<-ctx.Done()
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 
 	. "gopkg.in/check.v1"
 )
@@ -133,9 +134,9 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 				},
 			},
 			Value: []*oproto.Value{
-				{Timestamp: uint64(1), DoubleValue: 1.1},
-				{Timestamp: uint64(2), DoubleValue: 1.2},
-				{Timestamp: uint64(3), DoubleValue: 1.3},
+				value.NewDouble(1, 1.1),
+				value.NewDouble(2, 1.2),
+				value.NewDouble(3, 1.3),
 			},
 		}
 		writer <- vs
@@ -143,9 +144,9 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 		vs = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: "/test/foo"},
 			Value: []*oproto.Value{
-				{Timestamp: uint64(1), DoubleValue: 1.1},
-				{Timestamp: uint64(2), DoubleValue: 1.2},
-				{Timestamp: uint64(3), DoubleValue: 1.3},
+				value.NewDouble(1, 1.1),
+				value.NewDouble(2, 1.2),
+				value.NewDouble(3, 1.3),
 			},
 		}
 		writer <- vs
@@ -161,15 +162,15 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 		reader := file.ValueStreamReader(context.Background(), 500)
 		vs := <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/bar")
-		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
-		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
-		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
+		c.Check(vs.Value[0].GetDouble(), Equals, 1.1)
+		c.Check(vs.Value[1].GetDouble(), Equals, 1.2)
+		c.Check(vs.Value[2].GetDouble(), Equals, 1.3)
 
 		vs = <-reader
 		c.Check(vs.Variable.Name, Equals, "/test/foo")
-		c.Check(vs.Value[0].DoubleValue, Equals, 1.1)
-		c.Check(vs.Value[1].DoubleValue, Equals, 1.2)
-		c.Check(vs.Value[2].DoubleValue, Equals, 1.3)
+		c.Check(vs.Value[0].GetDouble(), Equals, 1.1)
+		c.Check(vs.Value[1].GetDouble(), Equals, 1.2)
+		c.Check(vs.Value[2].GetDouble(), Equals, 1.3)
 
 		for range reader {
 			log.Printf("Got unexpected value")
@@ -186,7 +187,7 @@ func (s *MySuite) TestValueStreamWriterMemoryLeak(c *C) {
 		Value:    []*oproto.Value{},
 	}
 	for i := 0; i < 10; i++ {
-		vs.Value = append(vs.Value, &oproto.Value{Timestamp: uint64(openinstrument.NowMs()), DoubleValue: 1.1})
+		vs.Value = append(vs.Value, value.NewDouble(openinstrument.NowMs(), 1.1))
 	}
 	// Write a temporary file containing two value streams
 	file, err := Write(filename)
@@ -228,9 +229,7 @@ func (s *MySuite) BenchmarkReader(c *C) {
 		for i := 0; i < 10000; i++ {
 			vs := &oproto.ValueStream{
 				Variable: &oproto.StreamVariable{Name: "/test/bar"},
-				Value: []*oproto.Value{
-					{Timestamp: uint64(i), DoubleValue: float64(i)},
-				},
+				Value:    []*oproto.Value{value.NewDouble(uint64(i), float64(i))},
 			}
 			writer <- vs
 		}
@@ -256,9 +255,7 @@ func (s *MySuite) BenchmarkWriterManyStreams(c *C) {
 
 	vs := &oproto.ValueStream{
 		Variable: &oproto.StreamVariable{Name: "/test/bar"},
-		Value: []*oproto.Value{
-			{Timestamp: uint64(1), DoubleValue: float64(1.1)},
-		},
+		Value:    []*oproto.Value{value.NewDouble(1, float64(1.1))},
 	}
 
 	for run := 0; run < c.N; run++ {
@@ -290,7 +287,7 @@ func (s *MySuite) BenchmarkWriterManyValues(c *C) {
 		Value:    []*oproto.Value{},
 	}
 	for j := 0; j < 100000; j++ {
-		vs.Value = append(vs.Value, &oproto.Value{Timestamp: uint64(j), DoubleValue: float64(1.1)})
+		vs.Value = append(vs.Value, value.NewDouble(uint64(j), 1.1))
 	}
 
 	for run := 0; run < c.N; run++ {

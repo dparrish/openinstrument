@@ -56,9 +56,9 @@ func main() {
 			value := &oproto.Value{Timestamp: timestamp}
 			f, err := strconv.ParseFloat(matches[2], 64)
 			if err != nil {
-				value.StringValue = matches[2]
+				value.Value.(*oproto.Value_String_).String_ = matches[2]
 			} else {
-				value.DoubleValue = f
+				value.Value.(*oproto.Value_Double).Double = f
 			}
 			c <- &oproto.ValueStream{
 				Variable: v.AsProto(),

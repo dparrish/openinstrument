@@ -6,8 +6,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/client"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 )
 
@@ -84,10 +86,7 @@ func (ei *Integer) Export() chan *oproto.ValueStream {
 		c <- &oproto.ValueStream{
 			Variable: ei.v.AsProto(),
 			Value: []*oproto.Value{
-				{
-					Timestamp:   uint64(time.Now().UnixNano() / 1000000),
-					DoubleValue: float64(ei.value),
-				},
+				value.NewDouble(openinstrument.NowMs(), float64(ei.value)),
 			},
 		}
 	}()
@@ -132,10 +131,7 @@ func (ef *Float) Export() chan *oproto.ValueStream {
 		c <- &oproto.ValueStream{
 			Variable: ef.v.AsProto(),
 			Value: []*oproto.Value{
-				{
-					Timestamp:   uint64(time.Now().UnixNano() / 1000000),
-					DoubleValue: ef.value,
-				},
+				value.NewDouble(openinstrument.NowMs(), float64(ef.value)),
 			},
 		}
 	}()
@@ -289,10 +285,7 @@ func (es *String) Export() chan *oproto.ValueStream {
 		c <- &oproto.ValueStream{
 			Variable: es.v.AsProto(),
 			Value: []*oproto.Value{
-				{
-					Timestamp:   uint64(time.Now().UnixNano() / 1000000),
-					StringValue: es.value,
-				},
+				value.NewString(openinstrument.NowMs(), es.value),
 			},
 		}
 	}()

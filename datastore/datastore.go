@@ -15,6 +15,7 @@ import (
 	"github.com/dparrish/openinstrument"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/protofile"
+	"github.com/dparrish/openinstrument/store_config"
 	"github.com/dparrish/openinstrument/variable"
 )
 
@@ -33,13 +34,16 @@ type Datastore struct {
 	blocks     map[string]*Block
 	blocksLock sync.RWMutex
 	blockKeys  []string
+
+	config store_config.ConfigStore
 }
 
 // Open opens a datastore at the supplied path.
-func Open(ctx context.Context, path string) *Datastore {
+func Open(ctx context.Context, path string, config store_config.ConfigStore) *Datastore {
 	ds := &Datastore{
 		Path:   path,
 		blocks: make(map[string]*Block),
+		config: config,
 	}
 
 	logCtx := openinstrument.LogContext(ctx)
@@ -142,7 +146,7 @@ func (ds *Datastore) readBlocks(ctx context.Context) bool {
 }
 
 func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
-	block := NewBlock(ctx, "", BlockIDFromFilename(filename), ds.Path)
+	block := NewBlock(ctx, "", BlockIDFromFilename(filename), ds.Path, ds.config)
 
 	file, err := protofile.Read(block.Filename())
 	if err != nil {
@@ -175,7 +179,7 @@ func (ds *Datastore) readBlockHeader(ctx context.Context, filename string) {
 }
 
 func (ds *Datastore) readBlockLog(ctx context.Context, filename string) {
-	block := NewBlock(ctx, "", BlockIDFromFilename(filename), ds.Path)
+	block := NewBlock(ctx, "", BlockIDFromFilename(filename), ds.Path, ds.config)
 
 	file, err := protofile.Read(block.logFilename())
 	if err != nil {
@@ -338,7 +342,7 @@ func (ds *Datastore) SplitBlock(ctx context.Context, block *Block) (*Block, *Blo
 	openinstrument.Logf(ctx, "Calculated optimal split point at %d (%s)", splitPoint, leftEndKey)
 
 	// Read in the whole block
-	leftBlock := NewBlock(ctx, leftEndKey, "", ds.Path)
+	leftBlock := NewBlock(ctx, leftEndKey, "", ds.Path, ds.config)
 	leftStreams := make(map[string]*oproto.ValueStream)
 	rightStreams := make(map[string]*oproto.ValueStream)
 
@@ -399,7 +403,7 @@ func (ds *Datastore) findBlock(ctx context.Context, variableName string) *Block 
 	}
 	ds.blocksLock.RUnlock()
 	// Create a new block
-	block := NewBlock(ctx, variableName, "", ds.Path)
+	block := NewBlock(ctx, variableName, "", ds.Path, ds.config)
 	ds.insertBlock(ctx, block)
 	openinstrument.Logf(ctx, "Creating new block for %s\n", variableName)
 	return block
@@ -433,6 +437,8 @@ func (ds *Datastore) JoinBlock(ctx context.Context, block *Block) (*Block, error
 		openinstrument.Logf(ctx, "Unable to delete old block file: %s", err)
 	}
 	delete(ds.blocks, lastB.EndKey())
+	ds.config.DeleteBlock(ctx, lastB.ID())
+	ds.config.UpdateBlock(ctx, *block.Block)
 
 	defer block.Flush()
 	return block, nil

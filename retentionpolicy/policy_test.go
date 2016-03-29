@@ -11,7 +11,8 @@ import (
 	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
-	"github.com/dparrish/openinstrument/retentionpolicy"
+	. "github.com/dparrish/openinstrument/retentionpolicy"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 
 	. "gopkg.in/check.v1"
@@ -34,14 +35,14 @@ func (s *MySuite) TestDefaultDropPolicy(c *C) {
 	`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := retentionpolicy.New(policyProto)
+	policy := New(policyProto)
 
 	input := &oproto.ValueStream{
 		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
 		Value:    []*oproto.Value{},
 	}
 	for i := 0; i < 10; i++ {
-		input.Value = append(input.Value, &oproto.Value{Timestamp: uint64(i), DoubleValue: 1.1})
+		input.Value = append(input.Value, value.NewDouble(uint64(i), 1.1))
 	}
 	output := policy.Apply(input)
 
@@ -70,20 +71,20 @@ func (s *MySuite) TestDropByValue(c *C) {
 	`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := retentionpolicy.New(policyProto)
+	policy := New(policyProto)
 	//log.Println(policyProto)
 
 	// Device not matching regexp is kept
 	input := &oproto.ValueStream{
 		Variable: variable.NewFromString("/system/filesystem/available{device=r2/home}").AsProto(),
-		Value:    []*oproto.Value{{Timestamp: uint64(1), DoubleValue: 1.0}},
+		Value:    []*oproto.Value{value.NewDouble(uint64(1), 1.0)},
 	}
 	c.Check(len(policy.Apply(input).Value), Equals, 1)
 
 	// Device matching regexp is dropped
 	input = &oproto.ValueStream{
 		Variable: variable.NewFromString("/system/filesystem/used{device=r2/home@zfs-auto-snap_hourly}").AsProto(),
-		Value:    []*oproto.Value{{Timestamp: uint64(1), DoubleValue: 1.0}},
+		Value:    []*oproto.Value{value.NewDouble(uint64(1), 1.0)},
 	}
 	c.Check(len(policy.Apply(input).Value), Equals, 0)
 }
@@ -106,7 +107,7 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 		`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := retentionpolicy.New(policyProto)
+	policy := New(policyProto)
 
 	input := &oproto.ValueStream{
 		Variable: variable.NewFromString("/test/foo/bar").AsProto(),
@@ -117,7 +118,7 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 		input.Value = append(input.Value, &oproto.Value{
 			Timestamp:    now - uint64(98-3*i),
 			EndTimestamp: now - uint64(100-3*i),
-			DoubleValue:  1.1,
+			Value:        &oproto.Value_Double{1.1},
 		})
 	}
 
@@ -138,7 +139,7 @@ func (s *MySuite) TestAgeKeepPolicy(c *C) {
 
 func (s *MySuite) TestApplyToBlock(c *C) {
 	return
-	block := datastore.NewBlock(context.Background(), "/system/vmstat/nr_anon_transparent_hugepages{hostname=rage}", "bed18417-dd30-4ab4-6432-0635e0e7a2a7", "/r2/services/openinstrument/task1")
+	block := datastore.NewBlock(context.Background(), "/system/vmstat/nr_anon_transparent_hugepages{hostname=rage}", "bed18417-dd30-4ab4-6432-0635e0e7a2a7", "/r2/services/openinstrument/task1", nil)
 
 	streams := make([]*oproto.ValueStream, 0)
 	originalNumValues := 0
@@ -169,7 +170,7 @@ func (s *MySuite) TestApplyToBlock(c *C) {
 		`
 	policyProto := &oproto.RetentionPolicy{}
 	c.Assert(proto.UnmarshalText(policyTxt, policyProto), IsNil)
-	policy := retentionpolicy.New(policyProto)
+	policy := New(policyProto)
 
 	numValues := 0
 	for _, stream := range streams {

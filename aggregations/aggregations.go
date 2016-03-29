@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 )
 
@@ -103,7 +104,7 @@ func Mean(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 					continue
 				}
 				if streams[i] != nil {
-					values = append(values, streams[i].Value[iPos[i]].DoubleValue)
+					values = append(values, streams[i].Value[iPos[i]].GetDouble())
 					timestamps = append(timestamps, streams[i].Value[iPos[i]].Timestamp)
 				}
 				iPos[i]++
@@ -119,10 +120,7 @@ func Mean(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 			for _, i := range timestamps {
 				tsTotal += i
 			}
-			stream.Value = append(stream.Value, &oproto.Value{
-				Timestamp:   tsTotal / uint64(len(timestamps)),
-				DoubleValue: total / float64(len(values)),
-			})
+			stream.Value = append(stream.Value, value.NewDouble(tsTotal/uint64(len(timestamps)), total/float64(len(values))))
 		}
 		if len(stream.Value) > 0 {
 			output = append(output, stream)
@@ -143,8 +141,8 @@ func Min(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 				continue
 			}
 			if input[i] != nil {
-				if min == nil || input[i].Value[iPos[i]].DoubleValue < *min {
-					min = &input[i].Value[iPos[i]].DoubleValue
+				if min == nil || input[i].Value[iPos[i]].GetDouble() < *min {
+					min = &input[i].Value[iPos[i]].Value.(*oproto.Value_Double).Double
 					ts = &input[i].Value[iPos[i]].Timestamp
 				}
 			}
@@ -153,10 +151,7 @@ func Min(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 		if min == nil {
 			break
 		}
-		output[0].Value = append(output[0].Value, &oproto.Value{
-			Timestamp:   *ts,
-			DoubleValue: *min,
-		})
+		output[0].Value = append(output[0].Value, value.NewDouble(*ts, *min))
 	}
 	return output
 }
@@ -173,8 +168,8 @@ func Max(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 				continue
 			}
 			if input[i] != nil {
-				if max == nil || input[i].Value[iPos[i]].DoubleValue > *max {
-					max = &input[i].Value[iPos[i]].DoubleValue
+				if max == nil || input[i].Value[iPos[i]].GetDouble() > *max {
+					max = &input[i].Value[iPos[i]].Value.(*oproto.Value_Double).Double
 					ts = &input[i].Value[iPos[i]].Timestamp
 				}
 			}
@@ -183,10 +178,7 @@ func Max(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 		if max == nil {
 			break
 		}
-		output[0].Value = append(output[0].Value, &oproto.Value{
-			Timestamp:   *ts,
-			DoubleValue: *max,
-		})
+		output[0].Value = append(output[0].Value, value.NewDouble(*ts, *max))
 	}
 	return output
 }
@@ -209,7 +201,7 @@ func Sum(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 				continue
 			}
 			if input[i] != nil {
-				values = append(values, input[i].Value[iPos[i]].DoubleValue)
+				values = append(values, input[i].Value[iPos[i]].GetDouble())
 				timestamps = append(timestamps, input[i].Value[iPos[i]].Timestamp)
 			}
 			iPos[i]++
@@ -225,10 +217,7 @@ func Sum(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 		for _, i := range timestamps {
 			tsTotal += i
 		}
-		output[0].Value = append(output[0].Value, &oproto.Value{
-			Timestamp:   tsTotal / uint64(len(timestamps)),
-			DoubleValue: total,
-		})
+		output[0].Value = append(output[0].Value, value.NewDouble(tsTotal/uint64(len(timestamps)), total))
 	}
 	return output
 }
@@ -245,7 +234,7 @@ func StdDev(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 				continue
 			}
 			if input[i] != nil {
-				values = append(values, input[i].Value[iPos[i]].DoubleValue)
+				values = append(values, input[i].Value[iPos[i]].GetDouble())
 				timestamps = append(timestamps, input[i].Value[iPos[i]].Timestamp)
 			}
 			iPos[i]++
@@ -266,10 +255,8 @@ func StdDev(by []string, input []*oproto.ValueStream) []*oproto.ValueStream {
 		for _, i := range timestamps {
 			tsTotal += i
 		}
-		output[0].Value = append(output[0].Value, &oproto.Value{
-			Timestamp:   tsTotal / uint64(len(timestamps)),
-			DoubleValue: math.Sqrt(variances / float64(len(values))),
-		})
+		output[0].Value = append(output[0].Value, value.NewDouble(tsTotal/uint64(len(timestamps)),
+			math.Sqrt(variances/float64(len(values)))))
 	}
 	return output
 }

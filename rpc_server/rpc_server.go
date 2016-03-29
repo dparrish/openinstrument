@@ -25,7 +25,8 @@ var (
 )
 
 type server struct {
-	ds *datastore.Datastore
+	ds     *datastore.Datastore
+	config store_config.ConfigStore
 }
 
 func (s *server) List(ctx context.Context, request *oproto.ListRequest) (*oproto.ListResponse, error) {
@@ -174,14 +175,12 @@ func (s *server) CompactBlock(ctx context.Context, request *oproto.CompactBlockR
 }
 
 func (s *server) GetCluster(ctx context.Context, request *oproto.GetClusterRequest) (*oproto.GetClusterResponse, error) {
-	cs := store_config.Get()
-	config := cs.GetClusterConfig(ctx)
+	config := s.config.GetClusterConfig(ctx)
 	return &oproto.GetClusterResponse{Config: config}, nil
 }
 
 func (s *server) UpdateRetentionPolicy(ctx context.Context, request *oproto.UpdateRetentionPolicyRequest) (*oproto.UpdateRetentionPolicyResponse, error) {
-	cs := store_config.Get()
-	policy, err := cs.GetRetentionPolicy(ctx)
+	policy, err := s.config.GetRetentionPolicy(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching retention policy: %s", err)
 	}
@@ -208,7 +207,7 @@ func (s *server) UpdateRetentionPolicy(ctx context.Context, request *oproto.Upda
 		return nil, fmt.Errorf("Invalid operation")
 	}
 
-	err = cs.UpdateRetentionPolicy(ctx, policy)
+	err = s.config.UpdateRetentionPolicy(ctx, policy)
 	if err != nil {
 		return nil, fmt.Errorf("Error updating retention policy: %s", err)
 	}
@@ -226,7 +225,7 @@ func (s *server) WatchCluster(request *oproto.WatchClusterRequest, server oproto
 					Config: c,
 				})
 			}
-			watchConfig := store_config.SubscribeClusterChanges()
+			watchConfig := s.config.SubscribeClusterChanges()
 
 		loop:
 			for {
@@ -238,12 +237,12 @@ func (s *server) WatchCluster(request *oproto.WatchClusterRequest, server oproto
 				}
 			}
 
-			store_config.UnsubscribeClusterChanges(watchConfig)
+			s.config.UnsubscribeClusterChanges(watchConfig)
 	*/
 	return nil
 }
 
-func Serve(ds *datastore.Datastore) {
+func Serve(ds *datastore.Datastore, config store_config.ConfigStore) {
 	sock, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP(*address), Port: *port})
 	if err != nil {
 		log.Fatalf("Failed to listen on %d: %s", *port, err)
@@ -252,7 +251,8 @@ func Serve(ds *datastore.Datastore) {
 
 	s := grpc.NewServer()
 	oproto.RegisterStoreServer(s, &server{
-		ds: ds,
+		ds:     ds,
+		config: config,
 	})
 	s.Serve(sock)
 }

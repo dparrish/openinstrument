@@ -47,10 +47,11 @@ type Block struct {
 	protoLock sync.RWMutex
 	Block     *oproto.Block
 
-	size uint32
+	size   uint32
+	config store_config.ConfigStore
 }
 
-func NewBlock(ctx context.Context, endKey, id, dsPath string) *Block {
+func NewBlock(ctx context.Context, endKey, id, dsPath string, config store_config.ConfigStore) *Block {
 	if id == "" {
 		u, err := uuid.NewV4()
 		if err != nil {
@@ -71,8 +72,9 @@ func NewBlock(ctx context.Context, endKey, id, dsPath string) *Block {
 			Id:     id,
 			EndKey: endKey,
 			State:  oproto.Block_UNKNOWN,
-			Node:   store_config.Get().GetTaskName(),
+			Node:   config.GetTaskName(),
 		},
+		config: config,
 	}
 }
 
@@ -101,9 +103,12 @@ func (block *Block) Delete() error {
 func (block *Block) SetState(ctx context.Context, state oproto.Block_State) error {
 	block.protoLock.Lock()
 	defer block.protoLock.Unlock()
-	//openinstrument.Logf(ctx, "Updating cluster block %s to state %s", block.Block.Id, state.String())
 	block.Block.State = state
-	return store_config.Get().UpdateBlock(context.Background(), *block.Block)
+	if block.config == nil {
+		return nil
+	}
+	//openinstrument.Logf(ctx, "Updating cluster block %s to state %s", block.Block.Id, state.String())
+	return block.config.UpdateBlock(context.Background(), *block.Block)
 }
 
 func (block *Block) GetLogStreams() map[string]*oproto.ValueStream {
@@ -325,7 +330,7 @@ func (block *Block) RunLengthEncodeStreams(ctx context.Context, streams map[stri
 // The values inside each ValueStream will be sorted and run-length-encoded before writing.
 func (block *Block) Write(ctx context.Context, streams map[string]*oproto.ValueStream) error {
 	// Build the header with a 0-index for each variable
-	block.Block.Header.Index = []*oproto.BlockHeaderIndex{}
+	block.Block.Header.Index = make([]*oproto.BlockHeaderIndex, 0, len(streams))
 	block.Block.Header.EndKey = ""
 	block.Block.Header.StartTimestamp = 0
 	block.Block.Header.EndTimestamp = 0
@@ -617,7 +622,7 @@ func (block *Block) Compact(ctx context.Context) error {
 	streams := make(map[string]*oproto.ValueStream, 0)
 
 	// Apply the retention policy during compaction
-	p, err := store_config.Get().GetRetentionPolicy(ctx)
+	p, err := block.config.GetRetentionPolicy(ctx)
 	if err != nil {
 		return fmt.Errorf("Error getting retention policy from config store: %s", err)
 	}

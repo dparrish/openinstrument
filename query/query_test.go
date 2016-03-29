@@ -7,6 +7,7 @@ import (
 
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 	"github.com/golang/protobuf/proto"
 
@@ -28,17 +29,17 @@ func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-
 			stream = &oproto.ValueStream{
 				Variable: v.AsProto(),
 				Value: []*oproto.Value{
-					{Timestamp: uint64(60 * 0), DoubleValue: float64(20 * 1)},
-					{Timestamp: uint64(60 * 1), DoubleValue: float64(20 * 2)},
-					{Timestamp: uint64(60 * 2), DoubleValue: float64(20 * 3)},
-					{Timestamp: uint64(60 * 3), DoubleValue: float64(20 * 4)},
-					{Timestamp: uint64(60 * 4), DoubleValue: float64(20 * 5)},
-					{Timestamp: uint64(60 * 5), DoubleValue: float64(20 * 6)},
-					{Timestamp: uint64(60 * 6), DoubleValue: float64(20 * 7)},
-					{Timestamp: uint64(60 * 7), DoubleValue: float64(20 * 8)},
-					{Timestamp: uint64(60 * 8), DoubleValue: float64(20 * 9)},
-					{Timestamp: uint64(60 * 9), DoubleValue: float64(20 * 10)},
-					{Timestamp: uint64(60 * 10), DoubleValue: float64(20 * 11)},
+					value.NewDouble(uint64(60*0), float64(20*1)),
+					value.NewDouble(uint64(60*1), float64(20*2)),
+					value.NewDouble(uint64(60*2), float64(20*3)),
+					value.NewDouble(uint64(60*3), float64(20*4)),
+					value.NewDouble(uint64(60*4), float64(20*5)),
+					value.NewDouble(uint64(60*5), float64(20*6)),
+					value.NewDouble(uint64(60*6), float64(20*7)),
+					value.NewDouble(uint64(60*7), float64(20*8)),
+					value.NewDouble(uint64(60*8), float64(20*9)),
+					value.NewDouble(uint64(60*9), float64(20*10)),
+					value.NewDouble(uint64(60*10), float64(20*11)),
 				},
 			}
 			if stream != nil && v.Labels["host"] == "a" {
@@ -55,23 +56,23 @@ func (s *FakeReadableStore) Reader(ctx context.Context, v *variable.Variable) <-
 			stream = &oproto.ValueStream{
 				Variable: v.AsProto(),
 				Value: []*oproto.Value{
-					{Timestamp: uint64(60 * 0), DoubleValue: float64(20 * 1)},
-					{Timestamp: uint64(60 * 1), DoubleValue: float64(20 * 2)},
-					{Timestamp: uint64(60 * 2), DoubleValue: float64(20 * 3)},
-					{Timestamp: uint64(60 * 3), DoubleValue: float64(20 * 4)},
-					{Timestamp: uint64(60 * 4), DoubleValue: float64(20 * 5)},
-					{Timestamp: uint64(60 * 5), DoubleValue: float64(20 * 6)},
-					{Timestamp: uint64(60 * 6), DoubleValue: float64(20 * 7)},
-					{Timestamp: uint64(60 * 7), DoubleValue: float64(20 * 8)},
-					{Timestamp: uint64(60 * 8), DoubleValue: float64(20 * 9)},
-					{Timestamp: uint64(60 * 9), DoubleValue: float64(20 * 10)},
-					{Timestamp: uint64(60 * 10), DoubleValue: float64(20 * 11)},
+					value.NewDouble(uint64(60*0), float64(20*1)),
+					value.NewDouble(uint64(60*1), float64(20*2)),
+					value.NewDouble(uint64(60*2), float64(20*3)),
+					value.NewDouble(uint64(60*3), float64(20*4)),
+					value.NewDouble(uint64(60*4), float64(20*5)),
+					value.NewDouble(uint64(60*5), float64(20*6)),
+					value.NewDouble(uint64(60*6), float64(20*7)),
+					value.NewDouble(uint64(60*7), float64(20*8)),
+					value.NewDouble(uint64(60*8), float64(20*9)),
+					value.NewDouble(uint64(60*9), float64(20*10)),
+					value.NewDouble(uint64(60*10), float64(20*11)),
 				},
 			}
 		}
 		if stream != nil && v.Labels["host"] == "b" {
 			for _, value := range stream.Value {
-				value.DoubleValue *= 2
+				value.Value.(*oproto.Value_Double).Double *= 2
 			}
 		}
 		c <- stream
@@ -190,17 +191,17 @@ func (s *MySuite) TestMean(c *C) {
 		output = append(output, stream)
 	}
 
-	c.Check(output[0].Value[0].DoubleValue, Equals, float64((20*1+40*1)/2))
-	c.Check(output[0].Value[1].DoubleValue, Equals, float64((20*2+40*2)/2))
-	c.Check(output[0].Value[2].DoubleValue, Equals, float64((20*3+40*3)/2))
-	c.Check(output[0].Value[3].DoubleValue, Equals, float64((20*4+40*4)/2))
-	c.Check(output[0].Value[4].DoubleValue, Equals, float64((20*5+40*5)/2))
-	c.Check(output[0].Value[5].DoubleValue, Equals, float64((20*6+40*6)/2))
-	c.Check(output[0].Value[6].DoubleValue, Equals, float64((20*7+40*7)/2))
-	c.Check(output[0].Value[7].DoubleValue, Equals, float64((20*8+40*8)/2))
-	c.Check(output[0].Value[8].DoubleValue, Equals, float64((20*9+40*9)/2))
-	c.Check(output[0].Value[9].DoubleValue, Equals, float64((20*10+40*10)/2))
-	c.Check(output[0].Value[10].DoubleValue, Equals, float64((20*11+40*11)/2))
+	c.Check(output[0].Value[0].GetDouble(), Equals, float64((20*1+40*1)/2))
+	c.Check(output[0].Value[1].GetDouble(), Equals, float64((20*2+40*2)/2))
+	c.Check(output[0].Value[2].GetDouble(), Equals, float64((20*3+40*3)/2))
+	c.Check(output[0].Value[3].GetDouble(), Equals, float64((20*4+40*4)/2))
+	c.Check(output[0].Value[4].GetDouble(), Equals, float64((20*5+40*5)/2))
+	c.Check(output[0].Value[5].GetDouble(), Equals, float64((20*6+40*6)/2))
+	c.Check(output[0].Value[6].GetDouble(), Equals, float64((20*7+40*7)/2))
+	c.Check(output[0].Value[7].GetDouble(), Equals, float64((20*8+40*8)/2))
+	c.Check(output[0].Value[8].GetDouble(), Equals, float64((20*9+40*9)/2))
+	c.Check(output[0].Value[9].GetDouble(), Equals, float64((20*10+40*10)/2))
+	c.Check(output[0].Value[10].GetDouble(), Equals, float64((20*11+40*11)/2))
 }
 
 func (s *MySuite) TestPercentile(c *C) {

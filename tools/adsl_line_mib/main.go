@@ -10,6 +10,7 @@ import (
 	"github.com/dparrish/openinstrument"
 	"github.com/dparrish/openinstrument/client"
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
 	"github.com/soniah/gosnmp"
 )
@@ -60,20 +61,14 @@ func main() {
 				request.Stream = append(request.Stream, &oproto.ValueStream{
 					Variable: variable.NewFromString(fmt.Sprintf("/network/adsl/downstream_rate{host=%s,unit=bps}", host)).AsProto(),
 					Value: []*oproto.Value{
-						{
-							DoubleValue: float64(snmpVar.Value.(uint) * 1000),
-							Timestamp:   openinstrument.NowMs(),
-						},
+						value.NewDouble(openinstrument.NowMs(), float64(snmpVar.Value.(uint)*1000)),
 					},
 				})
 			case ".1.3.6.1.2.1.10.97.1.1.2.1.10.2":
 				request.Stream = append(request.Stream, &oproto.ValueStream{
 					Variable: variable.NewFromString(fmt.Sprintf("/network/adsl/upstream_rate{host=%s,unit=bps}", host)).AsProto(),
 					Value: []*oproto.Value{
-						{
-							DoubleValue: float64(snmpVar.Value.(uint) * 1000),
-							Timestamp:   openinstrument.NowMs(),
-						},
+						value.NewDouble(openinstrument.NowMs(), float64(snmpVar.Value.(uint)*1000)),
 					},
 				})
 			}

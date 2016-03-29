@@ -113,8 +113,10 @@ message StreamAggregation {
 message Value {
   // Milliseconds since epoch
   uint64 timestamp = 1;
-  double double_value = 2;
-  string string_value = 3;
+	oneof value {
+		double double = 2;
+		string string = 3;
+	}
 
   // Used for run-length encoding
   uint64 end_timestamp = 4;

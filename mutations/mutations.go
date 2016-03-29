@@ -4,17 +4,15 @@ import (
 	"math"
 
 	oproto "github.com/dparrish/openinstrument/proto"
+	"github.com/dparrish/openinstrument/value"
 )
 
 func Mean(input *oproto.ValueStream) *oproto.ValueStream {
 	output := &oproto.ValueStream{}
 	var lastValue float64
 	for _, v := range input.Value {
-		output.Value = append(output.Value, &oproto.Value{
-			Timestamp:   v.Timestamp,
-			DoubleValue: (v.DoubleValue + lastValue) / 2,
-		})
-		lastValue = v.DoubleValue
+		output.Value = append(output.Value, value.NewDouble(v.Timestamp, (v.GetDouble()+lastValue)/2))
+		lastValue = v.GetDouble()
 	}
 	return output
 }
@@ -25,12 +23,9 @@ func MovingAverage(window uint64, input *oproto.ValueStream) *oproto.ValueStream
 	outItems := func() {
 		var total float64
 		for _, i := range items {
-			total += i.DoubleValue
+			total += i.GetDouble()
 		}
-		output.Value = append(output.Value, &oproto.Value{
-			Timestamp:   items[len(items)-1].Timestamp,
-			DoubleValue: total / float64(len(items)),
-		})
+		output.Value = append(output.Value, value.NewDouble(items[len(items)-1].Timestamp, total/float64(len(items))))
 	}
 	for _, v := range input.Value {
 		if len(items) == 0 || items[0].Timestamp+window >= v.Timestamp {
@@ -59,16 +54,13 @@ func SignedRateStream(input *oproto.ValueStream) *oproto.ValueStream {
 	output := &oproto.ValueStream{}
 	for _, v := range input.Value {
 		if lastTimestamp == 0 {
-			lastValue = v.DoubleValue
+			lastValue = v.GetDouble()
 			lastTimestamp = v.Timestamp
 			continue
 		}
-		rate := (v.DoubleValue - lastValue) / float64(v.Timestamp-lastTimestamp)
-		output.Value = append(output.Value, &oproto.Value{
-			Timestamp:   v.Timestamp,
-			DoubleValue: rate,
-		})
-		lastValue = v.DoubleValue
+		rate := (v.GetDouble() - lastValue) / float64(v.Timestamp-lastTimestamp)
+		output.Value = append(output.Value, value.NewDouble(v.Timestamp, rate))
+		lastValue = v.GetDouble()
 		lastTimestamp = v.Timestamp
 	}
 	return output
@@ -80,22 +72,19 @@ func SignedRate(input *oproto.ValueStream) *oproto.ValueStream {
 	var lastTimestamp uint64
 	first := true
 	for _, v := range input.Value {
-		if v.StringValue != "" {
-			continue
-		}
-		if first {
-			lastValue = v.DoubleValue
+		switch v.Value.(type) {
+		case *oproto.Value_Double:
+			if first {
+				lastValue = v.GetDouble()
+				lastTimestamp = v.Timestamp
+				first = false
+				continue
+			}
+			rate := (v.GetDouble() - lastValue) / float64(v.Timestamp-lastTimestamp)
+			output.Value = append(output.Value, value.NewDouble(v.Timestamp, rate))
+			lastValue = v.GetDouble()
 			lastTimestamp = v.Timestamp
-			first = false
-			continue
 		}
-		rate := (v.DoubleValue - lastValue) / float64(v.Timestamp-lastTimestamp)
-		output.Value = append(output.Value, &oproto.Value{
-			Timestamp:   v.Timestamp,
-			DoubleValue: rate,
-		})
-		lastValue = v.DoubleValue
-		lastTimestamp = v.Timestamp
 	}
 	return output
 }
@@ -104,7 +93,7 @@ func Rate(input *oproto.ValueStream) *oproto.ValueStream {
 	output := &oproto.ValueStream{}
 	newoutput := SignedRate(input)
 	for _, v := range newoutput.Value {
-		if v.DoubleValue >= 0 {
+		if v.GetDouble() >= 0 {
 			output.Value = append(output.Value, v)
 		}
 	}
@@ -149,7 +138,7 @@ func Multiply(param float64, input *oproto.ValueStream) *oproto.ValueStream {
 	output := &oproto.ValueStream{}
 	for _, v := range input.Value {
 		newv := &*v
-		newv.DoubleValue *= param
+		newv.Value.(*oproto.Value_Double).Double *= param
 		output.Value = append(output.Value, newv)
 	}
 	return output
@@ -159,7 +148,7 @@ func Add(param float64, input *oproto.ValueStream) *oproto.ValueStream {
 	output := &oproto.ValueStream{}
 	for _, v := range input.Value {
 		newv := &*v
-		newv.DoubleValue += param
+		newv.Value.(*oproto.Value_Double).Double += param
 		output.Value = append(output.Value, newv)
 	}
 	return output
@@ -170,11 +159,11 @@ func Root(param float64, input *oproto.ValueStream) *oproto.ValueStream {
 	for _, v := range input.Value {
 		newv := &*v
 		if param == 2 {
-			newv.DoubleValue = math.Sqrt(v.DoubleValue)
+			newv.Value.(*oproto.Value_Double).Double = math.Sqrt(v.GetDouble())
 		} else if param == 3 {
-			newv.DoubleValue = math.Cbrt(v.DoubleValue)
+			newv.Value.(*oproto.Value_Double).Double = math.Cbrt(v.GetDouble())
 		} else {
-			newv.DoubleValue = math.Pow(v.DoubleValue, 1.0/param)
+			newv.Value.(*oproto.Value_Double).Double = math.Pow(v.GetDouble(), 1.0/param)
 		}
 		output.Value = append(output.Value, newv)
 	}
@@ -185,7 +174,7 @@ func Power(param float64, input *oproto.ValueStream) *oproto.ValueStream {
 	output := &oproto.ValueStream{}
 	for _, v := range input.Value {
 		newv := &*v
-		newv.DoubleValue = math.Pow(v.DoubleValue, param)
+		newv.Value.(*oproto.Value_Double).Double = math.Pow(v.GetDouble(), param)
 		output.Value = append(output.Value, newv)
 	}
 	return output
@@ -214,14 +203,11 @@ func Interpolate(duration uint64, input *oproto.ValueStream) *oproto.ValueStream
 		}
 		if v.Timestamp >= timestamp {
 			// Fill in any missing values before this one
-			rate := float64((v.DoubleValue - previousValue.DoubleValue))
+			rate := float64((v.GetDouble() - previousValue.GetDouble()))
 			for ; timestamp <= v.Timestamp; timestamp += duration {
 				pct := float64(timestamp-previousValue.Timestamp) / float64(v.Timestamp-previousValue.Timestamp)
-				newValue := previousValue.DoubleValue + (rate * pct)
-				output.Value = append(output.Value, &oproto.Value{
-					Timestamp:   timestamp,
-					DoubleValue: newValue,
-				})
+				newValue := previousValue.GetDouble() + (rate * pct)
+				output.Value = append(output.Value, value.NewDouble(timestamp, newValue))
 			}
 			if previousValue.Timestamp < v.Timestamp {
 				if v.Timestamp%duration == 0 {
@@ -247,31 +233,28 @@ func Min(duration uint64, input *oproto.ValueStream) *oproto.ValueStream {
 		first         bool = true
 	)
 	for _, v := range input.Value {
-		if v.StringValue != "" {
-			continue
-		}
-		if first {
-			lastTimestamp = v.Timestamp
-			minTimestamp = v.Timestamp
-			min = v.DoubleValue
+		switch v.Value.(type) {
+		case *oproto.Value_Double:
+			if first {
+				lastTimestamp = v.Timestamp
+				minTimestamp = v.Timestamp
+				min = v.GetDouble()
+				first = false
+				continue
+			}
+			if v.Timestamp >= lastTimestamp+duration {
+				output.Value = append(output.Value, value.NewDouble(minTimestamp, min))
+				lastTimestamp = v.Timestamp
+				minTimestamp = v.Timestamp
+				min = v.GetDouble()
+				first = true
+			}
+			if v.GetDouble() < min {
+				min = v.GetDouble()
+				minTimestamp = v.Timestamp
+			}
 			first = false
-			continue
 		}
-		if v.Timestamp >= lastTimestamp+duration {
-			output.Value = append(output.Value, &oproto.Value{
-				Timestamp:   minTimestamp,
-				DoubleValue: min,
-			})
-			lastTimestamp = v.Timestamp
-			minTimestamp = v.Timestamp
-			min = v.DoubleValue
-			first = true
-		}
-		if v.DoubleValue < min {
-			min = v.DoubleValue
-			minTimestamp = v.Timestamp
-		}
-		first = false
 	}
 	return output
 }
@@ -288,19 +271,16 @@ func Max(duration uint64, input *oproto.ValueStream) *oproto.ValueStream {
 		if first {
 			lastTimestamp = v.Timestamp
 			maxTimestamp = v.Timestamp
-			max = v.DoubleValue
+			max = v.GetDouble()
 			first = false
 			continue
 		}
-		if v.DoubleValue >= max {
-			max = v.DoubleValue
+		if v.GetDouble() >= max {
+			max = v.GetDouble()
 			maxTimestamp = v.Timestamp
 		}
 		if v.Timestamp >= lastTimestamp+duration {
-			output.Value = append(output.Value, &oproto.Value{
-				Timestamp:   maxTimestamp,
-				DoubleValue: max,
-			})
+			output.Value = append(output.Value, value.NewDouble(maxTimestamp, max))
 			lastTimestamp = v.Timestamp
 			first = true
 		}
