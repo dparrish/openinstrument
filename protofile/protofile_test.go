@@ -124,7 +124,6 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 		file, err := Write(filename)
 		c.Assert(err, IsNil)
 		defer file.Close()
-		writer, done := file.ValueStreamWriter(10)
 
 		vs := &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{
@@ -139,7 +138,7 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 				value.NewDouble(3, 1.3),
 			},
 		}
-		writer <- vs
+		file.Write(vs)
 
 		vs = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: "/test/foo"},
@@ -149,9 +148,7 @@ func (s *MySuite) TestValueStreamReadWrite(c *C) {
 				value.NewDouble(3, 1.3),
 			},
 		}
-		writer <- vs
-		close(writer)
-		<-done
+		file.Write(vs)
 	}
 
 	{
@@ -193,16 +190,12 @@ func (s *MySuite) TestValueStreamWriterMemoryLeak(c *C) {
 	file, err := Write(filename)
 	c.Assert(err, IsNil)
 	defer file.Close()
-	writer, done := file.ValueStreamWriter(10)
 
 	wroteStreams := 0
 	for j := 0; j < 1000; j++ {
-		writer <- vs
+		file.Write(vs)
 		wroteStreams++
 	}
-
-	close(writer)
-	<-done
 
 	file, err = Read(filename)
 	c.Assert(err, IsNil)
@@ -224,17 +217,14 @@ func (s *MySuite) BenchmarkReader(c *C) {
 		// Write a temporary file containing lots of data
 		file, err := Write(filename)
 		c.Assert(err, IsNil)
-		writer, done := file.ValueStreamWriter(10)
 
 		for i := 0; i < 10000; i++ {
 			vs := &oproto.ValueStream{
 				Variable: &oproto.StreamVariable{Name: "/test/bar"},
 				Value:    []*oproto.Value{value.NewDouble(uint64(i), float64(i))},
 			}
-			writer <- vs
+			file.Write(vs)
 		}
-		close(writer)
-		<-done
 		file.Close()
 	}
 
@@ -263,13 +253,10 @@ func (s *MySuite) BenchmarkWriterManyStreams(c *C) {
 		file, err := Write(filename)
 		c.Assert(err, IsNil)
 		defer file.Close()
-		writer, done := file.ValueStreamWriter(100000)
 
 		for i := 0; i < 100000; i++ {
-			writer <- vs
+			file.Write(vs)
 		}
-		close(writer)
-		<-done
 	}
 
 	file, _ := Read(filename)
@@ -295,10 +282,7 @@ func (s *MySuite) BenchmarkWriterManyValues(c *C) {
 		file, err := Write(filename)
 		c.Assert(err, IsNil)
 		defer file.Close()
-		writer, done := file.ValueStreamWriter(10)
-		writer <- vs
-		close(writer)
-		<-done
+		file.Write(vs)
 	}
 
 	file, _ := Read(filename)

@@ -47,6 +47,15 @@ func Logf(ctx context.Context, format string, args ...interface{}) context.Conte
 	return ctx
 }
 
+func LogBlock(ctx context.Context, format string, args ...interface{}) func() {
+	title := fmt.Sprintf(format, args...)
+	Logf(ctx, "%s", title)
+	st := time.Now()
+	return func() {
+		Logf(ctx, "Finished %s in %v", title, time.Since(st))
+	}
+}
+
 func StringLog(ctx context.Context) string {
 	out := ""
 	l := GetLog(ctx).Log

@@ -211,7 +211,7 @@ func (s *server) UpdateRetentionPolicy(ctx context.Context, request *oproto.Upda
 	if err != nil {
 		return nil, fmt.Errorf("Error updating retention policy: %s", err)
 	}
-	return &oproto.UpdateRetentionPolicyResponse{&policy}, nil
+	return &oproto.UpdateRetentionPolicyResponse{Policy: &policy}, nil
 }
 
 func (s *server) WatchCluster(request *oproto.WatchClusterRequest, server oproto.Store_WatchClusterServer) error {

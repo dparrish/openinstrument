@@ -201,27 +201,29 @@ func (s *MySuite) TestMeanByTwoLabels(c *C) {
 
 func (s *MySuite) TestOffsetMean(c *C) {
 	return
-	input := []*oproto.ValueStream{
-		<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=a}")),
-		<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=b}")),
-	}
-	output := Mean(nil, input)
-	c.Assert(output, Not(IsNil))
-	c.Assert(len(output), Equals, 1)
-	stream := output[0]
-	c.Assert(len(stream.Value), Equals, 11)
+	/*
+		input := []*oproto.ValueStream{
+			<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=a}")),
+			<-s.store.Reader(context.Background(), variable.NewFromString("/test/offset{host=b}")),
+		}
+		output := Mean(nil, input)
+		c.Assert(output, Not(IsNil))
+		c.Assert(len(output), Equals, 1)
+		stream := output[0]
+		c.Assert(len(stream.Value), Equals, 11)
 
-	checkValue(c, stream.Value[0], 60*0, float64((20*1+40*1)/2))
-	checkValue(c, stream.Value[1], 60*1, float64((20*2+40*2)/2))
-	checkValue(c, stream.Value[2], 60*2, float64((20*3+40*3)/2))
-	checkValue(c, stream.Value[3], 60*3, float64((20*4+40*4)/2))
-	checkValue(c, stream.Value[4], 60*4, float64((20*5+40*5)/2))
-	checkValue(c, stream.Value[5], 60*5, float64((20*6+40*6)/2))
-	checkValue(c, stream.Value[6], 60*6, float64((20*7+40*7)/2))
-	checkValue(c, stream.Value[7], 60*7, float64((20*8+40*8)/2))
-	checkValue(c, stream.Value[8], 60*8, float64((20*9+40*9)/2))
-	checkValue(c, stream.Value[9], 60*9, float64((20*10+40*10)/2))
-	checkValue(c, stream.Value[10], 60*10, float64((20*11+40*11)/2))
+		checkValue(c, stream.Value[0], 60*0, float64((20*1+40*1)/2))
+		checkValue(c, stream.Value[1], 60*1, float64((20*2+40*2)/2))
+		checkValue(c, stream.Value[2], 60*2, float64((20*3+40*3)/2))
+		checkValue(c, stream.Value[3], 60*3, float64((20*4+40*4)/2))
+		checkValue(c, stream.Value[4], 60*4, float64((20*5+40*5)/2))
+		checkValue(c, stream.Value[5], 60*5, float64((20*6+40*6)/2))
+		checkValue(c, stream.Value[6], 60*6, float64((20*7+40*7)/2))
+		checkValue(c, stream.Value[7], 60*7, float64((20*8+40*8)/2))
+		checkValue(c, stream.Value[8], 60*8, float64((20*9+40*9)/2))
+		checkValue(c, stream.Value[9], 60*9, float64((20*10+40*10)/2))
+		checkValue(c, stream.Value[10], 60*10, float64((20*11+40*11)/2))
+	*/
 }
 
 func (s *MySuite) TestMin(c *C) {

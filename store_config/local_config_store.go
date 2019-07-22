@@ -50,9 +50,7 @@ func (s *LocalConfigStore) Start(ctx context.Context) error {
 	s.watcherUpdate = make(chan *oproto.ClusterConfig, 100)
 	s.wg.Add(1)
 	go func() {
-		var l sync.Mutex
 		defer s.wg.Done()
-	forLoop:
 		for {
 			select {
 			case u, ok := <-s.watcherUpdate:
@@ -60,19 +58,15 @@ func (s *LocalConfigStore) Start(ctx context.Context) error {
 					continue
 				}
 
-				func() {
-					l.Lock()
-					defer l.Unlock()
-					if err := openinstrument.SafeWriteFile(s.path, s.Config); err != nil {
-						log.Printf("Unable to write local config file: %s", err)
-					}
-				}()
+				if err := openinstrument.SafeWriteFile(s.path, s.Config); err != nil {
+					log.Printf("Unable to write local config file: %s", err)
+				}
 
 				for _, watcher := range s.watchers {
 					watcher.c <- *u
 				}
 			case <-s.watcherContext.Done():
-				break forLoop
+				return
 			}
 		}
 	}()

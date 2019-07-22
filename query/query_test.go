@@ -9,7 +9,6 @@ import (
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/value"
 	"github.com/dparrish/openinstrument/variable"
-	"github.com/golang/protobuf/proto"
 
 	. "gopkg.in/check.v1"
 )
@@ -263,47 +262,49 @@ func (s *MySuite) TestAggregationOfPercentile(c *C) {
 
 func (s *MySuite) TestPipeline(c *C) {
 	return
-	qs := `
-		aggregation <
-			type: MEAN
-			query <
-				mutation <
-					type: MEAN
-					query <
-						variable <
-							name: "/test"
-							label <
-								key: "host"
-								value: "a"
+	/*
+		qs := `
+			aggregation <
+				type: MEAN
+				query <
+					mutation <
+						type: MEAN
+						query <
+							variable <
+								name: "/test"
+								label <
+									key: "host"
+									value: "a"
+								>
+								label <
+									key: "otherkey"
+									value: "x"
+								>
 							>
-							label <
-								key: "otherkey"
-								value: "x"
-							>
-						>
-						variable <
-							name: "/test"
-							label <
-								key: "host"
-								value: "b"
-							>
-							label <
-								key: "otherkey"
-								value: "y"
+							variable <
+								name: "/test"
+								label <
+									key: "host"
+									value: "b"
+								>
+								label <
+									key: "otherkey"
+									value: "y"
+								>
 							>
 						>
 					>
 				>
 			>
-		>
-	`
+		`
 
-	qp := &oproto.Query{}
-	err := proto.UnmarshalText(qs, qp)
-	c.Assert(err, IsNil)
+		qp := &oproto.Query{}
+		err := proto.UnmarshalText(qs, qp)
+		c.Assert(err, IsNil)
 
-	_, err = NewFromProto(qp).Run(context.Background(), s.store)
-	c.Assert(err, IsNil)
+		_, err = NewFromProto(qp).Run(context.Background(), s.store)
+		c.Assert(err, IsNil)
 
-	//c.Fail()
+		//c.Fail()
+	*/
 }

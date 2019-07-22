@@ -284,9 +284,9 @@ func (s *EtcdConfigStore) watchCluster() error {
 
 func (s *EtcdConfigStore) notifyClusterChange() {
 	for _, c := range clusterChangeWatchers {
-		go func() {
+		go func(c chan *oproto.ClusterConfig) {
 			c <- Config
-		}()
+		}(c)
 	}
 }
 
@@ -381,11 +381,13 @@ func connectEtcd(ctx context.Context) error {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := etcdClient.AutoSync(ctx, 10*time.Second); err == context.DeadlineExceeded || err == context.Canceled {
+			switch err := etcdClient.AutoSync(ctx, 10*time.Second); err {
+			case context.DeadlineExceeded, context.Canceled:
 				break
-			}
-			if err != nil {
+			case nil:
+			default:
 				log.Print(err)
+
 			}
 		}
 	}()

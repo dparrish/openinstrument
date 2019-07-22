@@ -1,4 +1,4 @@
-package datastore
+package block
 
 import (
 	"fmt"
@@ -58,14 +58,14 @@ func (s *MySuite) TestRead(c *C) {
 
 func (s *MySuite) TestWrite(c *C) {
 	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir, s.config)
-	block.NewStreams = append(block.NewStreams, &oproto.ValueStream{
+	block.UnloggedStreams.Append(&oproto.ValueStream{
 		Variable: &oproto.StreamVariable{Name: "/test/foo"},
 		Value: []*oproto.Value{
 			value.NewDouble(0, 0.0),
 			value.NewDouble(0, 1.1),
 		},
 	})
-	block.LogStreams["/test/bar"] = &oproto.ValueStream{
+	block.LoggedStreams.M["/test/bar"] = &oproto.ValueStream{
 		Variable: &oproto.StreamVariable{Name: "/test/bar"},
 		Value: []*oproto.Value{
 			value.NewDouble(1, 1.1),
@@ -73,7 +73,7 @@ func (s *MySuite) TestWrite(c *C) {
 			value.NewDouble(3, 1.3),
 		},
 	}
-	block.LogStreams["/test/bar1"] = &oproto.ValueStream{
+	block.LoggedStreams.M["/test/bar1"] = &oproto.ValueStream{
 		Variable: &oproto.StreamVariable{Name: "/test/bar1"},
 		Value: []*oproto.Value{
 			value.NewDouble(4, 1.4),
@@ -81,7 +81,7 @@ func (s *MySuite) TestWrite(c *C) {
 			value.NewDouble(6, 1.6),
 		},
 	}
-	err := block.Write(context.Background(), block.LogStreams)
+	err := block.Write(context.Background(), block.LoggedStreams.M)
 	c.Assert(err, Equals, nil)
 
 	reader, err := block.GetIndexedStreams(context.Background())
@@ -105,12 +105,12 @@ func (s *MySuite) TestCompact(c *C) {
 	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir, s.config)
 	for v := 0; v < 10; v++ {
 		varName := fmt.Sprintf("/test/bar%d", v)
-		block.LogStreams[varName] = &oproto.ValueStream{
+		block.LoggedStreams.M[varName] = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: varName},
 			Value:    []*oproto.Value{},
 		}
 		for i := 0; i < 1000; i++ {
-			block.LogStreams[varName].Value = append(block.LogStreams[varName].Value, value.NewDouble(0, float64(i)))
+			block.LoggedStreams.M[varName].Value = append(block.LoggedStreams.M[varName].Value, value.NewDouble(0, float64(i)))
 		}
 	}
 	c.Assert(block.Compact(context.Background()), IsNil)
@@ -120,12 +120,12 @@ func (s *MySuite) BenchmarkCompact(c *C) {
 	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir, s.config)
 	for v := 0; v < 10; v++ {
 		varName := fmt.Sprintf("/test/bar%d", v)
-		block.LogStreams[varName] = &oproto.ValueStream{
+		block.LoggedStreams.M[varName] = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: varName},
 			Value:    []*oproto.Value{},
 		}
 		for i := 0; i < 100000; i++ {
-			block.LogStreams[varName].Value = append(block.LogStreams[varName].Value, value.NewDouble(0, float64(i)))
+			block.LoggedStreams.M[varName].Value = append(block.LoggedStreams.M[varName].Value, value.NewDouble(0, float64(i)))
 		}
 	}
 	for run := 0; run < c.N; run++ {
@@ -137,12 +137,12 @@ func (s *MySuite) TestGetStreamForVariable(c *C) {
 	block := NewBlock(context.Background(), "/test/foo", "", s.dataDir, s.config)
 	for v := 0; v < 10; v++ {
 		varName := fmt.Sprintf("/test/bar%d", v)
-		block.LogStreams[varName] = &oproto.ValueStream{
+		block.LoggedStreams.M[varName] = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: varName},
 			Value:    []*oproto.Value{},
 		}
 		for i := 0; i < 100; i++ {
-			block.LogStreams[varName].Value = append(block.LogStreams[varName].Value, value.NewDouble(0, float64(i)))
+			block.LoggedStreams.M[varName].Value = append(block.LoggedStreams.M[varName].Value, value.NewDouble(0, float64(i)))
 		}
 	}
 	c.Assert(block.Compact(context.Background()), IsNil)
@@ -168,7 +168,7 @@ func (s *MySuite) TestGetOptimalSplitPoint(c *C) {
 		for j := 'a'; j <= i; j++ {
 			v = append(v, value.NewDouble(0, float64(i)))
 		}
-		block.LogStreams[varName] = &oproto.ValueStream{
+		block.LoggedStreams.M[varName] = &oproto.ValueStream{
 			Variable: &oproto.StreamVariable{Name: varName},
 			Value:    v,
 		}

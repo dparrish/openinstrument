@@ -43,7 +43,7 @@ func SafeWriteFile(filename string, msg proto.Message) error {
 	if err := proto.MarshalText(w, msg); err != nil {
 		f.Close()
 		os.Remove(f.Name())
-		return fmt.Errorf("marshal failed: %s", f.Name(), err)
+		return fmt.Errorf("marshal %s failed: %s", f.Name(), err)
 	}
 	w.Flush()
 	f.Sync()

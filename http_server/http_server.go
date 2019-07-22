@@ -22,6 +22,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/dparrish/openinstrument"
+	"github.com/dparrish/openinstrument/block"
 	"github.com/dparrish/openinstrument/datastore"
 	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/dparrish/openinstrument/store_config"
@@ -96,7 +97,7 @@ func GetBlocks(ctx context.Context, config store_config.ConfigStore, ds *datasto
 	for _, block := range ds.Blocks() {
 		b = append(b, block.ToProto())
 	}
-	datastore.ProtoBlockBy(func(a, b *oproto.Block) bool { return a.EndKey < b.EndKey }).Sort(b)
+	block.ProtoBlockBy(func(a, b *oproto.Block) bool { return a.EndKey < b.EndKey }).Sort(b)
 	out, _ := json.Marshal(b)
 	w.Header().Set("Content-Type", "text/json")
 	w.Write(out)

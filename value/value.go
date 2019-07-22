@@ -35,14 +35,14 @@ func (vs *valuesSorter) Less(i, j int) bool {
 
 func NewDouble(timestamp uint64, val float64) *oproto.Value {
 	return &oproto.Value{
-		Value:     &oproto.Value_Double{val},
+		Value:     &oproto.Value_Double{Double: val},
 		Timestamp: timestamp,
 	}
 }
 
 func NewString(timestamp uint64, val string) *oproto.Value {
 	return &oproto.Value{
-		Value:     &oproto.Value_String_{val},
+		Value:     &oproto.Value_String_{String_: val},
 		Timestamp: timestamp,
 	}
 }

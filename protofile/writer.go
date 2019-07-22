@@ -3,13 +3,10 @@ package protofile
 import (
 	"encoding/binary"
 	"fmt"
-	"io"
-	"log"
 	"os"
 
 	"github.com/joaojeronimo/go-crc16"
 
-	oproto "github.com/dparrish/openinstrument/proto"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -52,24 +49,4 @@ func (pf *ProtoFile) Write(message proto.Message) (int64, error) {
 	bytes := int64(4 + 2 + len(data) + 2)
 	pf.pos += bytes
 	return bytes, nil
-}
-
-func (pf *ProtoFile) ValueStreamWriter(chanSize int) (chan<- *oproto.ValueStream, <-chan struct{}) {
-	c := make(chan *oproto.ValueStream, chanSize)
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for value := range c {
-			// Don't write the stringified variable name
-			_, err := pf.Write(value)
-			if err == io.EOF {
-				return
-			}
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		}
-	}()
-	return c, done
 }

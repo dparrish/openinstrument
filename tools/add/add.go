@@ -98,8 +98,6 @@ func main() {
 				log.Printf("%s", response)
 			}
 		}
-		in <- request
-		log.Printf("done")
 	}()
 
 	for response := range out {
